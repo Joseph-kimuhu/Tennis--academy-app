@@ -259,3 +259,55 @@ class Club(Base):
 # Add remaining User relationships
 User.coaching_sessions_coach = relationship("CoachingSession", back_populates="coach", foreign_keys=[CoachingSession.coach_id], viewonly=True)
 User.coaching_sessions_player = relationship("CoachingSession", back_populates="player", foreign_keys=[CoachingSession.player_id], viewonly=True)
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    receiver_id = Column(Integer, ForeignKey("users.id"))
+    subject = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    message_type = Column(String(50), default="general")  # general, notification, game_reminder
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")
+    receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
+
+
+class PlayerStatistics(Base):
+    __tablename__ = "player_statistics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    serves = Column(Integer, default=0)
+    aces = Column(Integer, default=0)
+    double_faults = Column(Integer, default=0)
+    first_serve_percentage = Column(Float, default=0.0)
+    second_serve_points_won = Column(Integer, default=0)
+    break_points_saved = Column(Integer, default=0)
+    break_points_faced = Column(Integer, default=0)
+    total_games = Column(Integer, default=0)
+    total_sets = Column(Integer, default=0)
+    total_matches = Column(Integer, default=0)
+    winning_streak = Column(Integer, default=0)
+    losing_streak = Column(Integer, default=0)
+    longest_win_streak = Column(Integer, default=0)
+    longest_lose_streak = Column(Integer, default=0)
+    coach_notes = Column(Text)
+    last_updated = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    player = relationship("User", back_populates="player_statistics")
+
+
+# Add Message relationships to User
+User.sent_messages = relationship("Message", back_populates="sender", foreign_keys=[Message.sender_id], viewonly=True)
+User.received_messages = relationship("Message", back_populates="receiver", foreign_keys=[Message.receiver_id], viewonly=True)
+
+# Add PlayerStatistics relationship to User
+User.player_statistics = relationship("PlayerStatistics", back_populates="player", uselist=False)

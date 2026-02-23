@@ -10,10 +10,12 @@ import Tournaments from './pages/Tournaments';
 import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
+import CoachPanel from './pages/CoachPanel';
+import PlayerDashboard from './pages/PlayerDashboard';
 
 // Protected Route Component
-function ProtectedRoute({ children, requireAdmin = false }) {
-  const { isAuthenticated, loading, isAdmin } = useAuth();
+function ProtectedRoute({ children, requireAdmin = false, requireCoach = false }) {
+  const { isAuthenticated, loading, isAdmin, isCoach, isPlayer } = useAuth();
 
   if (loading) {
     return (
@@ -28,14 +30,18 @@ function ProtectedRoute({ children, requireAdmin = false }) {
   }
 
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/player-dashboard" replace />;
+  }
+
+  if (requireCoach && !isCoach && !isAdmin) {
+    return <Navigate to="/player-dashboard" replace />;
   }
 
   return children;
 }
 
 function AppRoutes() {
-  const { loading } = useAuth();
+  const { loading, isAdmin, isCoach } = useAuth();
 
   if (loading) {
     return (
@@ -44,6 +50,13 @@ function AppRoutes() {
       </div>
     );
   }
+
+  // Determine default dashboard based on role
+  const getDefaultDashboard = () => {
+    if (isAdmin) return <Admin />;
+    if (isCoach) return <CoachPanel />;
+    return <PlayerDashboard />;
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -60,7 +73,7 @@ function AppRoutes() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                {getDefaultDashboard()}
               </ProtectedRoute>
             }
           />
@@ -69,6 +82,22 @@ function AppRoutes() {
             element={
               <ProtectedRoute requireAdmin>
                 <Admin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coach-panel"
+            element={
+              <ProtectedRoute requireCoach>
+                <CoachPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/player-dashboard"
+            element={
+              <ProtectedRoute>
+                <PlayerDashboard />
               </ProtectedRoute>
             }
           />

@@ -364,6 +364,70 @@ class ApiService {
   async getAdminStats() {
     return this.request('/api/admin/stats/overview');
   }
+
+  // Coach Panel
+  async getCoachDashboard() {
+    return this.request('/api/coach-panel/dashboard');
+  }
+
+  async getCoachPlayers(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/coach-panel/players?${query}`);
+  }
+
+  async getCoachPlayer(playerId) {
+    return this.request(`/api/coach-panel/players/${playerId}`);
+  }
+
+  async getPlayerStatistics(playerId) {
+    return this.request(`/api/coach-panel/players/${playerId}/statistics`);
+  }
+
+  async createPlayerStatistics(playerId, statsData) {
+    return this.request(`/api/coach-panel/players/${playerId}/statistics`, {
+      method: 'POST',
+      body: JSON.stringify(statsData),
+    });
+  }
+
+  async updatePlayerStatistics(playerId, statsData) {
+    return this.request(`/api/coach-panel/players/${playerId}/statistics`, {
+      method: 'PUT',
+      body: JSON.stringify(statsData),
+    });
+  }
+
+  async sendMessage(messageData) {
+    return this.request('/api/coach-panel/messages', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+    });
+  }
+
+  async getMessages(folder = 'inbox', params = {}) {
+    const query = new URLSearchParams({ ...params, folder }).toString();
+    return this.request(`/api/coach-panel/messages?${query}`);
+  }
+
+  async getMessage(messageId) {
+    return this.request(`/api/coach-panel/messages/${messageId}`);
+  }
+
+  async markMessageRead(messageId) {
+    return this.request(`/api/coach-panel/messages/${messageId}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  async deleteMessage(messageId) {
+    return this.request(`/api/coach-panel/messages/${messageId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getUnreadMessageCount() {
+    return this.request('/api/coach-panel/messages/unread/count');
+  }
 }
 
 export const api = new ApiService();

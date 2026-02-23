@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, isCoach, isPlayer, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -79,6 +79,32 @@ function Navbar() {
                 Admin
               </Link>
             )}
+
+            {(isCoach || isAdmin) && (
+              <Link
+                to="/coach-panel"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive('/coach-panel') 
+                    ? 'bg-[#2E7D32] text-white' 
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
+                }`}
+              >
+                Coach Panel
+              </Link>
+            )}
+
+            {isPlayer && (
+              <Link
+                to="/player-dashboard"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive('/player-dashboard') 
+                    ? 'bg-[#2E7D32] text-white' 
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
+                }`}
+              >
+                My Dashboard
+              </Link>
+            )}
           </div>
 
           {/* Auth Buttons / Profile */}
@@ -123,13 +149,33 @@ function Navbar() {
                       Dashboard
                     </Link>
                     <Link
-                      to="/profile"
+                      to="/player-dashboard"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       onClick={() => setIsProfileOpen(false)}
                     >
-                      <span className="mr-2">👤</span>
-                      Profile
+                      <span className="mr-2">🎾</span>
+                      My Dashboard
                     </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <span className="mr-2">⚙️</span>
+                        Admin
+                      </Link>
+                    )}
+                    {(isCoach || isAdmin) && (
+                      <Link
+                        to="/coach-panel"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <span className="mr-2">🏅</span>
+                        Coach Panel
+                      </Link>
+                    )}
                     <div className="border-t border-gray-100 mt-2 pt-2">
                       <button
                         onClick={handleLogout}
@@ -225,6 +271,32 @@ function Navbar() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Admin
+                  </Link>
+                )}
+                {(isCoach || isAdmin) && (
+                  <Link
+                    to="/coach-panel"
+                    className={`block px-4 py-3 rounded-lg text-sm font-medium ${
+                      isActive('/coach-panel') 
+                        ? 'bg-[#2E7D32] text-white' 
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Coach Panel
+                  </Link>
+                )}
+                {isPlayer && (
+                  <Link
+                    to="/player-dashboard"
+                    className={`block px-4 py-3 rounded-lg text-sm font-medium ${
+                      isActive('/player-dashboard') 
+                        ? 'bg-[#2E7D32] text-white' 
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    My Dashboard
                   </Link>
                 )}
                 <button

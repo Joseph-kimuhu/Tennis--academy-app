@@ -14,7 +14,7 @@ function Register() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -48,7 +48,13 @@ function Register() {
 
     const success = await register(userData);
     if (success) {
-      navigate('/login');
+      // Auto-login after registration
+      const loginSuccess = await login(formData.email, formData.password);
+      if (loginSuccess) {
+        navigate('/dashboard');
+      } else {
+        navigate('/login');
+      }
     } else {
       setError('Registration failed. Please try again.');
     }

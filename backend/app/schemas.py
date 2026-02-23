@@ -420,3 +420,99 @@ class ClubResponse(ClubBase):
 
     class Config:
         from_attributes = True
+
+
+# Message Schemas
+class MessageBase(BaseModel):
+    receiver_id: int
+    subject: str
+    content: str
+    message_type: str = "general"
+
+
+class MessageCreate(MessageBase):
+    pass
+
+
+class MessageResponse(MessageBase):
+    id: int
+    sender_id: int
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MessageWithUser(MessageResponse):
+    sender: Optional['UserPublic'] = None
+    receiver: Optional['UserPublic'] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Player Statistics Schemas
+class PlayerStatisticsBase(BaseModel):
+    serves: int = 0
+    aces: int = 0
+    double_faults: int = 0
+    first_serve_percentage: float = 0.0
+    second_serve_points_won: int = 0
+    break_points_saved: int = 0
+    break_points_faced: int = 0
+    total_games: int = 0
+    total_sets: int = 0
+    total_matches: int = 0
+    winning_streak: int = 0
+    losing_streak: int = 0
+    longest_win_streak: int = 0
+    longest_lose_streak: int = 0
+    coach_notes: Optional[str] = None
+
+
+class PlayerStatisticsCreate(PlayerStatisticsBase):
+    player_id: int
+
+
+class PlayerStatisticsUpdate(BaseModel):
+    serves: Optional[int] = None
+    aces: Optional[int] = None
+    double_faults: Optional[int] = None
+    first_serve_percentage: Optional[float] = None
+    second_serve_points_won: Optional[int] = None
+    break_points_saved: Optional[int] = None
+    break_points_faced: Optional[int] = None
+    total_games: Optional[int] = None
+    total_sets: Optional[int] = None
+    total_matches: Optional[int] = None
+    winning_streak: Optional[int] = None
+    losing_streak: Optional[int] = None
+    longest_win_streak: Optional[int] = None
+    longest_lose_streak: Optional[int] = None
+    coach_notes: Optional[str] = None
+
+
+class PlayerStatisticsResponse(PlayerStatisticsBase):
+    id: int
+    player_id: int
+    last_updated: Optional[datetime] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class PlayerStatisticsWithPlayer(PlayerStatisticsResponse):
+    player: Optional['UserPublic'] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Coach Panel Schemas
+class CoachDashboard(BaseModel):
+    total_players: int
+    pending_messages: int
+    upcoming_sessions: int
+    recent_performance: dict = {}
