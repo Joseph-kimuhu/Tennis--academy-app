@@ -91,9 +91,9 @@ function Navbar() {
 
             {isAdmin && (
               <Link
-                to="/admin"
+                to="/staff-panel"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/admin') 
+                  isActive('/staff-panel') || isActive('/admin') 
                     ? 'bg-[#2E7D32] text-white' 
                     : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
                 }`}
@@ -104,9 +104,9 @@ function Navbar() {
 
             {(isCoach || isAdmin) && (
               <Link
-                to="/coach-panel"
+                to="/staff-panel"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/coach-panel') 
+                  isActive('/staff-panel') || isActive('/coach-panel') 
                     ? 'bg-[#2E7D32] text-white' 
                     : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
                 }`}
@@ -186,7 +186,7 @@ function Navbar() {
                     </Link>
                     {isAdmin && (
                       <Link
-                        to="/admin"
+                        to="/staff-panel"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsProfileOpen(false)}
                       >
@@ -196,7 +196,7 @@ function Navbar() {
                     )}
                     {(isCoach || isAdmin) && (
                       <Link
-                        to="/coach-panel"
+                        to="/staff-panel"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsProfileOpen(false)}
                       >
@@ -290,9 +290,9 @@ function Navbar() {
                 </Link>
                 {isAdmin && (
                   <Link
-                    to="/admin"
+                    to="/staff-panel"
                     className={`block px-4 py-3 rounded-lg text-sm font-medium ${
-                      isActive('/admin') 
+                      isActive('/staff-panel') || isActive('/admin') 
                         ? 'bg-[#2E7D32] text-white' 
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
@@ -303,9 +303,9 @@ function Navbar() {
                 )}
                 {(isCoach || isAdmin) && (
                   <Link
-                    to="/coach-panel"
+                    to="/staff-panel"
                     className={`block px-4 py-3 rounded-lg text-sm font-medium ${
-                      isActive('/coach-panel') 
+                      isActive('/staff-panel') || isActive('/coach-panel') 
                         ? 'bg-[#2E7D32] text-white' 
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}

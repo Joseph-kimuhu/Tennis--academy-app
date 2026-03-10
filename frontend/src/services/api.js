@@ -624,6 +624,52 @@ class ApiService {
   async getEventParticipants(eventId) {
     return this.request(`/api/events/${eventId}/participants`);
   }
+
+  // Staff Management
+  async createStaffAccount(staffData) {
+    return this.request('/api/staff/register', {
+      method: 'POST',
+      body: JSON.stringify(staffData),
+    });
+  }
+
+  async getStaffStats() {
+    return this.request('/api/staff/stats');
+  }
+
+  async getAllUsers(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/staff/users?${query}`);
+  }
+
+  async getPlayers(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/staff/players?${query}`);
+  }
+
+  async getAllBookings(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/bookings?${query}`);
+  }
+
+  async getAllTournaments(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/tournaments?${query}`);
+  }
+
+  async updateUserRole(userId, newRole) {
+    return this.request(`/api/staff/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ new_role: newRole }),
+    });
+  }
+
+  async updateUserStatus(userId, isActive) {
+    return this.request(`/api/staff/users/${userId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_active: isActive }),
+    });
+  }
 }
 
 export const api = new ApiService();

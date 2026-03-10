@@ -12,6 +12,8 @@ import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import CoachPanel from './pages/CoachPanel';
 import PlayerDashboard from './pages/PlayerDashboard';
+import UnifiedStaffPanel from './pages/UnifiedStaffPanel';
+import StaffRegistration from './pages/StaffRegistration';
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAdmin = false, requireCoach = false }) {
@@ -53,8 +55,7 @@ function AppRoutes() {
 
   // Determine default dashboard based on role
   const getDefaultDashboard = () => {
-    if (isAdmin) return <Admin />;
-    if (isCoach) return <CoachPanel />;
+    if (isAdmin || isCoach) return <UnifiedStaffPanel />;
     return <PlayerDashboard />;
   };
 
@@ -66,6 +67,7 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/staff-register" element={<StaffRegistration />} />
           <Route path="/courts" element={<Courts />} />
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
@@ -78,10 +80,18 @@ function AppRoutes() {
             }
           />
           <Route
+            path="/staff-panel"
+            element={
+              <ProtectedRoute>
+                <UnifiedStaffPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin"
             element={
               <ProtectedRoute requireAdmin>
-                <Admin />
+                <UnifiedStaffPanel />
               </ProtectedRoute>
             }
           />
@@ -89,7 +99,7 @@ function AppRoutes() {
             path="/coach-panel"
             element={
               <ProtectedRoute requireCoach>
-                <CoachPanel />
+                <UnifiedStaffPanel />
               </ProtectedRoute>
             }
           />

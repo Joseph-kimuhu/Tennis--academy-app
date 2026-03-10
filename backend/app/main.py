@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import engine, Base, SessionLocal
-from .routes import auth, users, courts, bookings, tournaments, matches, coaching, admin, clubs, coach_panel
+from .routes import auth, users, courts, bookings, tournaments, matches, coaching, admin, clubs, coach_panel, staff
 from .models import User, UserRole
 from .auth import get_password_hash
 
@@ -73,6 +73,7 @@ app.include_router(coaching.router)
 app.include_router(admin.router)
 app.include_router(clubs.router)
 app.include_router(coach_panel.router)
+app.include_router(staff.router)
 logger.info("==> All routes registered successfully")
 
 

@@ -17,6 +17,15 @@ class UserCreate(UserBase):
     password: str
 
 
+class StaffCreate(BaseModel):
+    email: EmailStr
+    username: str
+    full_name: str
+    password: str
+    role: UserRole = UserRole.COACH
+    admin_code: Optional[str] = None
+
+
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
