@@ -115,18 +115,6 @@ function Navbar() {
               </Link>
             )}
 
-            {isPlayer && (
-              <Link
-                to="/player-dashboard"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/player-dashboard') 
-                    ? 'bg-[#2E7D32] text-white' 
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
-                }`}
-              >
-                My Dashboard
-              </Link>
-            )}
           </div>
 
           {/* Auth Buttons / Profile */}
@@ -195,14 +183,6 @@ function Navbar() {
                     >
                       <span className="mr-2">📊</span>
                       Dashboard
-                    </Link>
-                    <Link
-                      to="/player-dashboard"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <span className="mr-2">🎾</span>
-                      My Dashboard
                     </Link>
                     {isAdmin && (
                       <Link
@@ -332,19 +312,6 @@ function Navbar() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Coach Panel
-                  </Link>
-                )}
-                {isPlayer && (
-                  <Link
-                    to="/player-dashboard"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium ${
-                      isActive('/player-dashboard') 
-                        ? 'bg-[#2E7D32] text-white' 
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    My Dashboard
                   </Link>
                 )}
                 <button
