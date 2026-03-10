@@ -101,7 +101,7 @@ def get_staff_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH]))
 ):
-    """Get staff statistics"""
+    """Get staff statistics - Coaches have full admin access"""
     
     total_users = db.query(User).count()
     total_bookings = db.query(User).count()  # This would need to be updated with actual booking count
@@ -121,7 +121,7 @@ def get_all_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH]))
 ):
-    """Get all users (admin/coach only)"""
+    """Get all users - Coaches have full admin access"""
     
     query = db.query(User)
     
@@ -138,7 +138,7 @@ def get_players(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH]))
 ):
-    """Get all players (admin/coach only)"""
+    """Get all players - Coaches have full admin access"""
     
     players = db.query(User).filter(User.role == UserRole.PLAYER).offset(skip).limit(limit).all()
     return players
@@ -148,9 +148,9 @@ def update_user_role(
     user_id: int,
     new_role: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH]))
 ):
-    """Update user role (admin only)"""
+    """Update user role - Coaches have full admin access"""
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -175,9 +175,9 @@ def update_user_status(
     user_id: int,
     is_active: bool,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH]))
 ):
-    """Update user active status (admin only)"""
+    """Update user active status - Coaches have full admin access"""
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

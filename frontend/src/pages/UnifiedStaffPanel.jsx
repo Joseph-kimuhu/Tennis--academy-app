@@ -21,6 +21,9 @@ function UnifiedStaffPanel() {
     role: 'coach'
   });
 
+  // Coaches get full admin access
+  const hasFullAccess = isAdmin || isCoach;
+
   useEffect(() => {
     if (isAdmin || isCoach) {
       fetchData();
@@ -32,7 +35,7 @@ function UnifiedStaffPanel() {
     try {
       const [statsData, usersData, bookingsData, tournamentsData, courtsData] = await Promise.all([
         api.getStaffStats().catch(() => ({ total_users: 0, total_bookings: 0, active_tournaments: 0 })),
-        api.getAllUsers({ limit: 20 }),
+        api.getAllUsers({ limit: 20 }), // Always get all users for coaches too
         api.getAllBookings({ limit: 10 }),
         api.getAllTournaments({ limit: 10 }),
         api.getCourts({ limit: 10 }).catch(() => [])
@@ -107,14 +110,14 @@ function UnifiedStaffPanel() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                {isAdmin ? 'Admin' : 'Coach'} Panel
+                Staff Management Panel
               </h1>
               <p className="text-green-100">
-                {isAdmin ? 'Manage the entire tennis academy' : 'Manage coaching and player development'}
+                {isAdmin ? 'Administrator Access' : 'Coach Access (Full Admin Privileges)'}
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex gap-3">
-              {isAdmin && (
+              {hasFullAccess && (
                 <button
                   onClick={() => setShowCreateAccount(true)}
                   className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-gray-100 transition-colors"
@@ -325,7 +328,7 @@ function UnifiedStaffPanel() {
                             <button className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
                               Edit
                             </button>
-                            {isAdmin && (
+                            {hasFullAccess && (
                               <>
                                 <button className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600">
                                   Role

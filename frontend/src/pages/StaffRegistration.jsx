@@ -151,7 +151,7 @@ function StaffRegistration() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role
+                Account Type
               </label>
               <select
                 name="role"
@@ -159,9 +159,12 @@ function StaffRegistration() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
-                <option value="coach">Coach</option>
+                <option value="coach">Coach (Full Admin Access)</option>
                 <option value="admin">Administrator</option>
               </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Coaches automatically receive full admin privileges
+              </p>
             </div>
 
             <div>
