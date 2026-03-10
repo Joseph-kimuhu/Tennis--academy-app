@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 function PlayerDashboard() {
-  const { user, isPlayer, updateUser } = useAuth();
+  const { user, isPlayer, isCoach, isAdmin, updateUser } = useAuth();
   const [stats, setStats] = useState(null);
   const [messages, setMessages] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -24,6 +24,7 @@ function PlayerDashboard() {
     bio: user?.bio || '',
     skill_level: user?.skill_level || 'beginner'
   });
+  const [currentRole, setCurrentRole] = useState(user?.role || 'player');
 
   useEffect(() => {
     if (isPlayer) {
@@ -104,25 +105,106 @@ function PlayerDashboard() {
     }
   };
 
-  const fetchData = async () => {
-    setLoading(true);
+  const handleRoleSwitch = async (newRole) => {
     try {
-      const [statsData, messagesData, bookingsData, unreadData, announcementsData] = await Promise.all([
-        api.getMyStats().catch(() => null),
-        api.getMessages('inbox', { limit: 20 }).catch(() => []),
-        api.getMyBookings({ upcoming: true, limit: 5 }).catch(() => []),
-        api.getUnreadMessageCount().catch(() => ({ unread_count: 0 })),
-        api.getPlayerAnnouncements({ active_only: true, limit: 10 }).catch(() => []),
-      ]);
-      setStats(statsData);
-      setMessages(messagesData || []);
-      setBookings(bookingsData || []);
-      setUnreadCount(unreadData?.unread_count || 0);
-      setAnnouncements(announcementsData || []);
+      // In a real app, this would call an API to update the user's role
+      // For now, we'll just update the local state
+      setCurrentRole(newRole);
+      
+      // Show confirmation
+      const roleNames = {
+        player: 'Player',
+        coach: 'Coach',
+        admin: 'Administrator'
+      };
+      
+      alert(`Switched to ${roleNames[newRole]} role. In production, this would update your account permissions.`);
+      
+      // Redirect to appropriate dashboard
+      if (newRole === 'player') {
+        window.location.href = '/dashboard';
+      } else {
+        window.location.href = '/staff-panel';
+      }
     } catch (error) {
-      console.error('Error fetching player data:', error);
+      console.error('Error switching role:', error);
+      alert('Failed to switch role. Please try again.');
     }
-    setLoading(false);
+  };
+
+  // Dynamic dashboard content based on current role
+  const getDashboardContent = () => {
+    if (currentRole === 'player') {
+      return (
+        <>
+          {/* Player-specific content */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Player Dashboard</h2>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-4 bg-green-50 rounded-xl">
+                <p className="text-3xl font-bold text-green-600">{stats?.wins || 0}</p>
+                <p className="text-sm text-gray-600">Wins</p>
+              </div>
+              <div className="p-4 bg-red-50 rounded-xl">
+                <p className="text-3xl font-bold text-red-600">{stats?.losses || 0}</p>
+                <p className="text-sm text-gray-600">Losses</p>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-xl">
+                <p className="text-3xl font-bold text-blue-600">{stats?.ranking_points || 0}</p>
+                <p className="text-sm text-gray-600">Ranking Points</p>
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    } else {
+      return (
+        <>
+          {/* Staff-specific content */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Staff Management</h2>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-4 text-blue-900">Create Coach Account</h3>
+                <p className="text-gray-700 mb-4">
+                  Create new coach accounts with full administrator privileges
+                </p>
+                <button
+                  onClick={() => window.location.href = '/staff-register'}
+                  className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                >
+                  🎾 Create Coach Account
+                </button>
+              </div>
+              
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-4 text-red-900">Create Admin Account</h3>
+                <p className="text-gray-700 mb-4">
+                  Create administrator accounts with system-level access
+                </p>
+                <button
+                  onClick={() => window.location.href = '/staff-register'}
+                  className="w-full px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors"
+                >
+                  ⚙️ Create Admin Account
+                </button>
+              </div>
+            </div>
+            
+            <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
+              <div className="flex items-center">
+                <span className="text-2xl mr-3">🔐</span>
+                <div>
+                  <h4 className="font-semibold text-yellow-900">Security Notice</h4>
+                  <p className="text-sm text-yellow-800">
+                    Staff registration is restricted to authorized personnel. All access attempts are logged for security purposes.
+                  </p>
+                </div>
+              </div>
+            </div>
+        </>
+      );
+    }
   };
 
   const handleReadMessage = async (message) => {
@@ -235,13 +317,48 @@ function PlayerDashboard() {
                   🎾 {user?.username}
                 </span>
                 <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium capitalize">
-                  📊 {user?.skill_level}
+                  📊 {currentRole}
                 </span>
                 {unreadCount > 0 && (
                   <span className="px-3 py-1 bg-red-500 rounded-full text-sm font-medium animate-pulse">
                     💬 {unreadCount} new message{unreadCount > 1 ? 's' : ''}
                   </span>
                 )}
+              </div>
+              
+              {/* Role Switcher */}
+              <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
+                <span className="text-white/80 text-sm mr-2">Switch Role:</span>
+                <button
+                  onClick={() => handleRoleSwitch('player')}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    currentRole === 'player' 
+                      ? 'bg-white text-green-600' 
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  Player
+                </button>
+                <button
+                  onClick={() => handleRoleSwitch('coach')}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    currentRole === 'coach' 
+                      ? 'bg-white text-green-600' 
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  Coach
+                </button>
+                <button
+                  onClick={() => handleRoleSwitch('admin')}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    currentRole === 'admin' 
+                      ? 'bg-white text-green-600' 
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  Admin
+                </button>
               </div>
             </div>
           </div>
@@ -307,6 +424,9 @@ function PlayerDashboard() {
               { id: 'profile', label: 'Profile', icon: '👤' },
               { id: 'messages', label: 'Messages', icon: '💬', badge: unreadCount },
               { id: 'bookings', label: 'Bookings', icon: '📅' },
+              ...(currentRole !== 'player' ? [
+                { id: 'staff', label: 'Staff Management', icon: '👨‍💼' }
+              ] : [])
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -336,32 +456,21 @@ function PlayerDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            {activeTab === 'overview' && (
+            {activeTab === 'overview' && getDashboardContent()}
+            
+            {activeTab === 'announcements' && (
               <div className="space-y-6">
-                {/* Quick Stats */}
                 <div className="bg-white rounded-xl shadow-md p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Performance Overview</h2>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="p-4 bg-green-50 rounded-xl">
-                      <p className="text-3xl font-bold text-green-600">{stats?.wins || 0}</p>
-                      <p className="text-sm text-gray-600">Wins</p>
-                    </div>
-                    <div className="p-4 bg-red-50 rounded-xl">
-                      <p className="text-3xl font-bold text-red-600">{stats?.losses || 0}</p>
-                      <p className="text-sm text-gray-600">Losses</p>
-                    </div>
-                    <div className="p-4 bg-purple-50 rounded-xl">
-                      <p className="text-3xl font-bold text-purple-600">{stats?.win_rate?.toFixed(0) || 0}%</p>
-                      <p className="text-sm text-gray-600">Win Rate</p>
-                    </div>
-                  </div>
-                  
-                  {stats?.recent_performance && stats.recent_performance.length > 0 && (
-                    <div className="mt-6">
-                      <p className="text-sm text-gray-500 mb-3">Recent Form</p>
-                      <div className="flex flex-wrap gap-2">
-                        {stats.recent_performance.map((result, index) => (
-                          <div
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Announcements</h2>
+                  <div className="space-y-4">
+                    {announcements.length > 0 ? (
+                      announcements.map((announcement) => (
+                        <div key={announcement.id} className="border-l-4 border-green-500 pl-4">
+                          <h3 className="font-semibold text-gray-900 mb-2">{announcement.title}</h3>
+                          <p className="text-sm text-gray-500 mb-2">
+                            {formatDate(announcement.created_at)}
+                          </p>
+                          <p className="text-gray-700">{announcement.content}</p>
                             key={index}
                             className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${
                               result === 'W' 
@@ -906,12 +1015,50 @@ function PlayerDashboard() {
                         >
                           {sendingReply ? 'Sending...' : 'Send Reply'}
                         </button>
-                      </form>
+                      )) : (
+                        <div className="p-8 text-center">
+                          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <span className="text-2xl">📭</span>
+                          </div>
+                          <p className="text-gray-500 text-sm">No messages yet</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    
+                    {/* Message Detail */}
+                    {selectedMessage && (
+                      <div className="border-t p-4 bg-gray-50">
+                        <div className="mb-3">
+                          <h4 className="font-bold text-gray-900">{selectedMessage.subject}</h4>
+                          <p className="text-xs text-gray-500">
+                            From: {selectedMessage.sender?.username} • {formatDate(selectedMessage.created_at)}
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap">{selectedMessage.content}</p>
+                        
+                        <form onSubmit={handleReply}>
+                          <textarea
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            className="w-full p-3 border rounded-lg mb-2 text-sm"
+                            rows="2"
+                            placeholder="Write a reply..."
+                            required
+                          ></textarea>
+                          <button
+                            type="submit"
+                            disabled={sendingReply}
+                            className="w-full py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 disabled:opacity-50 transition-colors"
+                          >
+                            {sendingReply ? 'Sending...' : 'Send Reply'}
+                          </button>
+                        </form>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

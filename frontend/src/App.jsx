@@ -13,7 +13,6 @@ import Admin from './pages/Admin';
 import CoachPanel from './pages/CoachPanel';
 import PlayerDashboard from './pages/PlayerDashboard';
 import UnifiedStaffPanel from './pages/UnifiedStaffPanel';
-import StaffRegistration from './pages/StaffRegistration';
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAdmin = false, requireCoach = false }) {
@@ -67,7 +66,6 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/staff-register" element={<StaffRegistration />} />
           <Route path="/courts" element={<Courts />} />
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
@@ -83,22 +81,6 @@ function AppRoutes() {
             path="/staff-panel"
             element={
               <ProtectedRoute>
-                <UnifiedStaffPanel />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requireAdmin>
-                <UnifiedStaffPanel />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/coach-panel"
-            element={
-              <ProtectedRoute requireCoach>
                 <UnifiedStaffPanel />
               </ProtectedRoute>
             }
