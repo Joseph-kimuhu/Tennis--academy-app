@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel
 from ..database import get_db
-from ..models import User, UserRole, Message, PlayerStatistics, CoachingSession
+from ..models import User, UserRole, Message, PlayerStatistics, CoachingSession, TrainingSession, TrainingAttendance, Announcement, ProgressReport
 from ..schemas import (
     MessageCreate, MessageResponse, MessageWithUser,
     PlayerStatisticsCreate, PlayerStatisticsUpdate, PlayerStatisticsResponse,
@@ -363,3 +364,360 @@ def get_unread_count(
     ).count()
     
     return {"unread_count": count}
+
+
+# ==================== Training Sessions ====================
+
+class TrainingSessionCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    court_id: Optional[int] = None
+    scheduled_date: datetime
+    duration_minutes: int = 60
+    max_participants: int = 4
+    session_type: str = "general"
+
+
+class TrainingSessionUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    court_id: Optional[int] = None
+    scheduled_date: Optional[datetime] = None
+    duration_minutes: Optional[int] = None
+    max_participants: Optional[int] = None
+    session_type: Optional[str] = None
+    status: Optional[str] = None
+
+
+class TrainingSessionResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    coach_id: int
+    court_id: Optional[int]
+    scheduled_date: datetime
+    duration_minutes: int
+    max_participants: int
+    session_type: str
+    status: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+@router.get("/training-sessions", response_model=List[TrainingSessionResponse])
+def get_training_sessions(
+    skip: int = 0,
+    limit: int = 50,
+    upcoming: bool = True,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN]))
+):
+    query = db.query(TrainingSession)
+    
+    if upcoming:
+        query = query.filter(TrainingSession.scheduled_date >= datetime.now())
+    
+    sessions = query.order_by(TrainingSession.scheduled_date.asc()).offset(skip).limit(limit).all()
+    return sessions
+
+
+@router.post("/training-sessions", response_model=TrainingSessionResponse)
+def create_training_session(
+    session_data: TrainingSessionCreate,
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    new_session = TrainingSession(
+        title=session_data.title,
+        description=session_data.description,
+        coach_id=current_user.id,
+        court_id=session_data.court_id,
+        scheduled_date=session_data.scheduled_date,
+        duration_minutes=session_data.duration_minutes,
+        max_participants=session_data.max_participants,
+        session_type=session_data.session_type
+    )
+    
+    db.add(new_session)
+    db.commit()
+    db.refresh(new_session)
+    
+    return new_session
+
+
+@router.put("/training-sessions/{session_id}", response_model=TrainingSessionResponse)
+def update_training_session(
+    session_id: int,
+    session_data: TrainingSessionUpdate,
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    session = db.query(TrainingSession).filter(TrainingSession.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Training session not found")
+    
+    if session_data.title is not None:
+        session.title = session_data.title
+    if session_data.description is not None:
+        session.description = session_data.description
+    if session_data.court_id is not None:
+        session.court_id = session_data.court_id
+    if session_data.scheduled_date is not None:
+        session.scheduled_date = session_data.scheduled_date
+    if session_data.duration_minutes is not None:
+        session.duration_minutes = session_data.duration_minutes
+    if session_data.max_participants is not None:
+        session.max_participants = session_data.max_participants
+    if session_data.session_type is not None:
+        session.session_type = session_data.session_type
+    if session_data.status is not None:
+        session.status = session_data.status
+    
+    db.commit()
+    db.refresh(session)
+    
+    return session
+
+
+@router.delete("/training-sessions/{session_id}")
+def delete_training_session(
+    session_id: int,
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    session = db.query(TrainingSession).filter(TrainingSession.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Training session not found")
+    
+    db.delete(session)
+    db.commit()
+    
+    return {"message": "Training session deleted successfully"}
+
+
+# ==================== Announcements ====================
+
+class AnnouncementCreate(BaseModel):
+    title: str
+    content: str
+    priority: str = "normal"
+    expires_at: Optional[datetime] = None
+
+
+class AnnouncementUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    priority: Optional[str] = None
+    is_active: Optional[bool] = None
+    expires_at: Optional[datetime] = None
+
+
+class AnnouncementResponse(BaseModel):
+    id: int
+    title: str
+    content: str
+    author_id: int
+    priority: str
+    is_active: bool
+    expires_at: Optional[datetime]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+@router.get("/announcements", response_model=List[AnnouncementResponse])
+def get_announcements(
+    skip: int = 0,
+    limit: int = 20,
+    active_only: bool = True,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = db.query(Announcement)
+    
+    if active_only:
+        query = query.filter(Announcement.is_active == True)
+    
+    announcements = query.order_by(Announcement.created_at.desc()).offset(skip).limit(limit).all()
+    return announcements
+
+
+@router.post("/announcements", response_model=AnnouncementResponse)
+def create_announcement(
+    announcement_data: AnnouncementCreate,
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    new_announcement = Announcement(
+        title=announcement_data.title,
+        content=announcement_data.content,
+        author_id=current_user.id,
+        priority=announcement_data.priority,
+        expires_at=announcement_data.expires_at
+    )
+    
+    db.add(new_announcement)
+    db.flush()  # Get the announcement ID before committing
+    
+    # Get all players
+    players = db.query(User).filter(User.role == UserRole.PLAYER).all()
+    
+    # Create a message for each player
+    for player in players:
+        message = Message(
+            sender_id=current_user.id,
+            receiver_id=player.id,
+            subject=f"📢 {announcement_data.title}",
+            content=announcement_data.content,
+            message_type="notification"
+        )
+        db.add(message)
+    
+    db.commit()
+    db.refresh(new_announcement)
+    
+    return new_announcement
+
+
+@router.put("/announcements/{announcement_id}", response_model=AnnouncementResponse)
+def update_announcement(
+    announcement_id: int,
+    announcement_data: AnnouncementUpdate,
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    
+    if announcement_data.title is not None:
+        announcement.title = announcement_data.title
+    if announcement_data.content is not None:
+        announcement.content = announcement_data.content
+    if announcement_data.priority is not None:
+        announcement.priority = announcement_data.priority
+    if announcement_data.is_active is not None:
+        announcement.is_active = announcement_data.is_active
+    if announcement_data.expires_at is not None:
+        announcement.expires_at = announcement_data.expires_at
+    
+    db.commit()
+    db.refresh(announcement)
+    
+    return announcement
+
+
+@router.delete("/announcements/{announcement_id}")
+def delete_announcement(
+    announcement_id: int,
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    
+    db.delete(announcement)
+    db.commit()
+    
+    return {"message": "Announcement deleted successfully"}
+
+
+# ==================== Progress Reports ====================
+
+class ProgressReportCreate(BaseModel):
+    player_id: int
+    title: str
+    content: str
+    rating: Optional[int] = None
+    goals: Optional[str] = None
+    strengths: Optional[str] = None
+    areas_for_improvement: Optional[str] = None
+
+
+class ProgressReportResponse(BaseModel):
+    id: int
+    player_id: int
+    coach_id: int
+    title: str
+    content: str
+    rating: Optional[int]
+    goals: Optional[str]
+    strengths: Optional[str]
+    areas_for_improvement: Optional[str]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+@router.get("/players/{player_id}/progress-reports", response_model=List[ProgressReportResponse])
+def get_player_progress_reports(
+    player_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN]))
+):
+    reports = db.query(ProgressReport).filter(
+        ProgressReport.player_id == player_id
+    ).order_by(ProgressReport.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return reports
+
+
+@router.post("/progress-reports", response_model=ProgressReportResponse)
+def create_progress_report(
+    report_data: ProgressReportCreate,
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    # Verify player exists
+    player = db.query(User).filter(
+        User.id == report_data.player_id,
+        User.role == UserRole.PLAYER
+    ).first()
+    
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    
+    new_report = ProgressReport(
+        player_id=report_data.player_id,
+        coach_id=current_user.id,
+        title=report_data.title,
+        content=report_data.content,
+        rating=report_data.rating,
+        goals=report_data.goals,
+        strengths=report_data.strengths,
+        areas_for_improvement=report_data.areas_for_improvement
+    )
+    
+    db.add(new_report)
+    db.commit()
+    db.refresh(new_report)
+    
+    return new_report
+
+
+@router.delete("/progress-reports/{report_id}")
+def delete_progress_report(
+    report_id: int,
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    report = db.query(ProgressReport).filter(ProgressReport.id == report_id).first()
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="Progress report not found")
+    
+    db.delete(report)
+    db.commit()
+    
+    return {"message": "Progress report deleted successfully"}

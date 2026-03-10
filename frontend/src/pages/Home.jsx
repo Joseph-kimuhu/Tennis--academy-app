@@ -7,6 +7,7 @@ function Home() {
   const { isAuthenticated } = useAuth();
   const [activeTournaments, setActiveTournaments] = useState([]);
   const [courts, setCourts] = useState([]);
+  const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,12 +16,14 @@ function Home() {
 
   const fetchData = async () => {
     try {
-      const [tournamentsData, courtsData] = await Promise.all([
+      const [tournamentsData, courtsData, clubsData] = await Promise.all([
         api.getActiveTournaments(),
         api.getCourts({ limit: 6 }),
+        api.getClubs(),
       ]);
       setActiveTournaments(tournamentsData || []);
       setCourts(courtsData || []);
+      setClubs(clubsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -76,7 +79,7 @@ function Home() {
               <span className="text-5xl">🎾</span>
             </div>
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">
-              Play Tennis Like a Pro
+              {clubs.length > 0 ? clubs[0].name : 'Play Tennis Like a Pro'}
             </h1>
             <p className="text-xl md:text-2xl text-green-100 mb-10 max-w-2xl mx-auto">
               Book courts, join tournaments, track your progress, and compete with players worldwide
@@ -188,8 +191,8 @@ function Home() {
                     </div>
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                       <span className="text-2xl font-bold text-[#2E7D32]">
-                        ${court.price_per_hour}
-                        <span className="text-sm font-normal text-gray-500">/hr</span>
+                        {court.price_per_hour} KES
+                        <span className="text-sm font-normal text-gray-500">/hour</span>
                       </span>
                       <Link
                         to="/courts"
@@ -245,7 +248,7 @@ function Home() {
                     </div>
                     {tournament.prize_money > 0 && (
                       <span className="text-lg font-bold text-[#2E7D32]">
-                        ${tournament.prize_money}
+                        {tournament.prize_money} KES
                       </span>
                     )}
                   </div>
@@ -281,6 +284,72 @@ function Home() {
             <div className="text-white">
               <div className="text-5xl font-bold mb-2">10K+</div>
               <div className="text-green-200">Matches Played</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Coaching Info Section */}
+      <div className="py-16 bg-gradient-to-r from-[#2E7D32] to-[#1B5E20]">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div className="grid md:grid-cols-2">
+              {/* Left Side - Training Info */}
+              <div className="p-8 md:p-10">
+                <div className="inline-flex items-center gap-2 bg-[#CCFF00] text-[#1B5E20] px-4 py-2 rounded-full text-sm font-bold mb-4">
+                  <span>🎯</span>
+                  <span>Professional Training</span>
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                  Professional Tennis Training
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  For beginners and advanced players. Learn from professionals and improve your game.
+                </p>
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="text-3xl font-bold text-[#2E7D32]">1500 KES</span>
+                  <span className="text-gray-500">/hour</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <span>📍</span>
+                  <span>Nairobi, Kenya</span>
+                </div>
+              </div>
+              
+              {/* Right Side - Contact Info */}
+              <div className="bg-[#f9fafb] p-8 md:p-10 flex flex-col justify-center">
+                <div className="space-y-4">
+                  <a 
+                    href="https://wa.me/254724565388?text=Hi"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-4 bg-[#25D366] text-white rounded-xl hover:bg-[#20BD5A] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    <span className="text-2xl">💬</span>
+                    <div>
+                      <div className="font-bold">WhatsApp</div>
+                      <div className="text-sm opacity-90">0724565388</div>
+                    </div>
+                  </a>
+                  <a 
+                    href="mailto:johnmakumi106@gmail.com"
+                    className="flex items-center gap-3 p-4 bg-white border-2 border-gray-200 text-gray-900 rounded-xl hover:border-[#2E7D32] hover:text-[#2E7D32] transition-all"
+                  >
+                    <span className="text-2xl">📧</span>
+                    <div>
+                      <div className="font-bold">Email</div>
+                      <div className="text-sm text-gray-500">johnmakumi106@gmail.com</div>
+                    </div>
+                  </a>
+                  <div className="flex items-center gap-3 p-4 bg-[#2E7D32] text-white rounded-xl">
+                    <span className="text-2xl">👤</span>
+                    <div>
+                      <div className="font-bold">Instructor</div>
+                      <div className="text-sm opacity-90">John Makumi</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -322,10 +391,10 @@ function Home() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <span className="text-3xl">🎾</span>
-                <span className="text-xl font-bold">Tennis Court</span>
+                <span className="text-xl font-bold">{clubs.length > 0 ? clubs[0].name : 'Tennis Court'}</span>
               </div>
               <p className="text-gray-400">
-                Your complete tennis court booking and tournament management platform.
+                {clubs.length > 0 ? clubs[0].description : 'Your complete tennis court booking and tournament management platform.'}
               </p>
             </div>
             <div>
@@ -347,14 +416,24 @@ function Home() {
             <div>
               <h4 className="font-bold mb-4">Contact</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>📧 support@tenniscourt.com</li>
-                <li>📞 +1 234 567 890</li>
-                <li>📍 123 Tennis Street</li>
+                <li>📧 {clubs.length > 0 ? clubs[0].email : 'support@tenniscourt.com'}</li>
+                <li>
+                  <a 
+                    href="https://wa.me/254738839851?text=Hi" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-white flex items-center gap-2 transition-colors"
+                  >
+                    <span>💬</span>
+                    <span>0738839851</span>
+                  </a>
+                </li>
+                <li>📍 {clubs.length > 0 ? clubs[0].location : '123 Tennis Street'}</li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>© 2024 Tennis Court. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} {clubs.length > 0 ? clubs[0].name : 'Tennis Court'}. All rights reserved.</p>
           </div>
         </div>
       </footer>

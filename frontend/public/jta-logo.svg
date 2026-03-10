@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background circle - green badge -->
+  <circle cx="100" cy="100" r="95" fill="#2E7D32"/>
+  <circle cx="100" cy="100" r="88" fill="#1B5E20"/>
+  
+  <!-- White inner ring -->
+  <circle cx="100" cy="100" r="82" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+  
+  <!-- Crossed Tennis Rackets -->
+  <g transform="translate(100, 95)">
+    <!-- Racket 1 - tilted left -->
+    <g transform="rotate(-45)">
+      <rect x="-3" y="-50" width="6" height="55" fill="#FFFFFF"/>
+      <ellipse cx="0" cy="-55" rx="18" ry="22" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+    </g>
+    <!-- Racket 2 - tilted right -->
+    <g transform="rotate(45)">
+      <rect x="-3" y="-50" width="6" height="55" fill="#FFFFFF"/>
+      <ellipse cx="0" cy="-55" rx="18" ry="22" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+    </g>
+  </g>
+  
+  <!-- Three Tennis Balls -->
+  <circle cx="55" cy="145" r="10" fill="#CCFF90"/>
+  <circle cx="55" cy="145" r="8" fill="none" stroke="#FFFFFF" stroke-width="1"/>
+  <path d="M51 142 Q55 148 59 142" stroke="#2E7D32" stroke-width="1.5" fill="none"/>
+  
+  <circle cx="100" cy="160" r="10" fill="#CCFF90"/>
+  <circle cx="100" cy="160" r="8" fill="none" stroke="#FFFFFF" stroke-width="1"/>
+  <path d="M96 157 Q100 163 104 157" stroke="#2E7D32" stroke-width="1.5" fill="none"/>
+  
+  <circle cx="145" cy="145" r="10" fill="#CCFF90"/>
+  <circle cx="145" cy="145" r="8" fill="none" stroke="#FFFFFF" stroke-width="1"/>
+  <path d="M141 142 Q145 148 149 142" stroke="#2E7D32" stroke-width="1.5" fill="none"/>
+  
+  <!-- Text around the circle - JOHN TENNIS CLUB -->
+  <defs>
+    <path id="textCircle" d="M 100, 100 m -75, 0 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0"/>
+  </defs>
+  <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="14" font-weight="bold">
+    <textPath href="#textCircle" startOffset="50%" text-anchor="middle">
+      JOHN TENNIS CLUB
+    </textPath>
+  </text>
+</svg>

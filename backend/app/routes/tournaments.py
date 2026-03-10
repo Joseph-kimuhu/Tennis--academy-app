@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 from ..database import get_db
-from ..models import Tournament, TournamentParticipant, TournamentStatus, TournamentFormat, Match, MatchStatus, User, UserRole
+from ..models import Tournament, TournamentParticipant, TournamentStatus, TournamentFormat, Match, MatchStatus, User, UserRole, Notification
 from ..schemas import (
     TournamentCreate, TournamentUpdate, TournamentResponse, 
     TournamentWithParticipants, TournamentParticipantCreate,
@@ -98,7 +98,7 @@ def get_tournament(
 @router.post("/", response_model=TournamentResponse)
 def create_tournament(
     tournament_data: TournamentCreate,
-    current_user: User = Depends(require_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
     db: Session = Depends(get_db)
 ):
     new_tournament = Tournament(
@@ -118,7 +118,7 @@ def create_tournament(
 def update_tournament(
     tournament_id: int,
     tournament_data: TournamentUpdate,
-    current_user: User = Depends(require_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
     db: Session = Depends(get_db)
 ):
     tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
@@ -139,7 +139,7 @@ def update_tournament(
 @router.delete("/{tournament_id}")
 def delete_tournament(
     tournament_id: int,
-    current_user: User = Depends(require_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
     db: Session = Depends(get_db)
 ):
     tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
@@ -161,6 +161,13 @@ def join_tournament(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    # Only players can join tournaments
+    if current_user.role != UserRole.PLAYER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only players can register for tournaments"
+        )
+    
     tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
     if not tournament:
         raise HTTPException(
@@ -212,6 +219,28 @@ def join_tournament(
     db.add(participant)
     db.commit()
     db.refresh(participant)
+    
+    # Send notification to player
+    player_notification = Notification(
+        user_id=current_user.id,
+        title="Tournament Registration Successful",
+        message=f"You have successfully registered for {tournament.name}. Good luck!",
+        notification_type="tournament_registration"
+    )
+    db.add(player_notification)
+    
+    # Send notification to all coaches
+    coaches = db.query(User).filter(User.role == UserRole.COACH).all()
+    for coach in coaches:
+        coach_notification = Notification(
+            user_id=coach.id,
+            title="New Tournament Registration",
+            message=f"{current_user.full_name or current_user.username} has registered for {tournament.name}",
+            notification_type="tournament_registration"
+        )
+        db.add(coach_notification)
+    
+    db.commit()
     
     return participant
 

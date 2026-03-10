@@ -124,6 +124,44 @@ class ApiService {
     });
   }
 
+  async uploadProfilePicture(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const token = this.getToken();
+    const response = await fetch(`${this.baseUrl}/api/users/me/profile-picture`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to upload profile picture' }));
+      throw new Error(error.detail || 'Failed to upload profile picture');
+    }
+    
+    return response.json();
+  }
+
+  async removeProfilePicture() {
+    const token = this.getToken();
+    const response = await fetch(`${this.baseUrl}/api/users/me/profile-picture`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to remove profile picture' }));
+      throw new Error(error.detail || 'Failed to remove profile picture');
+    }
+    
+    return this.getMe();
+  }
+
   async getMyStats() {
     return this.request('/api/users/me/stats');
   }
@@ -148,7 +186,7 @@ class ApiService {
   }
 
   async createCourt(courtData) {
-    return this.request('/api/courts', {
+    return this.request('/api/courts/', {
       method: 'POST',
       body: JSON.stringify(courtData),
     });
@@ -165,6 +203,15 @@ class ApiService {
     return this.request(`/api/courts/${courtId}`, {
       method: 'DELETE',
     });
+  }
+
+  // Clubs
+  async getClubs() {
+    return this.request('/api/clubs');
+  }
+
+  async getClub(clubId) {
+    return this.request(`/api/clubs/${clubId}`);
   }
 
   // Bookings
@@ -223,7 +270,7 @@ class ApiService {
   }
 
   async createTournament(tournamentData) {
-    return this.request('/api/tournaments', {
+    return this.request('/api/tournaments/', {
       method: 'POST',
       body: JSON.stringify(tournamentData),
     });
@@ -243,13 +290,13 @@ class ApiService {
   }
 
   async joinTournament(tournamentId) {
-    return this.request(`/api/tournaments/${tournamentId}/join`, {
+    return this.request(`/api/tournaments/${tournamentId}/join/`, {
       method: 'POST',
     });
   }
 
   async leaveTournament(tournamentId) {
-    return this.request(`/api/tournaments/${tournamentId}/leave`, {
+    return this.request(`/api/tournaments/${tournamentId}/leave/`, {
       method: 'POST',
     });
   }
@@ -365,6 +412,18 @@ class ApiService {
     return this.request('/api/admin/stats/overview');
   }
 
+  async promoteToCoach(userId) {
+    return this.request(`/api/admin/users/${userId}/promote-to-coach`, {
+      method: 'POST',
+    });
+  }
+
+  async demoteToPlayer(userId) {
+    return this.request(`/api/admin/users/${userId}/demote-to-player`, {
+      method: 'POST',
+    });
+  }
+
   // Coach Panel
   async getCoachDashboard() {
     return this.request('/api/coach-panel/dashboard');
@@ -427,6 +486,143 @@ class ApiService {
 
   async getUnreadMessageCount() {
     return this.request('/api/coach-panel/messages/unread/count');
+  }
+
+  // Training Sessions
+  async getTrainingSessions(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/coach-panel/training-sessions?${query}`);
+  }
+
+  async createTrainingSession(sessionData) {
+    return this.request('/api/coach-panel/training-sessions', {
+      method: 'POST',
+      body: JSON.stringify(sessionData),
+    });
+  }
+
+  async updateTrainingSession(sessionId, sessionData) {
+    return this.request(`/api/coach-panel/training-sessions/${sessionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(sessionData),
+    });
+  }
+
+  async deleteTrainingSession(sessionId) {
+    return this.request(`/api/coach-panel/training-sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Announcements
+  async getAnnouncements(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/coach-panel/announcements?${query}`);
+  }
+
+  async createAnnouncement(announcementData) {
+    return this.request('/api/coach-panel/announcements', {
+      method: 'POST',
+      body: JSON.stringify(announcementData),
+    });
+  }
+
+  async updateAnnouncement(announcementId, announcementData) {
+    return this.request(`/api/coach-panel/announcements/${announcementId}`, {
+      method: 'PUT',
+      body: JSON.stringify(announcementData),
+    });
+  }
+
+  async deleteAnnouncement(announcementId) {
+    return this.request(`/api/coach-panel/announcements/${announcementId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Notifications
+  async getNotifications(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/users/notifications?${query}`);
+  }
+
+  async getUnreadNotificationsCount() {
+    return this.request('/api/users/notifications/unread-count');
+  }
+
+  async markNotificationRead(messageId) {
+    return this.request(`/api/users/notifications/${messageId}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  // Player Announcements - directly from coach
+  async getPlayerAnnouncements(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/users/announcements?${query}`);
+  }
+
+  async getPlayerAnnouncementsCount() {
+    return this.request('/api/users/announcements/unread-count');
+  }
+
+  // Progress Reports
+  async getPlayerProgressReports(playerId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/coach-panel/players/${playerId}/progress-reports?${query}`);
+  }
+
+  async createProgressReport(reportData) {
+    return this.request('/api/coach-panel/progress-reports', {
+      method: 'POST',
+      body: JSON.stringify(reportData),
+    });
+  }
+
+  async deleteProgressReport(reportId) {
+    return this.request(`/api/coach-panel/progress-reports/${reportId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Events
+  async getEvents(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/events?${query}`);
+  }
+
+  async getEvent(eventId) {
+    return this.request(`/api/events/${eventId}`);
+  }
+
+  async createEvent(eventData) {
+    return this.request('/api/events/', {
+      method: 'POST',
+      body: JSON.stringify(eventData),
+    });
+  }
+
+  async updateEvent(eventId, eventData) {
+    return this.request(`/api/events/${eventId}`, {
+      method: 'PUT',
+      body: JSON.stringify(eventData),
+    });
+  }
+
+  async deleteEvent(eventId) {
+    return this.request(`/api/events/${eventId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async registerForEvent(eventId) {
+    return this.request(`/api/events/${eventId}/register`, {
+      method: 'POST',
+    });
+  }
+
+  async getEventParticipants(eventId) {
+    return this.request(`/api/events/${eventId}/participants`);
   }
 }
 

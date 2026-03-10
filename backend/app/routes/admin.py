@@ -160,3 +160,43 @@ def get_stats_overview(
         "bookings_by_status": bookings_by_status,
         "users_by_role": users_by_role
     }
+
+
+@router.post("/users/{user_id}/promote-to-coach")
+def promote_to_coach(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Promote a player to coach"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    user.role = UserRole.COACH
+    db.commit()
+    
+    return {"message": f"User {user.username} promoted to coach"}
+
+
+@router.post("/users/{user_id}/demote-to-player")
+def demote_to_player(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Demote a coach to player"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    user.role = UserRole.PLAYER
+    db.commit()
+    
+    return {"message": f"User {user.username} demoted to player"}

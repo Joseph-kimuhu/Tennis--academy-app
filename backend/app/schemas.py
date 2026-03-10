@@ -90,7 +90,7 @@ class CourtBase(BaseModel):
 
 
 class CourtCreate(CourtBase):
-    pass
+    club_id: Optional[int] = None
 
 
 class CourtUpdate(BaseModel):
@@ -107,6 +107,7 @@ class CourtUpdate(BaseModel):
 class CourtResponse(CourtBase):
     id: int
     is_available: bool
+    club_id: Optional[int] = None
     created_at: datetime
 
     class Config:
@@ -165,6 +166,7 @@ class TournamentBase(BaseModel):
     name: str
     description: Optional[str] = None
     tournament_type: TournamentFormat = TournamentFormat.KNOCKOUT
+    location: Optional[str] = None
     start_date: datetime
     end_date: datetime
     registration_deadline: Optional[datetime] = None
@@ -183,6 +185,7 @@ class TournamentUpdate(BaseModel):
     description: Optional[str] = None
     tournament_type: Optional[TournamentFormat] = None
     status: Optional[TournamentStatus] = None
+    location: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     registration_deadline: Optional[datetime] = None
@@ -516,3 +519,53 @@ class CoachDashboard(BaseModel):
     pending_messages: int
     upcoming_sessions: int
     recent_performance: dict = {}
+
+
+# Event Schemas
+class EventBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    event_type: str = "social"
+    location: Optional[str] = None
+    start_time: datetime
+    end_time: datetime
+    max_participants: Optional[int] = None
+    price: float = 0.0
+
+
+class EventCreate(EventBase):
+    pass
+
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    event_type: Optional[str] = None
+    location: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    max_participants: Optional[int] = None
+    price: Optional[float] = None
+    is_active: Optional[bool] = None
+
+
+class EventResponse(EventBase):
+    id: int
+    organizer_id: int
+    is_active: bool
+    created_at: datetime
+    participant_count: Optional[int] = 0
+
+    class Config:
+        from_attributes = True
+
+
+class EventRegistrationResponse(BaseModel):
+    id: int
+    event_id: int
+    user_id: int
+    status: str
+    registered_at: datetime
+
+    class Config:
+        from_attributes = True

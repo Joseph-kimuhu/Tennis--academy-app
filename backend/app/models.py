@@ -126,6 +126,7 @@ class Tournament(Base):
     description = Column(Text)
     tournament_type = Column(Enum(TournamentFormat), default=TournamentFormat.KNOCKOUT)
     status = Column(Enum(TournamentStatus), default=TournamentStatus.UPCOMING)
+    location = Column(String(255))
     start_date = Column(DateTime(timezone=True), nullable=False)
     end_date = Column(DateTime(timezone=True), nullable=False)
     registration_deadline = Column(DateTime(timezone=True))
@@ -311,3 +312,158 @@ User.received_messages = relationship("Message", back_populates="receiver", fore
 
 # Add PlayerStatistics relationship to User
 User.player_statistics = relationship("PlayerStatistics", back_populates="player", uselist=False)
+
+
+# ==================== Training Session ====================
+class TrainingSession(Base):
+    __tablename__ = "training_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    coach_id = Column(Integer, ForeignKey("users.id"))
+    court_id = Column(Integer, ForeignKey("courts.id"))
+    scheduled_date = Column(DateTime(timezone=True), nullable=False)
+    duration_minutes = Column(Integer, default=60)  # Duration in minutes
+    max_participants = Column(Integer, default=4)
+    session_type = Column(String(50), default="general")  # general, technique, fitness, match
+    status = Column(String(20), default="scheduled")  # scheduled, in_progress, completed, cancelled
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    coach = relationship("User", back_populates="training_sessions_coach")
+    court = relationship("Court")
+    attendees = relationship("TrainingAttendance", back_populates="session")
+
+
+class TrainingAttendance(Base):
+    __tablename__ = "training_attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("training_sessions.id"))
+    player_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String(20), default="registered")  # registered, present, absent, cancelled
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    session = relationship("TrainingSession", back_populates="attendees")
+    player = relationship("User", back_populates="training_attendance")
+
+
+# ==================== Announcements ====================
+class Announcement(Base):
+    __tablename__ = "announcements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"))
+    priority = Column(String(20), default="normal")  # low, normal, high, urgent
+    is_active = Column(Boolean, default=True)
+    expires_at = Column(DateTime(timezone=True))  # Optional expiration date
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    author = relationship("User")
+
+
+# ==================== Progress Reports ====================
+class ProgressReport(Base):
+    __tablename__ = "progress_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    player_id = Column(Integer, ForeignKey("users.id"))
+    coach_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    rating = Column(Integer)  # 1-5 rating
+    goals = Column(Text)  # JSON string of goals
+    strengths = Column(Text)
+    areas_for_improvement = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    player = relationship("User", foreign_keys=[player_id])
+    coach = relationship("User", foreign_keys=[coach_id])
+
+
+# Add relationships to User
+User.training_sessions_coach = relationship("TrainingSession", back_populates="coach")
+User.training_attendance = relationship("TrainingAttendance", back_populates="player")
+
+
+class NotificationType(enum.Enum):
+    TOURNAMENT_REGISTRATION = "tournament_registration"
+    TOURNAMENT_RESULT = "tournament_result"
+    BOOKING_CONFIRMATION = "booking_confirmation"
+    BOOKING_CANCELLATION = "booking_cancellation"
+    MATCH_SCHEDULED = "match_scheduled"
+    MATCH_RESULT = "match_result"
+    GENERAL = "general"
+
+
+class EventType(enum.Enum):
+    SOCIAL = "social"
+    CLINIC = "clinic"
+    WORKSHOP = "workshop"
+    GROUP_LESSON = "group_lesson"
+    TOURNAMENT = "tournament"
+    OTHER = "other"
+
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    event_type = Column(Enum(EventType), default=EventType.SOCIAL)
+    organizer_id = Column(Integer, ForeignKey("users.id"))
+    location = Column(String(255))
+    start_time = Column(DateTime(timezone=True), nullable=False)
+    end_time = Column(DateTime(timezone=True), nullable=False)
+    max_participants = Column(Integer)
+    price = Column(Float, default=0.0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    organizer = relationship("User", back_populates="organized_events")
+    registrations = relationship("EventRegistration", back_populates="event", lazy="dynamic")
+
+
+class EventRegistration(Base):
+    __tablename__ = "event_registrations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String(20), default="registered")
+    registered_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    event = relationship("Event", back_populates="registrations")
+    user = relationship("User", back_populates="event_registrations")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+    notification_type = Column(String(50), default="general")
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="notifications")
+
+# Add notification relationship to User
+User.notifications = relationship("Notification", back_populates="user", lazy="dynamic")
+User.organized_events = relationship("Event", back_populates="organizer")
+User.event_registrations = relationship("EventRegistration", back_populates="user")

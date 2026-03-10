@@ -41,6 +41,10 @@ function Admin() {
         await api.activateUser(userId);
       } else if (action === 'deactivate') {
         await api.deactivateUser(userId);
+      } else if (action === 'promote') {
+        await api.promoteToCoach(userId);
+      } else if (action === 'demote') {
+        await api.demoteToPlayer(userId);
       }
       fetchData();
     } catch (error) {
@@ -280,6 +284,22 @@ function Admin() {
                               className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                             >
                               Verify
+                            </button>
+                          )}
+                          {user.role === 'player' && (
+                            <button
+                              onClick={() => handleUserAction(user.id, 'promote')}
+                              className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+                            >
+                              Promote to Coach
+                            </button>
+                          )}
+                          {user.role === 'coach' && (
+                            <button
+                              onClick={() => handleUserAction(user.id, 'demote')}
+                              className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                            >
+                              Demote to Player
                             </button>
                           )}
                           {user.is_active ? (

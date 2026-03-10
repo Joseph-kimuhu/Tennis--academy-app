@@ -89,7 +89,7 @@ def get_court_availability(
 @router.post("/", response_model=CourtResponse)
 def create_court(
     court_data: CourtCreate,
-    current_user: User = Depends(require_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
     db: Session = Depends(get_db)
 ):
     new_court = Court(**court_data.model_dump())
@@ -103,7 +103,7 @@ def create_court(
 def update_court(
     court_id: int,
     court_data: CourtUpdate,
-    current_user: User = Depends(require_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
     db: Session = Depends(get_db)
 ):
     court = db.query(Court).filter(Court.id == court_id).first()
@@ -124,7 +124,7 @@ def update_court(
 @router.delete("/{court_id}")
 def delete_court(
     court_id: int,
-    current_user: User = Depends(require_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_role([UserRole.COACH, UserRole.ADMIN])),
     db: Session = Depends(get_db)
 ):
     court = db.query(Court).filter(Court.id == court_id).first()

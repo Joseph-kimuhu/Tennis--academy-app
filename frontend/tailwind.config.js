@@ -8,16 +8,21 @@ export default {
     extend: {
       colors: {
         tennis: {
-          green: '#2E7D32',
-          'green-light': '#4CAF50',
-          'green-dark': '#1B5E20',
-          clay: '#D2691E',
-          grass: '#228B22',
-          ball: '#CCFF00',
+          green: '#006B3F',
+          'green-light': '#00A859',
+          'green-dark': '#004D2E',
+          clay: '#C8553D',
+          grass: '#588157',
+          ball: '#E8F44D',
+          court: '#2B5F75',
         }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        'tennis': '0 4px 14px 0 rgba(0, 107, 63, 0.15)',
+        'tennis-lg': '0 10px 40px 0 rgba(0, 107, 63, 0.2)',
       }
     },
   },

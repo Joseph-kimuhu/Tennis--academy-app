@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 function Courts() {
   const [courts, setCourts] = useState([]);
+  const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ court_type: '', is_indoor: '' });
   const [selectedCourt, setSelectedCourt] = useState(null);
@@ -18,6 +19,7 @@ function Courts() {
 
   useEffect(() => {
     fetchCourts();
+    fetchClubs();
   }, [filter]);
 
   const fetchCourts = async () => {
@@ -33,6 +35,15 @@ function Courts() {
       console.error('Error fetching courts:', error);
     }
     setLoading(false);
+  };
+
+  const fetchClubs = async () => {
+    try {
+      const data = await api.getClubs();
+      setClubs(data || []);
+    } catch (error) {
+      console.error('Error fetching clubs:', error);
+    }
   };
 
   const handleCourtSelect = async (court) => {
@@ -73,10 +84,43 @@ function Courts() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">Find a Court</h1>
-          <p className="mt-2 text-gray-600">Book your perfect tennis court</p>
-        </div>
+        {/* Academy Info */}
+        {clubs.length > 0 && (
+          <div className="bg-gradient-to-r from-tennis-green to-tennis-green-dark rounded-xl p-6 mb-8 text-white">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">{clubs[0].name}</h1>
+                <p className="mt-2 text-green-100">{clubs[0].description}</p>
+              </div>
+              <div className="mt-4 md:mt-0 text-right">
+                <p className="text-white font-semibold">{clubs[0].price_range}</p>
+                <p className="text-green-100 text-sm">{clubs[0].location}</p>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-col md:flex-row md:items-center gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <span>📧</span>
+                <span>{clubs[0].email}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>📞</span>
+                <span>{clubs[0].phone}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>🎯</span>
+                <span className="capitalize">For {clubs[0].skill_level}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        {clubs.length === 0 && (
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900">Find a Court</h1>
+            <p className="mt-2 text-gray-600">Book your perfect tennis court</p>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-8">
@@ -144,8 +188,8 @@ function Courts() {
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-bold text-tennis-green">
-                      ${court.price_per_hour}
-                      <span className="text-sm font-normal text-gray-500">/hr</span>
+                      {court.price_per_hour} KES
+                      <span className="text-sm font-normal text-gray-500">/hour</span>
                     </span>
                     <button
                       onClick={() => handleCourtSelect(court)}

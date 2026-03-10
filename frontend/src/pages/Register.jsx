@@ -146,7 +146,6 @@ function Register() {
                 className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-tennis-green focus:border-tennis-green"
               >
                 <option value="player">Player</option>
-                <option value="coach">Coach</option>
               </select>
             </div>
 

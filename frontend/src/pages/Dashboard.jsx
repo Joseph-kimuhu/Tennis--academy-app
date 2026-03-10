@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 function Dashboard() {
   const { user, isAdmin, isCoach } = useAuth();
+  const [searchParams] = useSearchParams();
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [matches, setMatches] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchData();
@@ -17,14 +27,16 @@ function Dashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, bookingsData, matchesData] = await Promise.all([
+      const [statsData, bookingsData, matchesData, notificationsData] = await Promise.all([
         api.getMyStats(),
         api.getMyBookings({ upcoming: true, limit: 5 }),
         api.getMyMatches({ limit: 5 }),
+        api.getNotifications({ limit: 10 }),
       ]);
       setStats(statsData);
       setBookings(bookingsData || []);
       setMatches(matchesData || []);
+      setNotifications(notificationsData || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     }
@@ -54,7 +66,70 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Tabs */}
+        <div className="bg-white rounded-xl shadow-md mb-6">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-6 py-3 font-medium text-sm transition-colors ${
+                activeTab === 'overview'
+                  ? 'text-tennis-green border-b-2 border-tennis-green'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('messages')}
+              className={`px-6 py-3 font-medium text-sm transition-colors ${
+                activeTab === 'messages'
+                  ? 'text-tennis-green border-b-2 border-tennis-green'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              📢 Messages & Announcements
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'messages' ? (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-xl font-bold mb-4">📢 Messages & Announcements</h2>
+            {notifications.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No messages or announcements yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 rounded-lg border-l-4 ${
+                      notification.is_read
+                        ? 'bg-gray-50 border-gray-300'
+                        : 'bg-blue-50 border-blue-500'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{notification.subject}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{notification.content}</p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          From: {notification.sender?.username || 'System'} •{' '}
+                          {new Date(notification.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {!notification.is_read && (
+                        <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
+                          New
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center justify-between">
@@ -104,6 +179,7 @@ function Dashboard() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
