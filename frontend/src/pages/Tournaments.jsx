@@ -109,7 +109,7 @@ function Tournaments() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-4 tracking-tight">🎾 Tournaments</h1>
-            <p className="text-xl text-green-50 max-w-2xl mx-auto">
+            <p className="text-xl text-black font-medium max-w-2xl mx-auto">
               Compete with the best players and showcase your skills on the court
             </p>
           </div>

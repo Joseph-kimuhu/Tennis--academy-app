@@ -483,7 +483,7 @@ function CoachPanel() {
               <h2 className="text-xl font-bold">Inbox</h2>
               <button
                 onClick={() => openMessageModal()}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md"
               >
                 + Compose
               </button>
@@ -524,7 +524,7 @@ function CoachPanel() {
                 <h2 className="text-xl font-bold">Training Sessions</h2>
                 <button
                   onClick={() => setShowSessionModal(true)}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-md"
                 >
                   + Schedule Session
                 </button>
@@ -581,7 +581,7 @@ function CoachPanel() {
                 <h2 className="text-xl font-bold">Announcements</h2>
                 <button
                   onClick={() => setShowAnnouncementModal(true)}
-                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium shadow-md"
                 >
                   + New Announcement
                 </button>
@@ -638,7 +638,7 @@ function CoachPanel() {
               <h2 className="text-2xl font-bold text-gray-900">Tournaments</h2>
               <button
                 onClick={() => setShowTournamentModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md"
               >
                 + Create Tournament
               </button>
@@ -709,7 +709,7 @@ function CoachPanel() {
               <h2 className="text-2xl font-bold text-gray-900">Courts</h2>
               <button
                 onClick={() => setShowCourtModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-md"
               >
                 + Add Court
               </button>

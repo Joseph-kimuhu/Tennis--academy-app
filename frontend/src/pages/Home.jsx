@@ -303,7 +303,7 @@ function Home() {
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
                   Professional Tennis Training
                 </h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-black mb-6">
                   For beginners and advanced players. Learn from professionals and improve your game.
                 </p>
                 <div className="flex items-center gap-2 mb-6">
@@ -385,7 +385,7 @@ function Home() {
       )}
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-white text-black py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -393,36 +393,36 @@ function Home() {
                 <span className="text-3xl">🎾</span>
                 <span className="text-xl font-bold">{clubs.length > 0 ? clubs[0].name : 'Tennis Court'}</span>
               </div>
-              <p className="text-gray-400">
+              <p className="text-black">
                 {clubs.length > 0 ? clubs[0].description : 'Your complete tennis court booking and tournament management platform.'}
               </p>
             </div>
             <div>
               <h4 className="font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="/courts" className="hover:text-white">Courts</Link></li>
-                <li><Link to="/tournaments" className="hover:text-white">Tournaments</Link></li>
-                <li><Link to="/leaderboard" className="hover:text-white">Leaderboard</Link></li>
+              <ul className="space-y-2 text-black">
+                <li><Link to="/courts" className="hover:text-blue-600">Courts</Link></li>
+                <li><Link to="/tournaments" className="hover:text-blue-600">Tournaments</Link></li>
+                <li><Link to="/leaderboard" className="hover:text-blue-600">Leaderboard</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Account</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="/login" className="hover:text-white">Login</Link></li>
+              <ul className="space-y-2 text-black">
+                <li><Link to="/login" className="hover:text-blue-600">Login</Link></li>
                 <li><Link to="/register" className="hover:text-white">Register</Link></li>
                 <li><Link to="/dashboard" className="hover:text-white">Dashboard</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Contact</h4>
-              <ul className="space-y-2 text-gray-400">
+              <ul className="space-y-2 text-black">
                 <li>📧 {clubs.length > 0 ? clubs[0].email : 'support@tenniscourt.com'}</li>
                 <li>
                   <a 
                     href="https://wa.me/254738839851?text=Hi" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="hover:text-white flex items-center gap-2 transition-colors"
+                    className="hover:text-green-600 flex items-center gap-2 transition-colors"
                   >
                     <span>💬</span>
                     <span>0738839851</span>
@@ -432,7 +432,7 @@ function Home() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-black">
             <p>© {new Date().getFullYear()} {clubs.length > 0 ? clubs[0].name : 'Tennis Court'}. All rights reserved.</p>
           </div>
         </div>
