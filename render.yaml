@@ -2,13 +2,14 @@ services:
   - type: web
     name: tennis-academy-backend
     env: python
+    rootDir: backend
     buildCommand: |
       echo "==> Installing Python dependencies..."
       pip install -r requirements.txt
       echo "==> Build complete"
     startCommand: |
       echo "==> Starting Tennis Academy Backend..."
-      cd backend && python3 -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level info
+      python3 -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level info
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
