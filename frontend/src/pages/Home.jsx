@@ -72,7 +72,7 @@ function Home() {
           <div 
             className="w-full h-full bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundImage: 'url(https://i.pinimg.com/1200x/42/37/eb/4237eb6b88b15f9e30cbe4d1ff991774.jpg)'
+              backgroundImage: 'url(https://i.pinimg.com/736x/b1/bc/2d/b1bc2d2ecf3a945b9c325131f42336ac.jpg)'
             }}
           />
           {/* Dark overlay for text readability */}
