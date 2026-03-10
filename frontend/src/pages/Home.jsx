@@ -66,7 +66,19 @@ function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="relative bg-tennis-gradient overflow-hidden">
+      <div className="relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <div 
+            className="w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: 'url(https://i.pinimg.com/1200x/42/37/eb/4237eb6b88b15f9e30cbe4d1ff991774.jpg)'
+            }}
+          />
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60"></div>
+        </div>
+        
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-64 h-64 bg-white opacity-10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full translate-x-1/2 translate-y-1/2"></div>
@@ -75,26 +87,26 @@ function Home() {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 relative z-10">
           <div className="text-center animate-fadeIn">
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-white/20 rounded-full mb-8 backdrop-blur-sm">
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-white/20 rounded-full mb-8 backdrop-blur-sm border-2 border-white/30">
               <span className="text-5xl">🎾</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
               {clubs.length > 0 ? clubs[0].name : 'Play Tennis Like a Pro'}
             </h1>
-            <p className="text-xl md:text-2xl text-green-100 mb-10 max-w-2xl mx-auto">
+            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto drop-shadow-md">
               Book courts, join tournaments, track your progress, and compete with players worldwide
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 to="/courts"
-                className="btn bg-white text-[#2E7D32] hover:bg-gray-100 text-lg px-8 py-4 shadow-xl"
+                className="inline-flex items-center bg-white text-[#2E7D32] hover:bg-gray-100 text-lg px-8 py-4 shadow-xl rounded-xl font-semibold transition-all hover:scale-105 backdrop-blur-sm"
               >
                 Book a Court
                 <span className="ml-2">→</span>
               </Link>
               <Link
                 to="/tournaments"
-                className="btn bg-[#2E7D32] text-white border-2 border-white/30 hover:bg-[#1B5E20] text-lg px-8 py-4"
+                className="inline-flex items-center bg-[#2E7D32] text-white border-2 border-white/30 hover:bg-[#1B5E20] text-lg px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 backdrop-blur-sm"
               >
                 Join Tournament
               </Link>
