@@ -273,7 +273,7 @@ function CoachPanel() {
               </button>
               <button
                 onClick={() => setActiveTab('players')}
-                className="px-6 py-3 bg-blue-700 bg-opacity50 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center"
+                className="px-6 py-3 bg-blue-700/50 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center"
               >
                 <span className="mr-2">👥</span> Players
               </button>

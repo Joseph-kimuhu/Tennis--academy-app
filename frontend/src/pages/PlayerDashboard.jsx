@@ -213,7 +213,7 @@ function PlayerDashboard() {
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 rounded-2xl p-8 mb-8 text-white shadow-lg">
           <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-            <div className="relative w-24 h-24 bg-white bg-opacity20 rounded-full flex items-center justify-center border-white border-center border-4-opacity-30 overflow-hidden">
+            <div className="relative w-24 h-24 bg-white/20 rounded-full flex items-center justify-center border-4 border-white/30 overflow-hidden">
               {user?.profile_picture ? (
                 <img 
                   src={user.profile_picture} 
@@ -231,10 +231,10 @@ function PlayerDashboard() {
                 {user?.full_name || user?.username}
               </h1>
               <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                <span className="px-3 py-1 bg-white bg-opacity20 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
                   🎾 {user?.username}
                 </span>
-                <span className="px-3 py-1 bg-white bg-opacity20 rounded-full text-sm font-medium capitalize">
+                <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium capitalize">
                   📊 {user?.skill_level}
                 </span>
                 {unreadCount > 0 && (
