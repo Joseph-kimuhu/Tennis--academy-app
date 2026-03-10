@@ -4,8 +4,10 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .database import engine, Base
+from .database import engine, Base, SessionLocal
 from .routes import auth, users, courts, bookings, tournaments, matches, coaching, admin, clubs, coach_panel
+from .models import User, UserRole
+from .auth import get_password_hash
 
 # Configure logging
 logging.basicConfig(
@@ -74,8 +76,65 @@ app.include_router(coach_panel.router)
 logger.info("==> All routes registered successfully")
 
 
+def seed_default_users():
+    """Create default admin and coach users if they don't exist"""
+    db = SessionLocal()
+    try:
+        # Check if coach already exists
+        coach_email = "coach@tennis.com"
+        existing_coach = db.query(User).filter(User.email == coach_email).first()
+        
+        if not existing_coach:
+            coach = User(
+                email=coach_email,
+                username="Coach",
+                full_name="Tennis Coach",
+                hashed_password=get_password_hash("coach123"),
+                role=UserRole.COACH,
+                is_active=True,
+                is_verified=True
+            )
+            db.add(coach)
+            db.commit()
+            logger.info("==> ✅ Coach account created: coach@tennis.com")
+        else:
+            logger.info("==> ✅ Coach account already exists: coach@tennis.com")
+
+        # Check if admin already exists
+        admin_email = "admin@tennis.com"
+        existing_admin = db.query(User).filter(User.email == admin_email).first()
+
+        if not existing_admin:
+            admin = User(
+                email=admin_email,
+                username="Admin",
+                full_name="System Administrator",
+                hashed_password=get_password_hash("admin123"),
+                role=UserRole.ADMIN,
+                is_active=True,
+                is_verified=True
+            )
+            db.add(admin)
+            db.commit()
+            logger.info("==> ✅ Admin account created: admin@tennis.com")
+        else:
+            logger.info("==> ✅ Admin account already exists: admin@tennis.com")
+
+        logger.info("==> 🎾 Default users seeding completed!")
+        logger.info("==> 🏆 Coach: coach@tennis.com / coach123")
+        logger.info("==> ⚙️ Admin: admin@tennis.com / admin123")
+        
+    except Exception as e:
+        logger.error(f"==> ❌ Error seeding users: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 async def startup_event():
+    logger.info("==> Seeding default users...")
+    seed_default_users()
     logger.info("==> Application startup complete")
     logger.info("==> Server is ready to accept connections")
 
