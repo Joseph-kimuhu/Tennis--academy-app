@@ -204,6 +204,7 @@ function Register() {
           <button
             type="submit"
             disabled={loading}
+            style={{ backgroundColor: '#006B3F', color: 'white' }}
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-tennis-green hover:bg-tennis-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tennis-green disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating account...' : 'Create account'}
