@@ -228,6 +228,27 @@ function Register() {
               />
             </div>
 
+            {/* Admin Code (only for coach and admin roles) */}
+            {(formData.role === 'coach' || formData.role === 'admin') && (
+              <div>
+                <label htmlFor="admin_code" className="block text-sm font-medium text-gray-700 mb-2">
+                  Admin Authorization Code *
+                </label>
+                <input
+                  id="admin_code"
+                  name="admin_code"
+                  type="password"
+                  value={formData.admin_code || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                  placeholder="Enter admin authorization code"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Required for creating coach and administrator accounts
+                </p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
