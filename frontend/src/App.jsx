@@ -1,22 +1,27 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Courts from './pages/Courts';
-import Tournaments from './pages/Tournaments';
-import Leaderboard from './pages/Leaderboard';
-import Dashboard from './pages/Dashboard';
-import Admin from './pages/Admin';
-import CoachPanel from './pages/CoachPanel';
-import PlayerDashboard from './pages/PlayerDashboard';
-import UnifiedStaffPanel from './pages/UnifiedStaffPanel';
 
-// Protected Route Component
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+
+import Navbar from "./components/Navbar";
+
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Courts from "./pages/Courts";
+import Tournaments from "./pages/Tournaments";
+import Leaderboard from "./pages/Leaderboard";
+
+import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
+import CoachPanel from "./pages/CoachPanel";
+import PlayerDashboard from "./pages/PlayerDashboard";
+import UnifiedStaffPanel from "./pages/UnifiedStaffPanel";
+
+
+// Protected Route
 function ProtectedRoute({ children, requireAdmin = false, requireCoach = false }) {
-  const { isAuthenticated, loading, isAdmin, isCoach, isPlayer } = useAuth();
+  const { isAuthenticated, loading, isAdmin, isCoach } = useAuth();
 
   if (loading) {
     return (
@@ -41,6 +46,7 @@ function ProtectedRoute({ children, requireAdmin = false, requireCoach = false }
   return children;
 }
 
+
 function AppRoutes() {
   const { loading, isAdmin, isCoach } = useAuth();
 
@@ -52,7 +58,6 @@ function AppRoutes() {
     );
   }
 
-  // Determine default dashboard based on role
   const getDefaultDashboard = () => {
     if (isAdmin || isCoach) return <UnifiedStaffPanel />;
     return <PlayerDashboard />;
@@ -60,15 +65,25 @@ function AppRoutes() {
 
   return (
     <div className="min-h-screen flex flex-col">
+
       <Navbar />
+
       <main className="flex-1">
+
         <Routes>
+
           <Route path="/" element={<Home />} />
+
           <Route path="/login" element={<Login />} />
+
           <Route path="/register" element={<Register />} />
+
           <Route path="/courts" element={<Courts />} />
+
           <Route path="/tournaments" element={<Tournaments />} />
+
           <Route path="/leaderboard" element={<Leaderboard />} />
+
           <Route
             path="/dashboard"
             element={
@@ -77,14 +92,16 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/staff-panel"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireCoach>
                 <UnifiedStaffPanel />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/player-dashboard"
             element={
@@ -93,12 +110,15 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+
         </Routes>
+
       </main>
+
     </div>
   );
 }
+
 
 function App() {
   return (
