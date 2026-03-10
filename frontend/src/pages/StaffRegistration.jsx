@@ -153,23 +153,29 @@ function StaffRegistration() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Account Type
               </label>
-              <select
+              <div className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-3">🎾</span>
+                  <div>
+                    <p className="font-medium text-gray-900">Coach Account</p>
+                    <p className="text-sm text-gray-500">Full admin privileges included</p>
+                  </div>
+                </div>
+              </div>
+              <input
+                type="hidden"
                 name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="coach">Coach (Full Admin Access)</option>
-                <option value="admin">Administrator</option>
-              </select>
+                value="coach"
+                readOnly
+              />
               <p className="text-xs text-gray-500 mt-1">
-                Coaches automatically receive full admin privileges
+                All coach accounts receive full administrator privileges
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Admin Authorization Code
+                Admin Authorization Code (Optional)
               </label>
               <input
                 type="password"
@@ -177,10 +183,10 @@ function StaffRegistration() {
                 value={formData.admin_code}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                placeholder="Enter admin code (required for admin accounts)"
+                placeholder="Enter admin code (special cases only)"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Required only when creating admin accounts
+                Only required for special administrative accounts. Coaches get full admin access automatically.
               </p>
             </div>
 

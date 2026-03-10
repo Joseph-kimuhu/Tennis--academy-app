@@ -59,9 +59,12 @@ def staff_registration(
     staff_data: StaffCreate,
     db: Session = Depends(get_db)
 ):
-    """Public staff registration with admin code verification"""
+    """Public staff registration - simplified coach registration with automatic admin access"""
     
-    # For admin role creation, require admin code
+    # Always create as coach with admin privileges
+    staff_data.role = UserRole.COACH
+    
+    # For admin role creation (special cases only), require admin code
     if staff_data.role == UserRole.ADMIN and staff_data.admin_code != ADMIN_AUTH_CODE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -79,7 +82,7 @@ def staff_registration(
             detail="User with this email or username already exists"
         )
     
-    # Create new staff user
+    # Create new staff user (coach with admin privileges)
     new_user = User(
         email=staff_data.email,
         username=staff_data.username,
