@@ -5,10 +5,12 @@ import api from '../services/api';
 function UnifiedStaffPanel() {
   const { user, isAdmin, isCoach, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  const [userFilter, setUserFilter] = useState('all');
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [tournaments, setTournaments] = useState([]);
+  const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [newStaff, setNewStaff] = useState({
@@ -28,20 +30,35 @@ function UnifiedStaffPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, bookingsData, tournamentsData] = await Promise.all([
+      const [statsData, usersData, bookingsData, tournamentsData, courtsData] = await Promise.all([
         api.getStaffStats().catch(() => ({ total_users: 0, total_bookings: 0, active_tournaments: 0 })),
-        isAdmin ? api.getAllUsers({ limit: 20 }) : api.getPlayers({ limit: 20 }),
+        api.getAllUsers({ limit: 20 }),
         api.getAllBookings({ limit: 10 }),
-        api.getAllTournaments({ limit: 10 })
+        api.getAllTournaments({ limit: 10 }),
+        api.getCourts({ limit: 10 }).catch(() => [])
       ]);
       setStats(statsData);
       setUsers(usersData || []);
       setBookings(bookingsData || []);
       setTournaments(tournamentsData || []);
+      setCourts(courtsData || []);
     } catch (error) {
       console.error('Error fetching staff data:', error);
     }
     setLoading(false);
+  };
+
+  const setActiveUserFilter = (filter) => {
+    setUserFilter(filter);
+  };
+
+  const toggleUserStatus = async (userId, isActive) => {
+    try {
+      await api.updateUserStatus(userId, isActive);
+      fetchData(); // Refresh data
+    } catch (error) {
+      alert('Failed to update user status: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const handleCreateStaff = async (e) => {
@@ -120,10 +137,12 @@ function UnifiedStaffPanel() {
           <div className="flex overflow-x-auto">
             {[
               { id: 'overview', label: 'Overview', icon: '📊' },
-              { id: 'users', label: isAdmin ? 'Users' : 'Players', icon: '👥' },
+              { id: 'users', label: 'Users', icon: '👥' },
               { id: 'bookings', label: 'Bookings', icon: '📅' },
               { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
-              ...(isAdmin ? [{ id: 'system', label: 'System', icon: '⚙️' }] : [])
+              { id: 'courts', label: 'Courts', icon: '🏟️' },
+              { id: 'coaching', label: 'Coaching', icon: '🎓' },
+              { id: 'system', label: 'System', icon: '⚙️' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -226,7 +245,41 @@ function UnifiedStaffPanel() {
 
           {activeTab === 'users' && (
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">{isAdmin ? 'All Users' : 'Players'}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">All Users</h2>
+              <div className="mb-6 flex flex-wrap gap-3">
+                <button
+                  onClick={() => setActiveUserFilter('all')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    userFilter === 'all' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  All Users
+                </button>
+                <button
+                  onClick={() => setActiveUserFilter('player')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    userFilter === 'player' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Players
+                </button>
+                <button
+                  onClick={() => setActiveUserFilter('coach')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    userFilter === 'coach' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Coaches
+                </button>
+                <button
+                  onClick={() => setActiveUserFilter('admin')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    userFilter === 'admin' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Admins
+                </button>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
@@ -235,11 +288,13 @@ function UnifiedStaffPanel() {
                       <th className="pb-3 font-semibold text-gray-900">Email</th>
                       <th className="pb-3 font-semibold text-gray-900">Role</th>
                       <th className="pb-3 font-semibold text-gray-900">Status</th>
-                      {isAdmin && <th className="pb-3 font-semibold text-gray-900">Actions</th>}
+                      <th className="pb-3 font-semibold text-gray-900">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => (
+                    {users
+                      .filter(user => userFilter === 'all' || user.role === userFilter)
+                      .map((user) => (
                       <tr key={user.id} className="border-b border-gray-100">
                         <td className="py-4">
                           <div className="flex items-center">
@@ -265,18 +320,29 @@ function UnifiedStaffPanel() {
                             {user.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        {isAdmin && (
-                          <td className="py-4">
-                            <div className="flex gap-2">
-                              <button className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
-                                Edit
-                              </button>
-                              <button className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        )}
+                        <td className="py-4">
+                          <div className="flex gap-2">
+                            <button className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                              Edit
+                            </button>
+                            {isAdmin && (
+                              <>
+                                <button className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                                  Role
+                                </button>
+                                <button 
+                                  onClick={() => toggleUserStatus(user.id, !user.is_active)}
+                                  className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
+                                >
+                                  {user.is_active ? 'Disable' : 'Enable'}
+                                </button>
+                                <button className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -344,10 +410,106 @@ function UnifiedStaffPanel() {
             </div>
           )}
 
-          {activeTab === 'system' && isAdmin && (
+          {activeTab === 'courts' && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Court Management</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {courts.map((court) => (
+                  <div key={court.id} className="border border-gray-200 rounded-lg p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-semibold">{court.name}</h3>
+                      <span className={`px-3 py-1 text-sm rounded-full ${
+                        court.is_available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {court.is_available ? 'Available' : 'Unavailable'}
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-sm text-gray-600 mb-4">
+                      <p><strong>Type:</strong> <span className="capitalize">{court.court_type}</span></p>
+                      <p><strong>Location:</strong> {court.is_indoor ? '🏠 Indoor' : '☀️ Outdoor'}</p>
+                      {court.location && <p><strong>Address:</strong> {court.location}</p>}
+                      <p><strong>Price:</strong> {court.price_per_hour} KES/hour</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                        Edit
+                      </button>
+                      <button className="flex-1 px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm">
+                        {court.is_available ? 'Close' : 'Open'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'coaching' && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Coaching Management</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Coaching Sessions */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Recent Coaching Sessions</h3>
+                  <div className="space-y-3">
+                    {bookings.slice(0, 5).map((booking) => (
+                      <div key={booking.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">{booking.user?.username || 'Player'}</p>
+                            <p className="text-sm text-gray-500">{booking.court?.name || 'Court'}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(booking.start_time).toLocaleDateString()} at{' '}
+                              {new Date(booking.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                          <span className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                            {booking.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Coach Performance */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Coach Performance</h3>
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-3xl">👥</span>
+                        <span className="text-sm text-blue-600 font-bold">Total</span>
+                      </div>
+                      <p className="text-3xl font-bold text-blue-600">{users.filter(u => u.role === 'player').length}</p>
+                      <p className="text-gray-600">Active Players</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-3xl">📅</span>
+                        <span className="text-sm text-green-600 font-bold">This Month</span>
+                      </div>
+                      <p className="text-3xl font-bold text-green-600">{bookings.length}</p>
+                      <p className="text-gray-600">Sessions</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-3xl">⭐</span>
+                        <span className="text-sm text-purple-600 font-bold">Average</span>
+                      </div>
+                      <p className="text-3xl font-bold text-purple-600">4.8</p>
+                      <p className="text-gray-600">Player Rating</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'system' && (
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">System Management</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <div className="border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-4">Database Stats</h3>
                   <div className="space-y-3">
@@ -363,21 +525,87 @@ function UnifiedStaffPanel() {
                       <span className="text-gray-600">Active Tournaments</span>
                       <span className="font-medium">{stats?.active_tournaments || 0}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Courts</span>
+                      <span className="font-medium">{courts.length}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4">User Distribution</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Players</span>
+                      <span className="font-medium">{users.filter(u => u.role === 'player').length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Coaches</span>
+                      <span className="font-medium">{users.filter(u => u.role === 'coach').length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Admins</span>
+                      <span className="font-medium">{users.filter(u => u.role === 'admin').length}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
                   <div className="space-y-3">
                     <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                      Backup Database
+                      📊 Generate Report
                     </button>
                     <button className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-                      Send Notifications
+                      📧 Send Notifications
                     </button>
                     <button className="w-full px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-                      Generate Reports
+                      💾 Backup Database
+                    </button>
+                    <button className="w-full px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
+                      🔄 Sync Data
                     </button>
                   </div>
+                </div>
+              </div>
+
+              {/* System Settings */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">System Settings</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-medium mb-3">Booking Settings</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Max booking duration</span>
+                        <select className="px-3 py-1 border border-gray-300 rounded text-sm">
+                          <option>2 hours</option>
+                          <option>3 hours</option>
+                          <option>4 hours</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Advance booking days</span>
+                        <input type="number" className="px-3 py-1 border border-gray-300 rounded text-sm w-20" defaultValue="7" />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-3">Tournament Settings</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Max participants</span>
+                        <input type="number" className="px-3 py-1 border border-gray-300 rounded text-sm w-20" defaultValue="32" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Auto-approve</span>
+                        <input type="checkbox" className="w-4 h-4" defaultChecked />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <button className="px-6 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600">
+                    Save Settings
+                  </button>
                 </div>
               </div>
             </div>
