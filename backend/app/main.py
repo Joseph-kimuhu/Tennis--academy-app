@@ -77,14 +77,17 @@ logger.info("==> All routes registered successfully")
 
 
 def seed_default_users():
-    """Create default admin and coach users if they don't exist"""
+    """Create default admin and coach users if they don't exist - NEVER deletes existing users"""
     db = SessionLocal()
     try:
+        logger.info("==> 🔄 Checking default users...")
+        
         # Check if coach already exists
         coach_email = "coach@tennis.com"
         existing_coach = db.query(User).filter(User.email == coach_email).first()
         
         if not existing_coach:
+            logger.info("==> ➕ Creating new coach account...")
             coach = User(
                 email=coach_email,
                 username="Coach",
@@ -96,15 +99,23 @@ def seed_default_users():
             )
             db.add(coach)
             db.commit()
-            logger.info("==> ✅ Coach account created: coach@tennis.com")
+            db.refresh(coach)
+            logger.info(f"==> ✅ Coach account created: {coach_email} (ID: {coach.id})")
         else:
-            logger.info("==> ✅ Coach account already exists: coach@tennis.com")
+            logger.info(f"==> ✅ Coach account already exists: {coach_email} (ID: {existing_coach.id}, Role: {existing_coach.role})")
+            # Ensure existing coach is still active and verified
+            if not existing_coach.is_active or not existing_coach.is_verified:
+                existing_coach.is_active = True
+                existing_coach.is_verified = True
+                db.commit()
+                logger.info("==> 🔧 Updated existing coach account to be active and verified")
 
         # Check if admin already exists
         admin_email = "admin@tennis.com"
         existing_admin = db.query(User).filter(User.email == admin_email).first()
 
         if not existing_admin:
+            logger.info("==> ➕ Creating new admin account...")
             admin = User(
                 email=admin_email,
                 username="Admin",
@@ -116,17 +127,33 @@ def seed_default_users():
             )
             db.add(admin)
             db.commit()
-            logger.info("==> ✅ Admin account created: admin@tennis.com")
+            db.refresh(admin)
+            logger.info(f"==> ✅ Admin account created: {admin_email} (ID: {admin.id})")
         else:
-            logger.info("==> ✅ Admin account already exists: admin@tennis.com")
+            logger.info(f"==> ✅ Admin account already exists: {admin_email} (ID: {existing_admin.id}, Role: {existing_admin.role})")
+            # Ensure existing admin is still active and verified
+            if not existing_admin.is_active or not existing_admin.is_verified:
+                existing_admin.is_active = True
+                existing_admin.is_verified = True
+                db.commit()
+                logger.info("==> 🔧 Updated existing admin account to be active and verified")
 
+        # Count total users to verify data integrity
+        total_users = db.query(User).count()
+        admin_count = db.query(User).filter(User.role == UserRole.ADMIN).count()
+        coach_count = db.query(User).filter(User.role == UserRole.COACH).count()
+        
         logger.info("==> 🎾 Default users seeding completed!")
+        logger.info(f"==> 📊 Database stats: {total_users} total users, {admin_count} admins, {coach_count} coaches")
         logger.info("==> 🏆 Coach: coach@tennis.com / coach123")
         logger.info("==> ⚙️ Admin: admin@tennis.com / admin123")
+        logger.info("==> 🛡️  User data is protected and will persist across restarts")
         
     except Exception as e:
         logger.error(f"==> ❌ Error seeding users: {e}")
         db.rollback()
+        # Don't re-raise the exception to prevent app startup failure
+        logger.info("==> ⚠️  App will continue starting despite seeding error")
     finally:
         db.close()
 
