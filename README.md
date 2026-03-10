@@ -173,3 +173,30 @@ This project is licensed under the MIT License.
 ## Support
 
 For support, email support@johntennisacademy.com or open an issue in the repository.
+
+## Deployment
+
+### Deploying to Render
+
+1. **Push your code to GitHub**
+
+2. **Create a new Web Service on Render**
+   - Connect your GitHub repository
+   - Use the following settings:
+     - **Build Command**: `pip install -r requirements.txt`
+     - **Start Command**: `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`
+     - **Environment**: Python 3.11.9
+
+3. **Create a PostgreSQL Database on Render**
+   - Note the Internal Database URL
+
+4. **Set Environment Variables**
+   - `DATABASE_URL`: Your Render PostgreSQL connection string
+   - `SECRET_KEY`: Generate a secure random key
+   - `FRONTEND_URL`: Your frontend deployment URL
+
+5. **Deploy**
+   - Render will automatically deploy your application
+   - Database tables will be created on first run
+
+Alternatively, use the included `render.yaml` for automatic configuration.
