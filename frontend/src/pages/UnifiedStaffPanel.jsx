@@ -15,6 +15,16 @@ function UnifiedStaffPanel() {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageForm, setMessageForm] = useState({ receiver_id: '', subject: '', content: '', message_type: 'general' });
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [playerStats, setPlayerStats] = useState(null);
+  const [statsForm, setStatsForm] = useState({
+    serves: 0, aces: 0, double_faults: 0, first_serve_percentage: 0,
+    second_serve_points_won: 0, break_points_saved: 0, break_points_faced: 0,
+    total_games: 0, total_sets: 0, total_matches: 0, winning_streak: 0,
+    losing_streak: 0, longest_win_streak: 0, longest_lose_streak: 0, coach_notes: ''
+  });
+  const [savingStats, setSavingStats] = useState(false);
   const [loading, setLoading] = useState(true);
     const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -129,6 +139,59 @@ function UnifiedStaffPanel() {
   const openMessageModal = (playerId = '') => {
     setMessageForm({ ...messageForm, receiver_id: playerId });
     setShowMessageModal(true);
+  };
+
+  const handleSelectPlayer = async (player) => {
+    setSelectedPlayer(player);
+    try {
+      const stats = await api.getPlayerStats(player.id).catch(() => null);
+      if (stats) {
+        setPlayerStats(stats);
+        setStatsForm({
+          serves: stats.serves || 0,
+          aces: stats.aces || 0,
+          double_faults: stats.double_faults || 0,
+          first_serve_percentage: stats.first_serve_percentage || 0,
+          second_serve_points_won: stats.second_serve_points_won || 0,
+          break_points_saved: stats.break_points_saved || 0,
+          break_points_faced: stats.break_points_faced || 0,
+          total_games: stats.total_games || 0,
+          total_sets: stats.total_sets || 0,
+          total_matches: stats.total_matches || 0,
+          winning_streak: stats.winning_streak || 0,
+          losing_streak: stats.losing_streak || 0,
+          longest_win_streak: stats.longest_win_streak || 0,
+          longest_lose_streak: stats.longest_lose_streak || 0,
+          coach_notes: stats.coach_notes || ''
+        });
+      } else {
+        setPlayerStats(null);
+        setStatsForm({
+          serves: 0, aces: 0, double_faults: 0, first_serve_percentage: 0,
+          second_serve_points_won: 0, break_points_saved: 0, break_points_faced: 0,
+          total_games: 0, total_sets: 0, total_matches: 0, winning_streak: 0,
+          losing_streak: 0, longest_win_streak: 0, longest_lose_streak: 0, coach_notes: ''
+        });
+      }
+      setShowStatsModal(true);
+    } catch (error) {
+      console.error('Error fetching player stats:', error);
+      setShowStatsModal(true);
+    }
+  };
+
+  const handleSaveStats = async (e) => {
+    e.preventDefault();
+    setSavingStats(true);
+    try {
+      await api.updatePlayerStatistics(selectedPlayer.id, statsForm);
+      setShowStatsModal(false);
+      alert('Player statistics saved successfully!');
+    } catch (error) {
+      console.error('Error saving player stats:', error);
+      alert('Failed to save player statistics. Please try again.');
+    }
+    setSavingStats(false);
   };
 
   const setActiveUserFilter = (filter) => {
@@ -744,7 +807,7 @@ function UnifiedStaffPanel() {
                         <td className="py-4">
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => alert('View Stats feature coming soon')}
+                              onClick={() => handleSelectPlayer(player)}
                               className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
                             >
                               📊 Stats
@@ -2326,6 +2389,164 @@ function UnifiedStaffPanel() {
                   className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium disabled:opacity-50"
                 >
                   {sendingMessage ? 'Sending...' : 'Send Message'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Modal */}
+      {showStatsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Player Statistics</h3>
+                <p className="text-sm text-gray-500">{selectedPlayer?.username}</p>
+              </div>
+              <button
+                onClick={() => setShowStatsModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSaveStats}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Serves</label>
+                  <input
+                    type="number"
+                    value={statsForm.serves}
+                    onChange={(e) => setStatsForm({ ...statsForm, serves: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Aces</label>
+                  <input
+                    type="number"
+                    value={statsForm.aces}
+                    onChange={(e) => setStatsForm({ ...statsForm, aces: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Double Faults</label>
+                  <input
+                    type="number"
+                    value={statsForm.double_faults}
+                    onChange={(e) => setStatsForm({ ...statsForm, double_faults: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">First Serve %</label>
+                  <input
+                    type="number"
+                    value={statsForm.first_serve_percentage}
+                    onChange={(e) => setStatsForm({ ...statsForm, first_serve_percentage: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">2nd Serve Won %</label>
+                  <input
+                    type="number"
+                    value={statsForm.second_serve_points_won}
+                    onChange={(e) => setStatsForm({ ...statsForm, second_serve_points_won: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Break Pts Saved</label>
+                  <input
+                    type="number"
+                    value={statsForm.break_points_saved}
+                    onChange={(e) => setStatsForm({ ...statsForm, break_points_saved: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Break Pts Faced</label>
+                  <input
+                    type="number"
+                    value={statsForm.break_points_faced}
+                    onChange={(e) => setStatsForm({ ...statsForm, break_points_faced: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Total Games</label>
+                  <input
+                    type="number"
+                    value={statsForm.total_games}
+                    onChange={(e) => setStatsForm({ ...statsForm, total_games: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Total Sets</label>
+                  <input
+                    type="number"
+                    value={statsForm.total_sets}
+                    onChange={(e) => setStatsForm({ ...statsForm, total_sets: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Total Matches</label>
+                  <input
+                    type="number"
+                    value={statsForm.total_matches}
+                    onChange={(e) => setStatsForm({ ...statsForm, total_matches: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Winning Streak</label>
+                  <input
+                    type="number"
+                    value={statsForm.winning_streak}
+                    onChange={(e) => setStatsForm({ ...statsForm, winning_streak: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Losing Streak</label>
+                  <input
+                    type="number"
+                    value={statsForm.losing_streak}
+                    onChange={(e) => setStatsForm({ ...statsForm, losing_streak: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Coach Notes</label>
+                <textarea
+                  value={statsForm.coach_notes}
+                  onChange={(e) => setStatsForm({ ...statsForm, coach_notes: e.target.value })}
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows="3"
+                  placeholder="Add notes about this player's performance..."
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowStatsModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingStats}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium disabled:opacity-50"
+                >
+                  {savingStats ? 'Saving...' : 'Save Statistics'}
                 </button>
               </div>
             </form>
