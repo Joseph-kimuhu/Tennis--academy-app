@@ -248,12 +248,32 @@ class FirebaseApiService {
     return { id: statsRef.id, ...statsData };
   }
 
+  async getPlayerStats(playerId) {
+    const statsRef = doc(db, 'player_statistics', playerId);
+    const statsDoc = await getDoc(statsRef);
+    if (statsDoc.exists()) {
+      return { id: statsDoc.id, ...statsDoc.data() };
+    }
+    return null;
+  }
+
   async updatePlayerStatistics(playerId, statsData) {
     const statsRef = doc(db, 'player_statistics', playerId);
-    await updateDoc(statsRef, {
-      ...statsData,
-      updatedAt: serverTimestamp()
-    });
+    const statsDoc = await getDoc(statsRef);
+    
+    if (statsDoc.exists()) {
+      await updateDoc(statsRef, {
+        ...statsData,
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      await setDoc(statsRef, {
+        ...statsData,
+        playerId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    }
     return { id: playerId, ...statsData };
   }
 

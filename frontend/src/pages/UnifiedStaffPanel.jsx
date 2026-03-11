@@ -186,12 +186,13 @@ function UnifiedStaffPanel() {
     e.preventDefault();
     setSavingStats(true);
     try {
+      console.log('Saving stats for player:', selectedPlayer?.id, statsForm);
       await api.updatePlayerStatistics(selectedPlayer.id, statsForm);
       setShowStatsModal(false);
       alert('Player statistics saved successfully!');
     } catch (error) {
       console.error('Error saving player stats:', error);
-      alert('Failed to save player statistics. Please try again.');
+      alert('Failed to save player statistics: ' + error.message);
     }
     setSavingStats(false);
   };
