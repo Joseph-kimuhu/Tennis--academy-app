@@ -271,11 +271,8 @@ class FirebaseApiService {
     const userId = this.getCurrentUserId();
     if (!userId) return [];
     
-    const q = query(
-      collection(db, 'bookings'),
-      where('user_id', '==', userId),
-      orderBy('start_time', 'desc')
-    );
+    // Get all bookings for user and sort in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'bookings'), where('user_id', '==', userId), limit(100));
     
     const querySnapshot = await getDocs(q);
     const bookings = [];
@@ -295,22 +292,25 @@ class FirebaseApiService {
   }
 
   async getAvailableSlots(courtId, date) {
-    // Get all bookings for this court on this date
+    // Get all bookings for this court and filter in JavaScript (avoids index requirement)
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
     
-    const q = query(
-      collection(db, 'bookings'),
-      where('court_id', '==', courtId),
-      where('start_time', '>=', startOfDay.toISOString()),
-      where('start_time', '<=', endOfDay.toISOString()),
-      where('status', '==', 'confirmed')
-    );
+    // Get all bookings for this court
+    const q = query(collection(db, 'bookings'), where('court_id', '==', courtId), limit(100));
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const bookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter by date range and status in JavaScript
+    return bookings.filter(b => {
+      const bookingTime = new Date(b.start_time);
+      return bookingTime >= startOfDay && 
+             bookingTime <= endOfDay && 
+             b.status === 'confirmed';
+    });
   }
 
   async createBooking(bookingData) {
@@ -349,16 +349,17 @@ class FirebaseApiService {
   // ==================== TOURNAMENTS ====================
 
   async getActiveTournaments() {
-    const now = new Date().toISOString();
-    const q = query(
-      collection(db, 'tournaments'),
-      where('status', '==', 'active'),
-      where('start_date', '>=', now),
-      orderBy('start_date', 'asc')
-    );
-    
+    // Get all tournaments and filter in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'tournaments'), limit(50));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const now = new Date();
+    const tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter active tournaments (status = 'active' or 'draft' and start_date >= now)
+    return tournaments.filter(t => 
+      (t.status === 'active' || t.status === 'draft') && 
+      new Date(t.start_date) >= now
+    ).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   }
 
   async getTournaments(params = {}) {
@@ -617,24 +618,15 @@ class FirebaseApiService {
     const userId = this.getCurrentUserId();
     if (!userId) return [];
     
-    const q = query(
-      collection(db, 'matches'),
-      where('player1_id', '==', userId),
-      orderBy('created_at', 'desc')
-    );
+    // Get matches without orderBy (avoid index requirement), sort in JavaScript
+    const q = query(collection(db, 'matches'), limit(100));
     
-    const q2 = query(
-      collection(db, 'matches'),
-      where('player2_id', '==', userId),
-      orderBy('created_at', 'desc')
-    );
+    const querySnapshot = await getDocs(q);
     
-    const [snapshot1, snapshot2] = await Promise.all([getDocs(q), getDocs(q2)]);
-    
-    const matches = [
-      ...snapshot1.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-      ...snapshot2.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    ];
+    // Filter matches where user is player1 or player2
+    const matches = querySnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(m => m.player1_id === userId || m.player2_id === userId);
     
     // Sort by date
     matches.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -840,29 +832,28 @@ class FirebaseApiService {
     
     const { limit: limitCount = 10 } = params;
     
-    const q = query(
-      collection(db, 'notifications'),
-      where('user_id', '==', userId),
-      orderBy('created_at', 'desc'),
-      limit(limitCount)
-    );
+    // Get all notifications for user and sort in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'notifications'), where('user_id', '==', userId), limit(50));
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const notifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Sort by created_at descending
+    notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    return notifications.slice(0, limitCount);
   }
 
   async getUnreadNotificationsCount() {
     const userId = this.getCurrentUserId();
     if (!userId) return 0;
     
-    const q = query(
-      collection(db, 'notifications'),
-      where('user_id', '==', userId),
-      where('is_read', '==', false)
-    );
+    // Get all notifications for user and filter in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'notifications'), where('user_id', '==', userId), limit(100));
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.size;
+    const notifications = querySnapshot.docs.map(doc => doc.data());
+    return notifications.filter(n => n.is_read === false).length;
   }
 
   async markNotificationAsRead(notificationId) {
@@ -877,21 +868,25 @@ class FirebaseApiService {
   async getLeaderboard(params = {}) {
     const { limit: limitCount = 10, skill_level } = params;
     
-    let q = query(
-      collection(db, 'users'),
-      where('role', '==', 'player'),
-      orderBy('ranking_points', 'desc'),
-      limit(limitCount)
-    );
+    // Get all users and filter/sort in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'users'), limit(100));
     
     const querySnapshot = await getDocs(q);
     let leaderboard = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
+    // Filter by role
+    leaderboard = leaderboard.filter(p => p.role === 'player');
+    
+    // Filter by skill level if provided
     if (skill_level) {
       leaderboard = leaderboard.filter(p => p.skill_level === skill_level);
     }
     
-    return leaderboard;
+    // Sort by ranking points
+    leaderboard.sort((a, b) => (b.ranking_points || 0) - (a.ranking_points || 0));
+    
+    // Apply limit
+    return leaderboard.slice(0, limitCount);
   }
 
   // ==================== CLUBS ====================
