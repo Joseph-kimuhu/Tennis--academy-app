@@ -12,6 +12,9 @@ function UnifiedStaffPanel() {
   const [tournaments, setTournaments] = useState([]);
   const [courts, setCourts] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageForm, setMessageForm] = useState({ receiver_id: '', subject: '', content: '', message_type: 'general' });
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [loading, setLoading] = useState(true);
     const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -101,6 +104,31 @@ function UnifiedStaffPanel() {
       console.error('Error fetching staff data:', error);
     }
     setLoading(false);
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!messageForm.receiver_id || !messageForm.subject || !messageForm.content) {
+      alert('Please fill in all fields');
+      return;
+    }
+    setSendingMessage(true);
+    try {
+      await api.sendMessage(messageForm);
+      setShowMessageModal(false);
+      setMessageForm({ receiver_id: '', subject: '', content: '', message_type: 'general' });
+      alert('Message sent successfully!');
+      fetchData(); // Refresh messages
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again.');
+    }
+    setSendingMessage(false);
+  };
+
+  const openMessageModal = (playerId = '') => {
+    setMessageForm({ ...messageForm, receiver_id: playerId });
+    setShowMessageModal(true);
   };
 
   const setActiveUserFilter = (filter) => {
@@ -722,7 +750,7 @@ function UnifiedStaffPanel() {
                               📊 Stats
                             </button>
                             <button
-                              onClick={() => alert('Message feature coming soon')}
+                              onClick={() => openMessageModal(player.id)}
                               className="px-3 py-1.5 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
                             >
                               ✉️ Message
@@ -747,7 +775,15 @@ function UnifiedStaffPanel() {
 
           {activeTab === 'messages' && (
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Messages</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Messages</h2>
+                <button
+                  onClick={() => openMessageModal()}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium shadow-md"
+                >
+                  + Compose
+                </button>
+              </div>
               <div className="space-y-3">
                 {messages.length > 0 ? messages.map((message) => (
                   <div 
@@ -2207,6 +2243,92 @@ function UnifiedStaffPanel() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Message Modal */}
+      {showMessageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Send Message</h3>
+              <button
+                onClick={() => setShowMessageModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSendMessage}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                <select
+                  value={messageForm.receiver_id}
+                  onChange={(e) => setMessageForm({ ...messageForm, receiver_id: e.target.value })}
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                >
+                  <option value="">Select a player</option>
+                  {users.filter(u => u.role === 'player').map((player) => (
+                    <option key={player.id} value={player.id}>
+                      {player.username} ({player.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <input
+                  type="text"
+                  value={messageForm.subject}
+                  onChange={(e) => setMessageForm({ ...messageForm, subject: e.target.value })}
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Enter subject"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message Type</label>
+                <select
+                  value={messageForm.message_type}
+                  onChange={(e) => setMessageForm({ ...messageForm, message_type: e.target.value })}
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="general">General</option>
+                  <option value="training">Training</option>
+                  <option value="tournament">Tournament</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea
+                  value={messageForm.content}
+                  onChange={(e) => setMessageForm({ ...messageForm, content: e.target.value })}
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  rows="4"
+                  placeholder="Write your message..."
+                  required
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowMessageModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingMessage}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium disabled:opacity-50"
+                >
+                  {sendingMessage ? 'Sending...' : 'Send Message'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
