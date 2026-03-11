@@ -49,7 +49,7 @@ class FirebaseApiService {
   async getPlayers(params = {}) {
     const { limit: limitCount = 50, skill_level, search } = params;
     
-    // Get all users and filter by role in JavaScript (avoids index requirement)
+    // Get all users and filter in JavaScript (avoids index requirement)
     const q = query(
       collection(db, 'users'),
       orderBy('ranking_points', 'desc'),
@@ -59,8 +59,8 @@ class FirebaseApiService {
     const querySnapshot = await getDocs(q);
     let players = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Filter to only players
-    players = players.filter(p => p.role === 'player' || !p.role);
+    // Filter to show all users who are not coaches or admins (players and unknown roles)
+    players = players.filter(p => p.role !== 'coach' && p.role !== 'admin');
     
     // Filter by skill level if provided
     if (skill_level) {
