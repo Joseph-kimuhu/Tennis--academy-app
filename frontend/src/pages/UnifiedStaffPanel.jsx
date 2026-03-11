@@ -18,6 +18,8 @@ function UnifiedStaffPanel() {
   const [showEditCourt, setShowEditCourt] = useState(false);
   const [editingCourt, setEditingCourt] = useState(null);
   const [showAddTournament, setShowAddTournament] = useState(false);
+  const [showEditTournament, setShowEditTournament] = useState(false);
+  const [editingTournament, setEditingTournament] = useState(null);
   const [showAddBooking, setShowAddBooking] = useState(false);
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
   const [confirmingBooking, setConfirmingBooking] = useState(null);
@@ -346,6 +348,46 @@ function UnifiedStaffPanel() {
       fetchData();
     } catch (error) {
       alert('Failed to update court: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const startEditTournament = (tournament) => {
+    setEditingTournament({
+      id: tournament.id,
+      name: tournament.name,
+      description: tournament.description || '',
+      start_date: tournament.start_date ? new Date(tournament.start_date).toISOString().split('T')[0] : '',
+      end_date: tournament.end_date ? new Date(tournament.end_date).toISOString().split('T')[0] : '',
+      location: tournament.location || '',
+      registration_deadline: tournament.registration_deadline ? new Date(tournament.registration_deadline).toISOString().split('T')[0] : '',
+      max_participants: tournament.max_participants || 16,
+      entry_fee: tournament.entry_fee || 0,
+      prize_money: tournament.prize_money || 0,
+      tournament_type: tournament.tournament_type || 'knockout'
+    });
+    setShowEditTournament(true);
+  };
+
+  const handleEditTournament = async (e) => {
+    e.preventDefault();
+    try {
+      const tournamentData = {
+        ...editingTournament,
+        start_date: editingTournament.start_date ? new Date(editingTournament.start_date).toISOString() : null,
+        end_date: editingTournament.end_date ? new Date(editingTournament.end_date).toISOString() : null,
+        registration_deadline: editingTournament.registration_deadline ? new Date(editingTournament.registration_deadline).toISOString() : null,
+        max_participants: parseInt(editingTournament.max_participants),
+        entry_fee: parseFloat(editingTournament.entry_fee),
+        prize_money: parseFloat(editingTournament.prize_money)
+      };
+
+      await api.updateTournament(editingTournament.id, tournamentData);
+      alert('Tournament updated successfully!');
+      setShowEditTournament(false);
+      setEditingTournament(null);
+      fetchData();
+    } catch (error) {
+      alert('Failed to update tournament: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -741,7 +783,10 @@ function UnifiedStaffPanel() {
                           Publish Tournament
                         </button>
                       )}
-                      <button className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                      <button 
+                        onClick={() => startEditTournament(tournament)}
+                        className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                      >
                         Edit
                       </button>
                       {tournament.status === 'active' && (
@@ -1391,6 +1436,143 @@ function UnifiedStaffPanel() {
                   className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
                 >
                   Add Tournament
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Tournament Modal */}
+      {showEditTournament && editingTournament && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full max-h-screen overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Tournament</h2>
+            <form onSubmit={handleEditTournament}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tournament Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTournament.name}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., Summer Championship 2024"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={editingTournament.description}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, description: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    rows={3}
+                    placeholder="Tournament description and details"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTournament.location}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, location: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., John Tennis Academy"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={editingTournament.start_date}
+                      onChange={(e) => setEditingTournament({ ...editingTournament, start_date: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={editingTournament.end_date}
+                      onChange={(e) => setEditingTournament({ ...editingTournament, end_date: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration Deadline</label>
+                  <input
+                    type="date"
+                    value={editingTournament.registration_deadline}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, registration_deadline: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Participants</label>
+                    <input
+                      type="number"
+                      min="2"
+                      value={editingTournament.max_participants}
+                      onChange={(e) => setEditingTournament({ ...editingTournament, max_participants: parseInt(e.target.value) || 16 })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Entry Fee (KES)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editingTournament.entry_fee}
+                      onChange={(e) => setEditingTournament({ ...editingTournament, entry_fee: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Prize Money (KES)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editingTournament.prize_money}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, prize_money: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tournament Type</label>
+                  <select
+                    value={editingTournament.tournament_type}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, tournament_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="knockout">Knockout</option>
+                    <option value="round_robin">Round Robin</option>
+                    <option value="league">League</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditTournament(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600"
+                >
+                  Update Tournament
                 </button>
               </div>
             </form>
