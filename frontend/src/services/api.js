@@ -665,9 +665,14 @@ class ApiService {
   }
 
   async updateUserStatus(userId, isActive) {
-    return this.request(`/api/staff/users/${userId}/status`, {
+    return this.request(`/api/staff/users/${userId}/status?is_active=${isActive}`, {
       method: 'PUT',
-      body: JSON.stringify({ is_active: isActive }),
+    });
+  }
+
+  async deleteUser(userId) {
+    return this.request(`/api/staff/users/${userId}`, {
+      method: 'DELETE',
     });
   }
 }

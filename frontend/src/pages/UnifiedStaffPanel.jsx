@@ -64,6 +64,27 @@ function UnifiedStaffPanel() {
     }
   };
 
+  const updateUserRole = async (userId, newRole) => {
+    try {
+      await api.updateUserRole(userId, newRole);
+      fetchData(); // Refresh data
+    } catch (error) {
+      alert('Failed to update user role: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      await api.deleteUser(userId);
+      fetchData(); // Refresh data
+    } catch (error) {
+      alert('Failed to delete user: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   const handleCreateStaff = async (e) => {
     e.preventDefault();
     try {
@@ -330,7 +351,13 @@ function UnifiedStaffPanel() {
                             </button>
                             {hasFullAccess && (
                               <>
-                                <button className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                                <button 
+                                  onClick={() => {
+                                    const newRole = user.role === 'player' ? 'coach' : user.role === 'coach' ? 'admin' : 'player';
+                                    updateUserRole(user.id, newRole);
+                                  }}
+                                  className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                                >
                                   Role
                                 </button>
                                 <button 
@@ -339,7 +366,10 @@ function UnifiedStaffPanel() {
                                 >
                                   {user.is_active ? 'Disable' : 'Enable'}
                                 </button>
-                                <button className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">
+                                <button 
+                                  onClick={() => deleteUser(user.id)}
+                                  className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                                >
                                   Delete
                                 </button>
                               </>
