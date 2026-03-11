@@ -545,47 +545,80 @@ class FirebaseApiService {
   }
 
   async createMatch(matchData) {
-    const docRef = await addDoc(collection(db, 'matches'), {
-      ...matchData,
-      status: 'scheduled',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    return { id: docRef.id, ...matchData };
+    // Check if user is authenticated
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('User not authenticated. Please log in again.');
+    }
+    
+    console.log('Creating match with user:', currentUser.email);
+    console.log('Match data:', matchData);
+    
+    try {
+      const docRef = await addDoc(collection(db, 'matches'), {
+        ...matchData,
+        status: 'scheduled',
+        created_by: currentUser.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      console.log('Match created successfully with ID:', docRef.id);
+      return { id: docRef.id, ...matchData };
+    } catch (error) {
+      console.error('Error creating match:', error);
+      throw error;
+    }
   }
 
   async getTournamentMatches(tournamentId) {
-    const q = query(
-      collection(db, 'matches'),
-      where('tournament_id', '==', tournamentId),
-      orderBy('created_at', 'asc')
-    );
-    const querySnapshot = await getDocs(q);
-    const matches = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Get player details for each match
-    const detailedMatches = [];
-    for (const match of matches) {
-      const detailedMatch = { ...match };
+    try {
+      console.log('Fetching matches for tournament:', tournamentId);
       
-      if (match.player1_id) {
-        const player1Doc = await getDoc(doc(db, 'users', match.player1_id));
-        if (player1Doc.exists()) {
-          detailedMatch.player1 = { id: player1Doc.id, ...player1Doc.data() };
+      // Simple query without orderBy to avoid index issues
+      const q = query(
+        collection(db, 'matches'),
+        where('tournament_id', '==', tournamentId)
+      );
+      const querySnapshot = await getDocs(q);
+      const matches = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      console.log('Found matches:', matches.length);
+      
+      // Get player details for each match
+      const detailedMatches = [];
+      for (const match of matches) {
+        const detailedMatch = { ...match };
+        
+        if (match.player1_id) {
+          try {
+            const player1Doc = await getDoc(doc(db, 'users', match.player1_id));
+            if (player1Doc.exists()) {
+              detailedMatch.player1 = { id: player1Doc.id, ...player1Doc.data() };
+            }
+          } catch (error) {
+            console.warn('Error fetching player1:', error);
+          }
         }
+        
+        if (match.player2_id) {
+          try {
+            const player2Doc = await getDoc(doc(db, 'users', match.player2_id));
+            if (player2Doc.exists()) {
+              detailedMatch.player2 = { id: player2Doc.id, ...player2Doc.data() };
+            }
+          } catch (error) {
+            console.warn('Error fetching player2:', error);
+          }
+        }
+        
+        detailedMatches.push(detailedMatch);
       }
       
-      if (match.player2_id) {
-        const player2Doc = await getDoc(doc(db, 'users', match.player2_id));
-        if (player2Doc.exists()) {
-          detailedMatch.player2 = { id: player2Doc.id, ...player2Doc.data() };
-        }
-      }
-      
-      detailedMatches.push(detailedMatch);
+      return detailedMatches;
+    } catch (error) {
+      console.error('Error fetching tournament matches:', error);
+      throw error;
     }
-    
-    return detailedMatches;
   }
 
   async registerForTournament(tournamentId) {

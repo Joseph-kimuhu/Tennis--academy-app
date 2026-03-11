@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is coach or admin
+    function isCoachOrAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['coach', 'admin'] ||
+         request.auth.token.email == 'johnmakumi106@gmail.com');
+    }
+
+    // USERS
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isCoachOrAdmin());
+      allow delete: if isCoachOrAdmin();
+    }
+
+    // TOURNAMENTS
+    match /tournaments/{tournamentId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+
+    // TOURNAMENT REGISTRATIONS
+    match /tournament_registrations/{registrationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (resource.data.user_id == request.auth.uid || isCoachOrAdmin());
+      allow delete: if isCoachOrAdmin();
+    }
+
+    // MATCHES - THIS WAS MISSING!
+    match /matches/{matchId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+
+    // COURTS
+    match /courts/{courtId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+
+    // BOOKINGS
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (resource.data.user_id == request.auth.uid || isCoachOrAdmin());
+      allow delete: if isAuthenticated() && 
+        (resource.data.user_id == request.auth.uid || isCoachOrAdmin());
+    }
+
+    // MESSAGES
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && 
+        (resource.data.sender_id == request.auth.uid || 
+         resource.data.receiver_id == request.auth.uid ||
+         isCoachOrAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (resource.data.receiver_id == request.auth.uid || isCoachOrAdmin());
+    }
+
+    // NOTIFICATIONS
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+    }
+
+    // TRAINING SESSIONS
+    match /training_sessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+
+    // ANNOUNCEMENTS
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+
+    // PLAYER STATISTICS
+    match /player_statistics/{playerId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+
+    // CLUBS
+    match /clubs/{clubId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+  }
+}

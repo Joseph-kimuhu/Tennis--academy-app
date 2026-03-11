@@ -468,12 +468,22 @@ function UnifiedStaffPanel() {
 
   const viewTournamentMatches = async (tournament) => {
     try {
+      console.log('Opening matches for tournament:', tournament.name);
       const matches = await api.getTournamentMatches(tournament.id);
       setTournamentMatches(matches);
       setSelectedTournament(tournament);
       setShowTournamentMatches(true);
     } catch (error) {
-      alert('Failed to load tournament matches: ' + (error.message || 'Unknown error'));
+      console.error('Error in viewTournamentMatches:', error);
+      
+      // More specific error messages
+      if (error.code === 'permission-denied') {
+        alert('Permission denied. Please make sure Firebase security rules are deployed correctly.');
+      } else if (error.message) {
+        alert('Failed to load tournament matches: ' + error.message);
+      } else {
+        alert('Failed to load tournament matches. Please try again.');
+      }
     }
   };
 
