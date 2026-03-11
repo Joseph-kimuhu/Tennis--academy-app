@@ -658,9 +658,8 @@ class ApiService {
   }
 
   async updateUserRole(userId, newRole) {
-    return this.request(`/api/staff/users/${userId}/role`, {
+    return this.request(`/api/staff/users/${userId}/role?new_role=${newRole}`, {
       method: 'PUT',
-      body: JSON.stringify({ new_role: newRole }),
     });
   }
 
@@ -673,6 +672,13 @@ class ApiService {
   async deleteUser(userId) {
     return this.request(`/api/staff/users/${userId}`, {
       method: 'DELETE',
+    });
+  }
+
+  async updateUser(userId, userData) {
+    return this.request(`/api/staff/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
     });
   }
 }

@@ -13,6 +13,8 @@ function UnifiedStaffPanel() {
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [newStaff, setNewStaff] = useState({
     email: '',
     username: '',
@@ -82,6 +84,35 @@ function UnifiedStaffPanel() {
       fetchData(); // Refresh data
     } catch (error) {
       alert('Failed to delete user: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const startEditUser = (user) => {
+    setEditingUser({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      full_name: user.full_name || '',
+      role: user.role
+    });
+    setShowEditUser(true);
+  };
+
+  const handleEditUser = async (e) => {
+    e.preventDefault();
+    try {
+      await api.updateUser(editingUser.id, {
+        email: editingUser.email,
+        username: editingUser.username,
+        full_name: editingUser.full_name,
+        role: editingUser.role
+      });
+      alert('User updated successfully!');
+      setShowEditUser(false);
+      setEditingUser(null);
+      fetchData();
+    } catch (error) {
+      alert('Failed to update user: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -346,7 +377,10 @@ function UnifiedStaffPanel() {
                         </td>
                         <td className="py-4">
                           <div className="flex gap-2">
-                            <button className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                            <button 
+                              onClick={() => startEditUser(user)}
+                              className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
                               Edit
                             </button>
                             {hasFullAccess && (
@@ -724,6 +758,78 @@ function UnifiedStaffPanel() {
                   className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
                 >
                   Create Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditUser && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit User</h2>
+            <form onSubmit={handleEditUser}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={editingUser.full_name}
+                    onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingUser.username}
+                    onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={editingUser.email}
+                    onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <select
+                    value={editingUser.role}
+                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="player">Player</option>
+                    <option value="coach">Coach</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditUser(false);
+                    setEditingUser(null);
+                  }}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600"
+                >
+                  Update User
                 </button>
               </div>
             </form>

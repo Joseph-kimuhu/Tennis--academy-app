@@ -193,3 +193,65 @@ def update_user_status(
     db.commit()
     
     return {"message": f"User status updated to {'active' if is_active else 'inactive'}"}
+
+@router.delete("/users/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH]))
+):
+    """Delete user - Coaches have full admin access"""
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Prevent deletion of the current user
+    if user.id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete your own account"
+        )
+    
+    db.delete(user)
+    db.commit()
+    
+    return {"message": "User deleted successfully"}
+
+@router.put("/users/{user_id}")
+def update_user(
+    user_id: int,
+    user_data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH]))
+):
+    """Update user details - Coaches have full admin access"""
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Update allowed fields
+    if 'email' in user_data:
+        user.email = user_data['email']
+    if 'username' in user_data:
+        user.username = user_data['username']
+    if 'full_name' in user_data:
+        user.full_name = user_data['full_name']
+    if 'role' in user_data:
+        if user_data['role'] not in [role.value for role in UserRole]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid role"
+            )
+        user.role = UserRole(user_data['role'])
+    
+    db.commit()
+    
+    return {"message": "User updated successfully"}
