@@ -25,6 +25,7 @@ function UnifiedStaffPanel() {
     losing_streak: 0, longest_win_streak: 0, longest_lose_streak: 0, coach_notes: ''
   });
   const [savingStats, setSavingStats] = useState(false);
+  const [messageFolder, setMessageFolder] = useState('inbox');
   const [loading, setLoading] = useState(true);
     const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -102,7 +103,7 @@ function UnifiedStaffPanel() {
         api.getAllBookings({ limit: 10 }),
         api.getAllTournaments({ limit: 10 }),
         api.getCourts({ limit: 10 }).catch(() => []),
-        api.getMessages('inbox', { limit: 20 }).catch(() => [])
+        api.getMessages(messageFolder, { limit: 20 }).catch(() => [])
       ]);
       setStats(statsData);
       setUsers(usersData || []);
@@ -124,6 +125,7 @@ function UnifiedStaffPanel() {
     }
     setSendingMessage(true);
     try {
+      console.log('Sending message:', messageForm);
       await api.sendMessage(messageForm);
       setShowMessageModal(false);
       setMessageForm({ receiver_id: '', subject: '', content: '', message_type: 'general' });
@@ -131,7 +133,7 @@ function UnifiedStaffPanel() {
       fetchData(); // Refresh messages
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message. Please try again.');
+      alert('Failed to send message: ' + error.message);
     }
     setSendingMessage(false);
   };
@@ -847,12 +849,30 @@ function UnifiedStaffPanel() {
                   + Compose
                 </button>
               </div>
+              <div className="mb-4 flex space-x-2">
+                <button
+                  onClick={() => { setMessageFolder('inbox'); fetchData(); }}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    messageFolder === 'inbox' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Inbox
+                </button>
+                <button
+                  onClick={() => { setMessageFolder('sent'); fetchData(); }}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    messageFolder === 'sent' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Sent
+                </button>
+              </div>
               <div className="space-y-3">
                 {messages.length > 0 ? messages.map((message) => (
                   <div 
                     key={message.id}
                     onClick={async () => {
-                      if (!message.is_read) {
+                      if (!message.is_read && messageFolder === 'inbox') {
                         try {
                           await api.markMessageAsRead(message.id);
                           message.is_read = true;
@@ -862,14 +882,14 @@ function UnifiedStaffPanel() {
                         }
                       }
                     }}
-                    className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}
+                    className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read && messageFolder === 'inbox' ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
-                        {!message.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
+                        {!message.is_read && messageFolder === 'inbox' && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
                         <div>
-                          <p className="font-medium">{message.sender?.username || 'Unknown'}</p>
-                          <p className="text-xs text-gray-500">To: {message.receiver?.username}</p>
+                          <p className="font-medium">{messageFolder === 'inbox' ? message.sender?.username || 'Unknown' : `To: ${message.receiver?.username || 'Unknown'}`}</p>
+                          <p className="text-xs text-gray-500">{messageFolder === 'inbox' ? `To: ${message.receiver?.username}` : `To: ${message.receiver?.username}`}</p>
                         </div>
                       </div>
                       <span className="text-xs text-gray-400">{message.created_at ? new Date(message.created_at).toLocaleDateString() : ''}</span>

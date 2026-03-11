@@ -923,14 +923,22 @@ class FirebaseApiService {
     const userId = this.getCurrentUserId();
     if (!userId) throw new Error('Not authenticated');
     
-    const docRef = await addDoc(collection(db, 'messages'), {
-      ...messageData,
-      sender_id: userId,
-      is_read: false,
-      createdAt: serverTimestamp()
-    });
+    console.log('Firebase sendMessage - userId:', userId, 'messageData:', messageData);
     
-    return { id: docRef.id, ...messageData };
+    try {
+      const docRef = await addDoc(collection(db, 'messages'), {
+        ...messageData,
+        sender_id: userId,
+        is_read: false,
+        createdAt: serverTimestamp()
+      });
+      
+      console.log('Message created with ID:', docRef.id);
+      return { id: docRef.id, ...messageData };
+    } catch (error) {
+      console.error('Error creating message in Firestore:', error);
+      throw error;
+    }
   }
 
   // ==================== NOTIFICATIONS ====================
