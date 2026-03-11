@@ -70,6 +70,54 @@ if not os.path.exists("uploads"):
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 logger.info("==> Static files mounted for /uploads")
 
+# Image upload endpoint (must be before router registration)
+@app.post("/api/upload/court-image")
+async def upload_court_image(file: UploadFile = File(...)):
+    """Upload court image and return URL"""
+    try:
+        # Validate file type
+        if not file.content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File must be an image"
+            )
+        
+        # Validate file size (5MB limit)
+        max_size = 5 * 1024 * 1024  # 5MB
+        file_content = await file.read()
+        if len(file_content) > max_size:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File size must be less than 5MB"
+            )
+        
+        # Create uploads directory if it doesn't exist
+        uploads_dir = "uploads/courts"
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
+        file_path = os.path.join(uploads_dir, unique_filename)
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_content)
+        
+        # Return the URL (adjust based on your hosting setup)
+        image_url = f"/uploads/courts/{unique_filename}"
+        
+        return {"image_url": image_url}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading image: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload image"
+        )
+
 # Include routers
 logger.info("==> Registering API routes...")
 app.include_router(auth.router)
@@ -192,50 +240,3 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
-
-@app.post("/api/upload/court-image")
-async def upload_court_image(file: UploadFile = File(...)):
-    """Upload court image and return URL"""
-    try:
-        # Validate file type
-        if not file.content_type.startswith('image/'):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File must be an image"
-            )
-        
-        # Validate file size (5MB limit)
-        max_size = 5 * 1024 * 1024  # 5MB
-        file_content = await file.read()
-        if len(file_content) > max_size:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File size must be less than 5MB"
-            )
-        
-        # Create uploads directory if it doesn't exist
-        uploads_dir = "uploads/courts"
-        os.makedirs(uploads_dir, exist_ok=True)
-        
-        # Generate unique filename
-        file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
-        unique_filename = f"{uuid.uuid4()}.{file_extension}"
-        file_path = os.path.join(uploads_dir, unique_filename)
-        
-        # Save file
-        with open(file_path, "wb") as buffer:
-            buffer.write(file_content)
-        
-        # Return the URL (adjust based on your hosting setup)
-        image_url = f"/uploads/courts/{unique_filename}"
-        
-        return {"image_url": image_url}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error uploading image: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upload image"
-        )
