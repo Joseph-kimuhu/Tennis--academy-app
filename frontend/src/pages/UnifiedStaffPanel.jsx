@@ -12,20 +12,12 @@ function UnifiedStaffPanel() {
   const [tournaments, setTournaments] = useState([]);
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateAccount, setShowCreateAccount] = useState(false);
-  const [showEditUser, setShowEditUser] = useState(false);
+    const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showAddCourt, setShowAddCourt] = useState(false);
   const [showAddTournament, setShowAddTournament] = useState(false);
   const [showAddBooking, setShowAddBooking] = useState(false);
-  const [newStaff, setNewStaff] = useState({
-    email: '',
-    username: '',
-    full_name: '',
-    password: '',
-    role: 'coach'
-  });
-  const [newCourt, setNewCourt] = useState({
+    const [newCourt, setNewCourt] = useState({
     name: '',
     club_id: '',
     court_type: 'hard',
@@ -149,19 +141,7 @@ function UnifiedStaffPanel() {
     }
   };
 
-  const handleCreateStaff = async (e) => {
-    e.preventDefault();
-    try {
-      await api.createStaffAccount(newStaff);
-      alert('Staff account created successfully!');
-      setShowCreateAccount(false);
-      setNewStaff({ email: '', username: '', full_name: '', password: '', role: 'coach' });
-      fetchData();
-    } catch (error) {
-      alert('Failed to create staff account: ' + (error.message || 'Unknown error'));
-    }
-  };
-
+  
   const handleCreateCourt = async (e) => {
     e.preventDefault();
     try {
@@ -321,15 +301,7 @@ function UnifiedStaffPanel() {
                 {isAdmin ? 'Administrator Access' : 'Coach Access (Full Admin Privileges)'}
               </p>
             </div>
-            <div className="mt-4 md:mt-0 flex gap-3">
-              {hasFullAccess && (
-                <button
-                  onClick={() => setShowCreateAccount(true)}
-                  className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-gray-100 transition-colors"
-                >
-                  ➕ Create Staff Account
-                </button>
-              )}
+            <div className="mt-4 md:mt-0">
               <button
                 onClick={fetchData}
                 className="px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl font-semibold hover:bg-white/30 transition-colors"
@@ -523,9 +495,9 @@ function UnifiedStaffPanel() {
                         </td>
                         <td className="py-4">
                           <span className={`px-3 py-1 text-xs rounded-full ${
-                            user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            user.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}>
-                            {user.is_active ? 'Active' : 'Inactive'}
+                            {user.is_active !== false ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="py-4">
@@ -551,7 +523,7 @@ function UnifiedStaffPanel() {
                                   onClick={() => toggleUserStatus(user.id, !user.is_active)}
                                   className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
                                 >
-                                  {user.is_active ? 'Disable' : 'Enable'}
+                                  {user.is_active !== false ? 'Disable' : 'Enable'}
                                 </button>
                                 <button 
                                   onClick={() => deleteUser(user.id)}

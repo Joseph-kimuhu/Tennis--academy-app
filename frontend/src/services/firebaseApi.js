@@ -41,6 +41,47 @@ class FirebaseApiService {
     return { id: userDoc.id, ...userDoc.data() };
   }
 
+  async getAllUsers(params = {}) {
+    const { limit: limitCount = 50 } = params;
+    
+    // Get all users and sort in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'users'), limit(limitCount));
+    const querySnapshot = await getDocs(q);
+    const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Sort by username
+    users.sort((a, b) => (a.username || '').localeCompare(b.username || ''));
+    
+    return users;
+  }
+
+  async updateUserStatus(userId, isActive) {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      is_active: isActive,
+      updatedAt: serverTimestamp()
+    });
+    
+    const updatedDoc = await getDoc(userRef);
+    return { id: updatedDoc.id, ...updatedDoc.data() };
+  }
+
+  async updateUserRole(userId, newRole) {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      role: newRole,
+      updatedAt: serverTimestamp()
+    });
+    
+    const updatedDoc = await getDoc(userRef);
+    return { id: updatedDoc.id, ...updatedDoc.data() };
+  }
+
+  async deleteUser(userId) {
+    await deleteDoc(doc(db, 'users', userId));
+    return true;
+  }
+
   async getUser(userId) {
     const userDoc = await getDoc(doc(db, 'users', userId));
     if (!userDoc.exists()) throw new Error('User not found');
@@ -345,6 +386,52 @@ class FirebaseApiService {
       status: 'cancelled',
       updatedAt: serverTimestamp()
     });
+  }
+
+  async getAllBookings(params = {}) {
+    const { limit: limitCount = 50 } = params;
+    
+    // Get all bookings and sort in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'bookings'), limit(limitCount));
+    const querySnapshot = await getDocs(q);
+    const bookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get user and court details for each booking
+    const detailedBookings = [];
+    for (const booking of bookings) {
+      if (booking.user_id) {
+        const userDoc = await getDoc(doc(db, 'users', booking.user_id));
+        if (userDoc.exists()) {
+          booking.user = { id: userDoc.id, ...userDoc.data() };
+        }
+      }
+      if (booking.court_id) {
+        const courtDoc = await getDoc(doc(db, 'courts', booking.court_id));
+        if (courtDoc.exists()) {
+          booking.court = { id: courtDoc.id, ...courtDoc.data() };
+        }
+      }
+      detailedBookings.push(booking);
+    }
+    
+    // Sort by start time
+    detailedBookings.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+    
+    return detailedBookings;
+  }
+
+  async getAllTournaments(params = {}) {
+    const { limit: limitCount = 50 } = params;
+    
+    // Get all tournaments and sort in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'tournaments'), limit(limitCount));
+    const querySnapshot = await getDocs(q);
+    const tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Sort by start date
+    tournaments.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+    
+    return tournaments;
   }
 
   // ==================== TOURNAMENTS ====================
