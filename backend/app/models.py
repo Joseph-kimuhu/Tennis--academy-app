@@ -21,6 +21,7 @@ class CourtType(enum.Enum):
     HARD = "hard"
     CLAY = "clay"
     GRASS = "grass"
+    CARPET = "carpet"
     SYNTHETIC = "synthetic"
 
 

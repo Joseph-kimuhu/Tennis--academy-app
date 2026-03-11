@@ -30,6 +30,7 @@ class FirebaseApiService {
 
   // ==================== USERS ====================
   
+    
   async getMe() {
     const userId = this.getCurrentUserId();
     if (!userId) throw new Error('Not authenticated');

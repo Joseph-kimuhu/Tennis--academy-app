@@ -9,7 +9,6 @@ function Register() {
     password: '',
     confirmPassword: '',
     full_name: '',
-    role: 'player',
     skill_level: 'beginner',
   });
   const [error, setError] = useState('');
@@ -43,7 +42,7 @@ function Register() {
         username: formData.username,
         password: formData.password,
         full_name: formData.full_name || null,
-        role: formData.role,
+        role: 'player',
         skill_level: formData.skill_level,
       };
 
@@ -157,41 +156,23 @@ function Register() {
               />
             </div>
 
-            {/* Role Selection */}
+            {/* Skill Level */}
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                I am a *
+              <label htmlFor="skill_level" className="block text-sm font-medium text-gray-700 mb-2">
+                Skill Level
               </label>
               <select
-                id="role"
-                name="role"
-                value={formData.role}
+                id="skill_level"
+                name="skill_level"
+                value={formData.skill_level}
                 onChange={handleChange}
                 className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
               >
-                <option value="player">Player</option>
+                <option value="beginner">🌱 Beginner</option>
+                <option value="intermediate">⭐ Intermediate</option>
+                <option value="advanced">🏆 Advanced</option>
               </select>
             </div>
-
-            {/* Skill Level (only for players) */}
-            {formData.role === 'player' && (
-              <div>
-                <label htmlFor="skill_level" className="block text-sm font-medium text-gray-700 mb-2">
-                  Skill Level
-                </label>
-                <select
-                  id="skill_level"
-                  name="skill_level"
-                  value={formData.skill_level}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                >
-                  <option value="beginner">🌱 Beginner</option>
-                  <option value="intermediate">⭐ Intermediate</option>
-                  <option value="advanced">🏆 Advanced</option>
-                </select>
-              </div>
-            )}
 
             {/* Password Fields */}
             <div>
