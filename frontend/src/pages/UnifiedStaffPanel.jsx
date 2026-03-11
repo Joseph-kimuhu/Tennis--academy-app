@@ -32,7 +32,9 @@ function UnifiedStaffPanel() {
     is_indoor: false,
     description: '',
     price_per_hour: 0,
-    location: ''
+    location: '',
+    image_url: '',
+    image_file: null
   });
   const [newTournament, setNewTournament] = useState({
     name: '',
@@ -163,18 +165,78 @@ function UnifiedStaffPanel() {
   const handleCreateCourt = async (e) => {
     e.preventDefault();
     try {
-      const courtData = {
+      let courtData = {
         ...newCourt,
         club_id: newCourt.club_id ? parseInt(newCourt.club_id, 10) : null,
         price_per_hour: parseFloat(newCourt.price_per_hour)
       };
+
+      // Handle image upload if present
+      if (newCourt.image_file) {
+        const formData = new FormData();
+        formData.append('file', newCourt.image_file);
+        
+        try {
+          const uploadResponse = await fetch('/api/upload/court-image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            courtData.image_url = uploadResult.image_url;
+          }
+        } catch (uploadError) {
+          console.warn('Image upload failed, creating court without image:', uploadError);
+        }
+      }
+
+      // Remove file from data before sending to API
+      delete courtData.image_file;
+
       await api.createCourt(courtData);
       alert('Court created successfully!');
       setShowAddCourt(false);
-      setNewCourt({ name: '', club_id: '', court_type: 'hard', is_indoor: false, description: '', price_per_hour: 0, location: '' });
+      setNewCourt({ 
+        name: '', 
+        club_id: '', 
+        court_type: 'hard', 
+        is_indoor: false, 
+        description: '', 
+        price_per_hour: 0, 
+        location: '', 
+        image_url: '',
+        image_file: null 
+      });
       fetchData();
     } catch (error) {
       alert('Failed to create court: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (JPG, PNG, etc.)');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image file must be less than 5MB');
+        return;
+      }
+
+      setNewCourt({ ...newCourt, image_file: file });
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewCourt(prev => ({ ...prev, image_url: reader.result }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -1015,6 +1077,30 @@ function UnifiedStaffPanel() {
                     rows="3"
                     placeholder="Court description and features..."
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Court Image</label>
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                    />
+                    <p className="text-xs text-gray-500">Upload a photo of the court (JPG, PNG, max 5MB)</p>
+                    
+                    {/* Image Preview */}
+                    {newCourt.image_url && (
+                      <div className="mt-3">
+                        <img
+                          src={newCourt.image_url}
+                          alt="Court preview"
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                        />
+                        <p className="text-xs text-green-600 mt-1">✓ Image selected</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center">
                   <input
