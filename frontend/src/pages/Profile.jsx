@@ -227,6 +227,7 @@ function Profile() {
         {/* Password Section */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Change Password</h2>
+          <p className="text-sm text-gray-500 mb-4">Enter your current login password to set a new password.</p>
           <form onSubmit={handlePasswordChange}>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>

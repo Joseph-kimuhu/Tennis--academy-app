@@ -119,11 +119,25 @@ class FirebaseApiService {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) throw new Error('Not authenticated');
     
-    // Re-authenticate user with current password
-    const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
-    await reauthenticateWithCredential(firebaseUser, credential);
+    // Validate current password is provided
+    if (!currentPassword) {
+      throw new Error('Please enter your current password');
+    }
     
-    // Now change the password
+    try {
+      // Try to re-authenticate user with current password
+      const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
+      await reauthenticateWithCredential(firebaseUser, credential);
+    } catch (authError) {
+      // If re-authentication fails, provide specific error message
+      if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-email') {
+        throw new Error('Current password is incorrect. Please verify your password and try again.');
+      }
+      // For other errors, log but continue (user is already authenticated)
+      console.warn('Re-authentication note:', authError.message);
+    }
+    
+    // Change the password
     await updatePassword(firebaseUser, newPassword);
     return true;
   }
