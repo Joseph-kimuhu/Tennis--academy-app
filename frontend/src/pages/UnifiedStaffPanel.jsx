@@ -20,6 +20,18 @@ function UnifiedStaffPanel() {
   const [showAddTournament, setShowAddTournament] = useState(false);
   const [showEditTournament, setShowEditTournament] = useState(false);
   const [editingTournament, setEditingTournament] = useState(null);
+  const [showAddMatch, setShowAddMatch] = useState(false);
+  const [showTournamentMatches, setShowTournamentMatches] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState(null);
+  const [tournamentMatches, setTournamentMatches] = useState([]);
+  const [newMatch, setNewMatch] = useState({
+    player1_id: '',
+    player2_id: '',
+    tournament_id: '',
+    scheduled_time: '',
+    court_id: '',
+    round: '1'
+  });
   const [showAddBooking, setShowAddBooking] = useState(false);
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
   const [confirmingBooking, setConfirmingBooking] = useState(null);
@@ -388,6 +400,80 @@ function UnifiedStaffPanel() {
       fetchData();
     } catch (error) {
       alert('Failed to update tournament: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const deleteTournament = async (tournamentId) => {
+    if (!confirm('Are you sure you want to delete this tournament? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      await api.deleteTournament(tournamentId);
+      alert('Tournament deleted successfully!');
+      fetchData();
+    } catch (error) {
+      alert('Failed to delete tournament: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const completeTournament = async (tournamentId) => {
+    if (!confirm('Are you sure you want to mark this tournament as completed? This will end the tournament.')) {
+      return;
+    }
+    try {
+      await api.completeTournament(tournamentId);
+      alert('Tournament completed successfully!');
+      fetchData();
+    } catch (error) {
+      alert('Failed to complete tournament: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const startAddMatch = (tournament) => {
+    setSelectedTournament(tournament);
+    setNewMatch({
+      player1_id: '',
+      player2_id: '',
+      tournament_id: tournament.id,
+      scheduled_time: '',
+      court_id: '',
+      round: '1'
+    });
+    setShowAddMatch(true);
+  };
+
+  const handleCreateMatch = async (e) => {
+    e.preventDefault();
+    try {
+      const matchData = {
+        ...newMatch,
+        scheduled_time: new Date(newMatch.scheduled_time).toISOString()
+      };
+      await api.createMatch(matchData);
+      alert('Match created successfully!');
+      setShowAddMatch(false);
+      setNewMatch({
+        player1_id: '',
+        player2_id: '',
+        tournament_id: '',
+        scheduled_time: '',
+        court_id: '',
+        round: '1'
+      });
+      fetchData();
+    } catch (error) {
+      alert('Failed to create match: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const viewTournamentMatches = async (tournament) => {
+    try {
+      const matches = await api.getTournamentMatches(tournament.id);
+      setTournamentMatches(matches);
+      setSelectedTournament(tournament);
+      setShowTournamentMatches(true);
+    } catch (error) {
+      alert('Failed to load tournament matches: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -774,6 +860,7 @@ function UnifiedStaffPanel() {
                         <p className="font-medium">{tournament.participant_count || 0} players</p>
                       </div>
                     </div>
+                    <div className="space-y-2">
                     <div className="flex gap-2">
                       {tournament.status === 'draft' && (
                         <button
@@ -790,11 +877,41 @@ function UnifiedStaffPanel() {
                         Edit
                       </button>
                       {tournament.status === 'active' && (
-                        <button className="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
-                          Cancel
+                        <button 
+                          onClick={() => completeTournament(tournament.id)}
+                          className="flex-1 px-3 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm"
+                        >
+                          Complete
                         </button>
                       )}
                     </div>
+                    <div className="flex gap-2">
+                      {tournament.status === 'active' && (
+                        <button 
+                          onClick={() => startAddMatch(tournament)}
+                          className="flex-1 px-3 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm"
+                        >
+                          + Add Match
+                        </button>
+                      )}
+                      {(tournament.status === 'active' || tournament.status === 'completed') && (
+                        <button 
+                          onClick={() => viewTournamentMatches(tournament)}
+                          className="flex-1 px-3 py-2 bg-teal-500 text-white rounded hover:bg-teal-600 text-sm"
+                        >
+                          View Matches
+                        </button>
+                      )}
+                      {tournament.status === 'completed' && (
+                        <button 
+                          onClick={() => deleteTournament(tournament.id)}
+                          className="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   </div>
                 ))}
               </div>
@@ -1727,6 +1844,173 @@ function UnifiedStaffPanel() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Match Modal */}
+      {showAddMatch && selectedTournament && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full max-h-screen overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add Match - {selectedTournament.name}</h2>
+            <form onSubmit={handleCreateMatch}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Player 1 *</label>
+                  <select
+                    required
+                    value={newMatch.player1_id}
+                    onChange={(e) => setNewMatch({ ...newMatch, player1_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">Select Player 1</option>
+                    {users.filter(u => u.role === 'player').map(player => (
+                      <option key={player.id} value={player.id}>{player.username}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Player 2 *</label>
+                  <select
+                    required
+                    value={newMatch.player2_id}
+                    onChange={(e) => setNewMatch({ ...newMatch, player2_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">Select Player 2</option>
+                    {users.filter(u => u.role === 'player').map(player => (
+                      <option key={player.id} value={player.id}>{player.username}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Round</label>
+                  <select
+                    value={newMatch.round}
+                    onChange={(e) => setNewMatch({ ...newMatch, round: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="1">Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                    <option value="4">Semi-Final</option>
+                    <option value="5">Final</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Court *</label>
+                  <select
+                    required
+                    value={newMatch.court_id}
+                    onChange={(e) => setNewMatch({ ...newMatch, court_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">Select Court</option>
+                    {courts.filter(c => c.is_available).map(court => (
+                      <option key={court.id} value={court.id}>{court.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled Time *</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={newMatch.scheduled_time}
+                    onChange={(e) => setNewMatch({ ...newMatch, scheduled_time: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMatch(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
+                >
+                  Create Match
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Tournament Matches Modal */}
+      {showTournamentMatches && selectedTournament && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Matches - {selectedTournament.name}</h2>
+              <button
+                onClick={() => setShowTournamentMatches(false)}
+                className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              {tournamentMatches.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No matches created yet for this tournament.</p>
+                  <button
+                    onClick={() => {
+                      setShowTournamentMatches(false);
+                      startAddMatch(selectedTournament);
+                    }}
+                    className="mt-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                  >
+                    Create First Match
+                  </button>
+                </div>
+              ) : (
+                tournamentMatches.map((match) => (
+                  <div key={match.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-semibold">Round {match.round}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(match.scheduled_time).toLocaleDateString()} at{' '}
+                          {new Date(match.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`px-3 py-1 text-sm rounded-full ${
+                          match.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                          match.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {match.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <p className="font-medium">{match.player1?.username || 'Player 1'}</p>
+                          <p className="text-sm text-gray-500">vs</p>
+                          <p className="font-medium">{match.player2?.username || 'Player 2'}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">Court: {match.court_id || 'TBD'}</p>
+                        {match.winner_id && (
+                          <p className="text-sm font-medium text-green-600">
+                            Winner: {match.winner_id === match.player1_id ? match.player1?.username : match.player2?.username}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

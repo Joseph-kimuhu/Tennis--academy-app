@@ -529,6 +529,65 @@ class FirebaseApiService {
     return { id: updatedDoc.id, ...updatedDoc.data() };
   }
 
+  async deleteTournament(tournamentId) {
+    await deleteDoc(doc(db, 'tournaments', tournamentId));
+    return true;
+  }
+
+  async completeTournament(tournamentId) {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    await updateDoc(tournamentRef, {
+      status: 'completed',
+      completed_at: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  }
+
+  async createMatch(matchData) {
+    const docRef = await addDoc(collection(db, 'matches'), {
+      ...matchData,
+      status: 'scheduled',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return { id: docRef.id, ...matchData };
+  }
+
+  async getTournamentMatches(tournamentId) {
+    const q = query(
+      collection(db, 'matches'),
+      where('tournament_id', '==', tournamentId),
+      orderBy('created_at', 'asc')
+    );
+    const querySnapshot = await getDocs(q);
+    const matches = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get player details for each match
+    const detailedMatches = [];
+    for (const match of matches) {
+      const detailedMatch = { ...match };
+      
+      if (match.player1_id) {
+        const player1Doc = await getDoc(doc(db, 'users', match.player1_id));
+        if (player1Doc.exists()) {
+          detailedMatch.player1 = { id: player1Doc.id, ...player1Doc.data() };
+        }
+      }
+      
+      if (match.player2_id) {
+        const player2Doc = await getDoc(doc(db, 'users', match.player2_id));
+        if (player2Doc.exists()) {
+          detailedMatch.player2 = { id: player2Doc.id, ...player2Doc.data() };
+        }
+      }
+      
+      detailedMatches.push(detailedMatch);
+    }
+    
+    return detailedMatches;
+  }
+
   async registerForTournament(tournamentId) {
     const userId = this.getCurrentUserId();
     if (!userId) throw new Error('Not authenticated');
