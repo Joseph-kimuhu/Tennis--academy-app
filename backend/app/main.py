@@ -10,8 +10,8 @@ import os
 import uuid
 from .database import engine, Base, SessionLocal, get_db
 from .models import User, UserRole
-from .routes import auth, users, bookings, tournaments, courts, clubs, staff
-from .security import get_password_hash
+from .routes import auth, users, bookings, tournaments, courts, clubs, staff, admin, coach_panel, coaching, matches
+from .auth import get_password_hash
 
 # Configure logging
 logging.basicConfig(
@@ -76,7 +76,12 @@ app.include_router(users.router)
 app.include_router(courts.router)
 app.include_router(bookings.router)
 app.include_router(tournaments.router)
+app.include_router(clubs.router)
 app.include_router(staff.router)
+app.include_router(admin.router)
+app.include_router(coach_panel.router)
+app.include_router(coaching.router)
+app.include_router(matches.router)
 logger.info("==> All routes registered successfully")
 
 
