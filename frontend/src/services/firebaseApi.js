@@ -390,8 +390,14 @@ class FirebaseApiService {
     
     if (!tournamentDoc.exists()) throw new Error('Tournament not found');
     
+    const tournamentData = tournamentDoc.data();
+    
+    // Get user info for notification
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const playerName = userDoc.exists() ? userDoc.data().username : 'A player';
+    
     // Create tournament_registrations collection with pending payment
-    await addDoc(collection(db, 'tournament_registrations'), {
+    const registrationRef = await addDoc(collection(db, 'tournament_registrations'), {
       tournament_id: tournamentId,
       user_id: userId,
       status: 'pending_payment',
@@ -400,6 +406,13 @@ class FirebaseApiService {
       payment_reference: '',
       registered_at: serverTimestamp()
     });
+    
+    // Notify coaches about new registration
+    try {
+      await this.notifyCoachesOfRegistration(playerName, tournamentData.name, registrationRef.id);
+    } catch (e) {
+      console.warn('Could not notify coaches:', e);
+    }
   }
 
   async getTournamentParticipants(tournamentId) {
@@ -458,29 +471,51 @@ class FirebaseApiService {
     
     const registrationData = registrationDoc.data();
     
+    // Get tournament name for notification
+    const tournamentDoc = await getDoc(doc(db, 'tournaments', registrationData.tournament_id));
+    const tournamentName = tournamentDoc.exists() ? tournamentDoc.data().name : 'the tournament';
+    
     // Update registration status to approved
     await updateDoc(registrationRef, {
       status: 'approved',
       approved_at: serverTimestamp()
     });
     
-    // Also add user to tournament's approved participants
-    const tournamentRef = doc(db, 'tournaments', registrationData.tournament_id);
-    await updateDoc(tournamentRef, {
-      approved_participants: arrayUnion(registrationData.user_id),
-      updatedAt: serverTimestamp()
-    });
+    // Notify player of approval
+    try {
+      await this.notifyPlayerOfApproval(registrationData.user_id, tournamentName, 'approved');
+    } catch (e) {
+      console.warn('Could not notify player:', e);
+    }
     
     return true;
   }
 
   async rejectTournamentRegistration(registrationId, reason) {
     const registrationRef = doc(db, 'tournament_registrations', registrationId);
+    const registrationDoc = await getDoc(registrationRef);
+    
+    if (!registrationDoc.exists()) throw new Error('Registration not found');
+    
+    const registrationData = registrationDoc.data();
+    
+    // Get tournament name for notification
+    const tournamentDoc = await getDoc(doc(db, 'tournaments', registrationData.tournament_id));
+    const tournamentName = tournamentDoc.exists() ? tournamentDoc.data().name : 'the tournament';
+    
     await updateDoc(registrationRef, {
       status: 'rejected',
       rejection_reason: reason,
       rejected_at: serverTimestamp()
     });
+    
+    // Notify player of rejection
+    try {
+      await this.notifyPlayerOfApproval(registrationData.user_id, tournamentName, 'rejected');
+    } catch (e) {
+      console.warn('Could not notify player:', e);
+    }
+    
     return true;
   }
 
@@ -656,6 +691,50 @@ class FirebaseApiService {
     });
     
     return { id: docRef.id, ...messageData };
+  }
+
+  // ==================== NOTIFICATIONS ====================
+  
+  async createNotification(userId, title, message, type = 'general') {
+    await addDoc(collection(db, 'notifications'), {
+      user_id: userId,
+      title,
+      message,
+      type,
+      is_read: false,
+      created_at: serverTimestamp()
+    });
+  }
+
+  async notifyCoachesOfRegistration(playerName, tournamentName, registrationId) {
+    // Get all coaches
+    const coachesQuery = query(
+      collection(db, 'users'),
+      where('role', '==', 'coach')
+    );
+    const coachesSnapshot = await getDocs(coachesQuery);
+    
+    // Create notification for each coach
+    for (const coachDoc of coachesSnapshot.docs) {
+      await addDoc(collection(db, 'notifications'), {
+        user_id: coachDoc.id,
+        title: 'New Tournament Registration',
+        message: `${playerName} has registered for ${tournamentName}. Please review and approve.`,
+        type: 'tournament_registration',
+        reference_id: registrationId,
+        is_read: false,
+        created_at: serverTimestamp()
+      });
+    }
+  }
+
+  async notifyPlayerOfApproval(playerId, tournamentName, status) {
+    await this.createNotification(
+      playerId,
+      `Tournament Registration ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+      `Your registration for ${tournamentName} has been ${status}. ${status === 'approved' ? 'Good luck!' : 'Please contact the coach for more information.'}`,
+      'tournament_approval'
+    );
   }
 
   async markMessageAsRead(messageId) {
