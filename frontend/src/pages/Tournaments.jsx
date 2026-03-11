@@ -10,6 +10,8 @@ function Tournaments() {
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [showBracket, setShowBracket] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ phone: '', reference: '' });
   const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
@@ -51,6 +53,32 @@ function Tournaments() {
     try {
       await api.joinTournament(tournamentId);
       
+      // Show payment modal instead of success notification
+      setShowPaymentModal(true);
+      setPaymentForm({ phone: '', reference: '' });
+      
+      fetchTournaments();
+      handleTournamentSelect(selectedTournament);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Find the user's registration
+      const myRegistrations = participants.filter(p => p.user_id === user?.id);
+      if (myRegistrations.length === 0) {
+        alert('Registration not found');
+        return;
+      }
+      
+      const registrationId = myRegistrations[0].id;
+      await api.confirmTournamentPayment(registrationId, paymentForm.phone, paymentForm.reference);
+      
+      setShowPaymentModal(false);
+      
       // Show success notification
       const notification = document.createElement('div');
       notification.className = 'fixed top-4 right-4 bg-gradient-to-r from-tennis-green to-tennis-green-light text-white px-6 py-4 rounded-xl shadow-tennis-lg z-50 animate-slide-in';
@@ -58,8 +86,8 @@ function Tournaments() {
         <div class="flex items-center gap-3">
           <span class="text-2xl">✅</span>
           <div>
-            <p class="font-bold">Registration Successful!</p>
-            <p class="text-sm text-green-50">You've registered for ${selectedTournament.name}</p>
+            <p class="font-bold">Payment Submitted!</p>
+            <p class="text-sm text-green-50">Your payment is being processed. Coach will approve shortly.</p>
           </div>
         </div>
       `;
@@ -69,7 +97,6 @@ function Tournaments() {
         notification.remove();
       }, 5000);
       
-      fetchTournaments();
       handleTournamentSelect(selectedTournament);
     } catch (error) {
       alert(error.message);
@@ -406,6 +433,73 @@ function Tournaments() {
           </div>
         )}
       </div>
+      
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Complete Payment</h3>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+              <p className="font-semibold text-yellow-800 mb-2">💳 Payment Instructions</p>
+              <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
+                <li>Go to M-Pesa on your phone</li>
+                <li>Select "Pay Bill"</li>
+                <li>Enter Business Number: <strong>0738839851</strong></li>
+                <li>Enter Account Number: <strong>{selectedTournament?.name}</strong></li>
+                <li>Enter the tournament fee amount</li>
+                <li>Enter your M-Pesa PIN to confirm</li>
+              </ol>
+            </div>
+            
+            <form onSubmit={handlePaymentSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  M-Pesa Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={paymentForm.phone}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, phone: e.target.value })}
+                  placeholder="e.g., 254712345678"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  M-Pesa Transaction Reference
+                </label>
+                <input
+                  type="text"
+                  value={paymentForm.reference}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
+                  placeholder="e.g., ABC123XYZ"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(false)}
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-all"
+                >
+                  Confirm Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

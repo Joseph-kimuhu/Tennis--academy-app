@@ -24,6 +24,9 @@ function CoachPanel() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showTournamentModal, setShowTournamentModal] = useState(false);
   const [showCourtModal, setShowCourtModal] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState(null);
+  const [tournamentRegistrations, setTournamentRegistrations] = useState([]);
+  const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
 
   const [messageForm, setMessageForm] = useState({ receiver_id: '', subject: '', content: '', message_type: 'general' });
   const [sessionForm, setSessionForm] = useState({
@@ -681,6 +684,21 @@ function CoachPanel() {
                         >
                           Delete
                         </button>
+                        <button
+                          onClick={async () => {
+                            setSelectedTournament(tournament);
+                            try {
+                              const regs = await api.getTournamentRegistrations(tournament.id);
+                              setTournamentRegistrations(regs || []);
+                              setShowRegistrationsModal(true);
+                            } catch (error) {
+                              alert('Failed to load registrations: ' + error.message);
+                            }
+                          }}
+                          className="text-blue-600 hover:text-blue-700 text-sm ml-2"
+                        >
+                          View Registrations
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1286,6 +1304,103 @@ function CoachPanel() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Tournament Registrations Modal */}
+      {showRegistrationsModal && selectedTournament && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Tournament Registrations
+              </h3>
+              <p className="text-gray-600 mb-6">{selectedTournament.name}</p>
+              
+              {tournamentRegistrations.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No registrations yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {tournamentRegistrations.map((reg) => (
+                    <div key={reg.id} className="border rounded-xl p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-gray-900">{reg.username}</p>
+                          <p className="text-sm text-gray-500">{reg.email}</p>
+                          <div className="flex gap-4 mt-2 text-sm">
+                            <span className={`px-2 py-1 rounded ${
+                              reg.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              Payment: {reg.payment_status}
+                            </span>
+                            <span className={`px-2 py-1 rounded ${
+                              reg.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              reg.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              Status: {reg.status}
+                            </span>
+                          </div>
+                          {reg.payment_status === 'paid' && (
+                            <div className="mt-2 text-sm text-gray-600">
+                              <p>Phone: {reg.payment_phone}</p>
+                              <p>Reference: {reg.payment_reference}</p>
+                            </div>
+                          )}
+                        </div>
+                        {reg.status !== 'approved' && reg.status !== 'rejected' && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await api.approveTournamentRegistration(reg.id);
+                                  const regs = await api.getTournamentRegistrations(selectedTournament.id);
+                                  setTournamentRegistrations(regs || []);
+                                  alert('Registration approved!');
+                                } catch (error) {
+                                  alert('Failed to approve: ' + error.message);
+                                }
+                              }}
+                              className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={async () => {
+                                const reason = prompt('Enter rejection reason:');
+                                if (reason === null) return;
+                                try {
+                                  await api.rejectTournamentRegistration(reg.id, reason);
+                                  const regs = await api.getTournamentRegistrations(selectedTournament.id);
+                                  setTournamentRegistrations(regs || []);
+                                  alert('Registration rejected!');
+                                } catch (error) {
+                                  alert('Failed to reject: ' + error.message);
+                                }
+                              }}
+                              className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <button
+                onClick={() => {
+                  setShowRegistrationsModal(false);
+                  setSelectedTournament(null);
+                }}
+                className="mt-6 w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-all"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

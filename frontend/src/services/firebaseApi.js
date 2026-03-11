@@ -390,6 +390,8 @@ class FirebaseApiService {
     
     if (!tournamentDoc.exists()) throw new Error('Tournament not found');
     
+    const tournamentData = tournamentDoc.data();
+    
     // Add user to participants
     await updateDoc(tournamentRef, {
       participants: arrayUnion(userId),
@@ -397,13 +399,131 @@ class FirebaseApiService {
       updatedAt: serverTimestamp()
     });
     
-    // Create tournament_registrations collection
+    // Create tournament_registrations collection with pending payment
     await addDoc(collection(db, 'tournament_registrations'), {
       tournament_id: tournamentId,
       user_id: userId,
-      status: 'registered',
+      status: 'pending_payment',
+      payment_status: 'pending',
+      payment_phone: '',
+      payment_reference: '',
       registered_at: serverTimestamp()
     });
+  }
+
+  async getTournamentParticipants(tournamentId) {
+    // Get all registrations for this tournament
+    const q = query(
+      collection(db, 'tournament_registrations'),
+      where('tournament_id', '==', tournamentId)
+    );
+    
+    const snapshot = await getDocs(q);
+    const registrations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get user details for each participant
+    const participants = [];
+    for (const reg of registrations) {
+      const userDoc = await getDoc(doc(db, 'users', reg.user_id));
+      if (userDoc.exists()) {
+        participants.push({
+          id: reg.id,
+          user_id: reg.user_id,
+          username: userDoc.data().username,
+          email: userDoc.data().email,
+          status: reg.status,
+          payment_status: reg.payment_status,
+          payment_phone: reg.payment_phone,
+          payment_reference: reg.payment_reference,
+          registered_at: reg.registered_at
+        });
+      }
+    }
+    
+    return participants;
+  }
+
+  async confirmTournamentPayment(registrationId, paymentPhone, paymentReference) {
+    const registrationRef = doc(db, 'tournament_registrations', registrationId);
+    await updateDoc(registrationRef, {
+      payment_phone: paymentPhone,
+      payment_reference: paymentReference,
+      payment_status: 'paid',
+      payment_confirmed_at: serverTimestamp()
+    });
+    return true;
+  }
+
+  // Alias for registerForTournament for compatibility
+  async joinTournament(tournamentId) {
+    return this.registerForTournament(tournamentId);
+  }
+
+  async approveTournamentRegistration(registrationId) {
+    const registrationRef = doc(db, 'tournament_registrations', registrationId);
+    const registrationDoc = await getDoc(registrationRef);
+    
+    if (!registrationDoc.exists()) throw new Error('Registration not found');
+    
+    const registrationData = registrationDoc.data();
+    
+    // Update registration status to approved
+    await updateDoc(registrationRef, {
+      status: 'approved',
+      approved_at: serverTimestamp()
+    });
+    
+    // Also add user to tournament's approved participants
+    const tournamentRef = doc(db, 'tournaments', registrationData.tournament_id);
+    await updateDoc(tournamentRef, {
+      approved_participants: arrayUnion(registrationData.user_id),
+      updatedAt: serverTimestamp()
+    });
+    
+    return true;
+  }
+
+  async rejectTournamentRegistration(registrationId, reason) {
+    const registrationRef = doc(db, 'tournament_registrations', registrationId);
+    await updateDoc(registrationRef, {
+      status: 'rejected',
+      rejection_reason: reason,
+      rejected_at: serverTimestamp()
+    });
+    return true;
+  }
+
+  async getTournamentRegistrations(tournamentId, status) {
+    let constraints = [where('tournament_id', '==', tournamentId)];
+    if (status) {
+      constraints.push(where('status', '==', status));
+    }
+    
+    const q = query(collection(db, 'tournament_registrations'), ...constraints);
+    const snapshot = await getDocs(q);
+    const registrations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get user details for each registration
+    const detailedRegistrations = [];
+    for (const reg of registrations) {
+      const userDoc = await getDoc(doc(db, 'users', reg.user_id));
+      if (userDoc.exists()) {
+        detailedRegistrations.push({
+          id: reg.id,
+          user_id: reg.user_id,
+          username: userDoc.data().username,
+          email: userDoc.data().email,
+          full_name: userDoc.data().full_name,
+          status: reg.status,
+          payment_status: reg.payment_status,
+          payment_phone: reg.payment_phone,
+          payment_reference: reg.payment_reference,
+          registered_at: reg.registered_at
+        });
+      }
+    }
+    
+    return detailedRegistrations;
   }
 
   // ==================== MATCHES ====================
