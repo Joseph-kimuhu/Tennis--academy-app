@@ -390,15 +390,6 @@ class FirebaseApiService {
     
     if (!tournamentDoc.exists()) throw new Error('Tournament not found');
     
-    const tournamentData = tournamentDoc.data();
-    
-    // Add user to participants
-    await updateDoc(tournamentRef, {
-      participants: arrayUnion(userId),
-      participant_count: increment(1),
-      updatedAt: serverTimestamp()
-    });
-    
     // Create tournament_registrations collection with pending payment
     await addDoc(collection(db, 'tournament_registrations'), {
       tournament_id: tournamentId,

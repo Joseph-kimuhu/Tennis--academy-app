@@ -13,6 +13,14 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Notifications - users can read their own, coaches can read all
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+        (resource.data.user_id == request.auth.uid || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['coach', 'admin']);
+      allow write: if request.auth != null;
+    }
+    
     // Tournaments - everyone can read, only coaches/admins can write
     match /tournaments/{tournamentId} {
       allow read: if request.auth != null;
@@ -45,6 +53,14 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['coach', 'admin'];
+    }
+    
+    // Bookings - authenticated users can read their own, coaches can read all
+    match /bookings/{bookingId} {
+      allow read: if request.auth != null && 
+        (resource.data.user_id == request.auth.uid || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['coach', 'admin']);
+      allow write: if request.auth != null;
     }
     
     // Messages - only sender and recipient can read/write
