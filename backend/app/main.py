@@ -28,12 +28,15 @@ logger.info(f"==> Docs on specifying a Python version: https://render.com/docs/p
 logger.info(f"==> Environment: {settings.ENVIRONMENT if hasattr(settings, 'ENVIRONMENT') else 'production'}")
 
 # Create database tables (only when running, not on import)
+# Base.metadata.create_all() is SAFE - it only creates missing tables, never deletes existing data
 try:
     logger.info("==> Connecting to database...")
     Base.metadata.create_all(bind=engine)
-    logger.info("==> Database tables created successfully")
+    logger.info("==> ✅ Database tables ready - existing tables and data are protected")
+    logger.info("==> 🛡️  Tables are only created if they don't exist - no data deletion")
 except Exception as e:
     logger.warning(f"==> Database initialization skipped: {str(e)}")
+    logger.warning("==> ⚠️  This may affect app functionality - check database connection")
 
 logger.info("==> Initializing FastAPI application...")
 app = FastAPI(
@@ -161,12 +164,10 @@ def seed_default_users():
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database and create tables"""
+    """Initialize application startup"""
     logger.info("==> 🎾 Starting Tennis Academy Application...")
     
-    # Create database tables
-    create_tables()
-    
+    # Database tables already created at module level
     # Seeding disabled - admins and coaches will create their own accounts
     logger.info("==> 🛡️  Automatic seeding disabled - staff will create accounts manually")
     
