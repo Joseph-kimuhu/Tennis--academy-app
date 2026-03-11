@@ -213,11 +213,10 @@ function PlayerDashboard() {
               { id: 'bookings', label: 'My Bookings', icon: '📅', badge: myBookings.length },
               { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
               { id: 'training', label: 'Training', icon: '🎾' },
-              { id: 'players', label: 'Players', icon: '👥' },
               { id: 'matches', label: 'My Matches', icon: '⚔️' },
               { id: 'messages', label: 'Messages', icon: '✉️', badge: messages.filter(m => !m.is_read).length },
               { id: 'leaderboard', label: 'Leaderboard', icon: '🏅' },
-              { id: 'announcements', label: 'News', icon: '📢', badge: announcements.length },
+              { id: 'announcements', label: 'Announcements', icon: '📢', badge: announcements.length },
               { id: 'notifications', label: 'Notifications', icon: '🔔', badge: notifications.filter(n => !n.is_read).length },
             ].map((tab) => (
               <button
@@ -353,11 +352,25 @@ function PlayerDashboard() {
                         {tournament.status}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-600 space-y-1">
+                    <div className="text-sm text-gray-600 space-y-1 mb-3">
                       <div>📅 {new Date(tournament.start_date).toLocaleDateString()}</div>
                       <div>👥 {tournament.participant_count || 0} players</div>
                       <div>💰 {tournament.entry_fee || 0} KES</div>
                     </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.registerForTournament(tournament.id);
+                          alert('Successfully registered for tournament!');
+                          fetchData();
+                        } catch (error) {
+                          alert('Failed to register: ' + error.message);
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                    >
+                      Register Now
+                    </button>
                   </div>
                 ))}
                 {activeTournaments.length === 0 && (

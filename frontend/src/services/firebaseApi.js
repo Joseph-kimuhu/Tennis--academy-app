@@ -15,10 +15,12 @@ import {
   serverTimestamp,
   increment,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  setDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
+import { updateEmail, updatePassword, updateProfile } from 'firebase/auth';
 
 class FirebaseApiService {
   // Helper to get current user ID
@@ -81,6 +83,71 @@ class FirebaseApiService {
     
     const updatedDoc = await getDoc(userRef);
     return { id: updatedDoc.id, ...updatedDoc.data() };
+  }
+
+  async updateProfile(userData) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    const firebaseUser = auth.currentUser;
+    
+    // Update Firebase Auth profile (display name)
+    if (userData.username && firebaseUser) {
+      await updateProfile(firebaseUser, {
+        displayName: userData.username
+      });
+    }
+    
+    // Update email if provided
+    if (userData.email && firebaseUser && userData.email !== firebaseUser.email) {
+      await updateEmail(firebaseUser, userData.email);
+    }
+    
+    // Update Firestore user document (except password)
+    const { password, ...dataWithoutPassword } = userData;
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      ...dataWithoutPassword,
+      updatedAt: serverTimestamp()
+    });
+    
+    const updatedDoc = await getDoc(userRef);
+    return { id: updatedDoc.id, ...updatedDoc.data() };
+  }
+
+  async changePassword(newPassword) {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) throw new Error('Not authenticated');
+    
+    await updatePassword(firebaseUser, newPassword);
+    return true;
+  }
+
+  async uploadProfilePicture(file) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    // Upload to Firebase Storage
+    const storageRef = ref(storage, `profile_pictures/${userId}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    
+    // Update user document
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      profile_picture: downloadURL,
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update Firebase Auth profile
+    const firebaseUser = auth.currentUser;
+    if (firebaseUser) {
+      await updateProfile(firebaseUser, {
+        photoURL: downloadURL
+      });
+    }
+    
+    return downloadURL;
   }
 
   async getPlayerStatistics(playerId) {
@@ -600,23 +667,7 @@ class FirebaseApiService {
       ranking_points: userData.ranking_points || 0
     };
   }
-
-  // Placeholder methods for features not yet implemented
-  async uploadProfilePicture(file) {
-    const userId = this.getCurrentUserId();
-    if (!userId) throw new Error('Not authenticated');
-    
-    const storageRef = ref(storage, `profile_pictures/${userId}`);
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-    
-    await this.updateUser(userId, { profile_picture: downloadURL });
-    return downloadURL;
-  }
 }
-
-// Need to import setDoc
-import { setDoc } from 'firebase/firestore';
 
 const api = new FirebaseApiService();
 export default api;
