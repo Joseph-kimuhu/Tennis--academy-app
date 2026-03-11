@@ -17,6 +17,12 @@ function UnifiedStaffPanel() {
   const [showAddCourt, setShowAddCourt] = useState(false);
   const [showAddTournament, setShowAddTournament] = useState(false);
   const [showAddBooking, setShowAddBooking] = useState(false);
+  const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
+  const [confirmingBooking, setConfirmingBooking] = useState(null);
+  const [paymentData, setPaymentData] = useState({
+    payment_phone: '',
+    payment_reference: ''
+  });
     const [newCourt, setNewCourt] = useState({
     name: '',
     club_id: '',
@@ -259,6 +265,51 @@ function UnifiedStaffPanel() {
       fetchData();
     } catch (error) {
       alert('Failed to create booking: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handlePaymentConfirm = async (e) => {
+    e.preventDefault();
+    try {
+      await api.confirmBookingPayment(confirmingBooking.id, paymentData.payment_phone, paymentData.payment_reference);
+      alert('Payment confirmed successfully!');
+      setShowPaymentConfirm(false);
+      setConfirmingBooking(null);
+      setPaymentData({ payment_phone: '', payment_reference: '' });
+      fetchData();
+    } catch (error) {
+      alert('Failed to confirm payment: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const startPaymentConfirm = (booking) => {
+    setConfirmingBooking(booking);
+    setPaymentData({
+      payment_phone: booking.payment_phone || '',
+      payment_reference: booking.payment_reference || ''
+    });
+    setShowPaymentConfirm(true);
+  };
+
+  const publishTournament = async (tournamentId) => {
+    if (!confirm('Are you sure you want to publish this tournament? It will become visible to all players.')) {
+      return;
+    }
+    try {
+      await api.publishTournament(tournamentId);
+      alert('Tournament published successfully!');
+      fetchData();
+    } catch (error) {
+      alert('Failed to publish tournament: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const toggleCourtStatus = async (courtId, isAvailable) => {
+    try {
+      await api.updateCourtStatus(courtId, isAvailable);
+      fetchData();
+    } catch (error) {
+      alert('Failed to update court status: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -557,7 +608,7 @@ function UnifiedStaffPanel() {
               <div className="space-y-4">
                 {bookings.map((booking) => (
                   <div key={booking.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
                         <p className="font-semibold">{booking.court?.name || 'Court Booking'}</p>
                         <p className="text-gray-600">User: {booking.user?.username}</p>
@@ -565,16 +616,45 @@ function UnifiedStaffPanel() {
                           {new Date(booking.start_time).toLocaleDateString()} at{' '}
                           {new Date(booking.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
+                        {booking.payment_phone && (
+                          <p className="text-sm text-gray-500">Phone: {booking.payment_phone}</p>
+                        )}
+                        {booking.payment_reference && (
+                          <p className="text-sm text-gray-500">Ref: {booking.payment_reference}</p>
+                        )}
                       </div>
                       <div className="text-right">
                         <span className={`px-3 py-1 text-sm rounded-full ${
-                          booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                          booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
+                          'bg-yellow-100 text-yellow-800'
                         }`}>
                           {booking.status}
+                        </span>
+                        <span className={`px-3 py-1 text-sm rounded-full ml-2 ${
+                          booking.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {booking.payment_status || 'pending'}
                         </span>
                         <p className="text-lg font-bold text-green-600 mt-2">{booking.court?.price_per_hour} KES</p>
                       </div>
                     </div>
+                    {booking.payment_status !== 'paid' && booking.status !== 'cancelled' && (
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => startPaymentConfirm(booking)}
+                          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                        >
+                          Confirm Payment
+                        </button>
+                        <button
+                          onClick={() => api.cancelBooking(booking.id).then(fetchData)}
+                          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -597,12 +677,16 @@ function UnifiedStaffPanel() {
                   <div key={tournament.id} className="border border-gray-200 rounded-lg p-6">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="text-lg font-semibold">{tournament.name}</h3>
-                      <span className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full">
+                      <span className={`px-3 py-1 text-sm rounded-full ${
+                        tournament.status === 'active' ? 'bg-green-100 text-green-800' : 
+                        tournament.status === 'completed' ? 'bg-gray-100 text-gray-800' : 
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
                         {tournament.status}
                       </span>
                     </div>
                     <p className="text-gray-600 mb-4">{tournament.description}</p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-4">
                       <div>
                         <p className="text-sm text-gray-500">Start Date</p>
                         <p className="font-medium">{new Date(tournament.start_date).toLocaleDateString()}</p>
@@ -611,6 +695,24 @@ function UnifiedStaffPanel() {
                         <p className="text-sm text-gray-500">Participants</p>
                         <p className="font-medium">{tournament.participant_count || 0} players</p>
                       </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {tournament.status === 'draft' && (
+                        <button
+                          onClick={() => publishTournament(tournament.id)}
+                          className="flex-1 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                        >
+                          Publish Tournament
+                        </button>
+                      )}
+                      <button className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                        Edit
+                      </button>
+                      {tournament.status === 'active' && (
+                        <button className="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -650,7 +752,10 @@ function UnifiedStaffPanel() {
                       <button className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
                         Edit
                       </button>
-                      <button className="flex-1 px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm">
+                      <button 
+                        onClick={() => toggleCourtStatus(court.id, !court.is_available)}
+                        className="flex-1 px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
+                      >
                         {court.is_available ? 'Close' : 'Open'}
                       </button>
                     </div>
@@ -1243,6 +1348,65 @@ function UnifiedStaffPanel() {
                   className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
                 >
                   Add Booking
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Confirmation Modal */}
+      {showPaymentConfirm && confirmingBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Confirm Payment</h2>
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <p className="font-semibold">{confirmingBooking.court?.name || 'Court Booking'}</p>
+              <p className="text-gray-600">User: {confirmingBooking.user?.username}</p>
+              <p className="text-sm text-gray-500">
+                {new Date(confirmingBooking.start_time).toLocaleDateString()} at{' '}
+                {new Date(confirmingBooking.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <p className="text-lg font-bold text-green-600 mt-2">{confirmingBooking.court?.price_per_hour} KES</p>
+            </div>
+            <form onSubmit={handlePaymentConfirm}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Phone Number</label>
+                  <input
+                    type="text"
+                    required
+                    value={paymentData.payment_phone}
+                    onChange={(e) => setPaymentData({ ...paymentData, payment_phone: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., 0712345678"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Reference</label>
+                  <input
+                    type="text"
+                    required
+                    value={paymentData.payment_reference}
+                    onChange={(e) => setPaymentData({ ...paymentData, payment_reference: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., ABC123XYZ"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentConfirm(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
+                >
+                  Confirm Payment
                 </button>
               </div>
             </form>

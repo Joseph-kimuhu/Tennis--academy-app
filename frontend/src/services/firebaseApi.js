@@ -307,6 +307,16 @@ class FirebaseApiService {
     await deleteDoc(doc(db, 'courts', courtId));
   }
 
+  async updateCourtStatus(courtId, isAvailable) {
+    const courtRef = doc(db, 'courts', courtId);
+    await updateDoc(courtRef, {
+      is_available: isAvailable,
+      updatedAt: serverTimestamp()
+    });
+    const updatedDoc = await getDoc(courtRef);
+    return { id: updatedDoc.id, ...updatedDoc.data() };
+  }
+
   // ==================== BOOKINGS ====================
 
   async getMyBookings() {
@@ -386,6 +396,19 @@ class FirebaseApiService {
       status: 'cancelled',
       updatedAt: serverTimestamp()
     });
+  }
+
+  async confirmBookingPayment(bookingId, paymentPhone, paymentReference) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      payment_status: 'paid',
+      payment_phone: paymentPhone,
+      payment_reference: paymentReference,
+      payment_confirmed_at: serverTimestamp(),
+      status: 'confirmed',
+      updatedAt: serverTimestamp()
+    });
+    return true;
   }
 
   async getAllBookings(params = {}) {
@@ -484,6 +507,16 @@ class FirebaseApiService {
       updatedAt: serverTimestamp()
     });
     return { id: docRef.id, ...tournamentData };
+  }
+
+  async publishTournament(tournamentId) {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    await updateDoc(tournamentRef, {
+      status: 'active',
+      published_at: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return true;
   }
 
   async updateTournament(tournamentId, tournamentData) {
