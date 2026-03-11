@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Courts from "./pages/Courts";
 import Tournaments from "./pages/Tournaments";
 import Leaderboard from "./pages/Leaderboard";
+import Profile from "./pages/Profile";
 
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
@@ -83,6 +84,15 @@ function AppRoutes() {
           <Route path="/tournaments" element={<Tournaments />} />
 
           <Route path="/leaderboard" element={<Leaderboard />} />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/dashboard"

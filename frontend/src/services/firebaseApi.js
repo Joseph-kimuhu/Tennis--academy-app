@@ -573,6 +573,20 @@ class FirebaseApiService {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
+  async getUnreadNotificationsCount() {
+    const userId = this.getCurrentUserId();
+    if (!userId) return 0;
+    
+    const q = query(
+      collection(db, 'notifications'),
+      where('user_id', '==', userId),
+      where('is_read', '==', false)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.size;
+  }
+
   async markNotificationAsRead(notificationId) {
     const notificationRef = doc(db, 'notifications', notificationId);
     await updateDoc(notificationRef, {
