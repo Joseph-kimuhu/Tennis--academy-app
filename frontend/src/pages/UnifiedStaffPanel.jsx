@@ -15,12 +15,43 @@ function UnifiedStaffPanel() {
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [showAddCourt, setShowAddCourt] = useState(false);
+  const [showAddTournament, setShowAddTournament] = useState(false);
+  const [showAddBooking, setShowAddBooking] = useState(false);
   const [newStaff, setNewStaff] = useState({
     email: '',
     username: '',
     full_name: '',
     password: '',
     role: 'coach'
+  });
+  const [newCourt, setNewCourt] = useState({
+    name: '',
+    club_id: '',
+    court_type: 'hard',
+    is_indoor: false,
+    description: '',
+    price_per_hour: 0,
+    location: ''
+  });
+  const [newTournament, setNewTournament] = useState({
+    name: '',
+    description: '',
+    start_date: '',
+    end_date: '',
+    location: '',
+    registration_deadline: '',
+    max_participants: 16,
+    entry_fee: 0,
+    prize_money: 0,
+    tournament_type: 'knockout'
+  });
+  const [newBooking, setNewBooking] = useState({
+    user_id: '',
+    court_id: '',
+    start_time: '',
+    end_time: '',
+    notes: ''
   });
 
   // Coaches get full admin access
@@ -126,6 +157,66 @@ function UnifiedStaffPanel() {
       fetchData();
     } catch (error) {
       alert('Failed to create staff account: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handleCreateCourt = async (e) => {
+    e.preventDefault();
+    try {
+      const courtData = {
+        ...newCourt,
+        club_id: newCourt.club_id ? parseInt(newCourt.club_id, 10) : null,
+        price_per_hour: parseFloat(newCourt.price_per_hour)
+      };
+      await api.createCourt(courtData);
+      alert('Court created successfully!');
+      setShowAddCourt(false);
+      setNewCourt({ name: '', club_id: '', court_type: 'hard', is_indoor: false, description: '', price_per_hour: 0, location: '' });
+      fetchData();
+    } catch (error) {
+      alert('Failed to create court: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handleCreateTournament = async (e) => {
+    e.preventDefault();
+    try {
+      const tournamentData = {
+        ...newTournament,
+        start_date: newTournament.start_date ? new Date(newTournament.start_date).toISOString() : null,
+        end_date: newTournament.end_date ? new Date(newTournament.end_date).toISOString() : null,
+        registration_deadline: newTournament.registration_deadline ? new Date(newTournament.registration_deadline).toISOString() : null,
+        max_participants: parseInt(newTournament.max_participants),
+        entry_fee: parseFloat(newTournament.entry_fee),
+        prize_money: parseFloat(newTournament.prize_money)
+      };
+      await api.createTournament(tournamentData);
+      alert('Tournament created successfully!');
+      setShowAddTournament(false);
+      setNewTournament({ name: '', description: '', start_date: '', end_date: '', location: '', registration_deadline: '', max_participants: 16, entry_fee: 0, prize_money: 0, tournament_type: 'knockout' });
+      fetchData();
+    } catch (error) {
+      alert('Failed to create tournament: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handleCreateBooking = async (e) => {
+    e.preventDefault();
+    try {
+      const bookingData = {
+        ...newBooking,
+        user_id: parseInt(newBooking.user_id),
+        court_id: parseInt(newBooking.court_id),
+        start_time: new Date(newBooking.start_time).toISOString(),
+        end_time: new Date(newBooking.end_time).toISOString()
+      };
+      await api.createBooking(bookingData);
+      alert('Booking created successfully!');
+      setShowAddBooking(false);
+      setNewBooking({ user_id: '', court_id: '', start_time: '', end_time: '', notes: '' });
+      fetchData();
+    } catch (error) {
+      alert('Failed to create booking: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -420,7 +511,15 @@ function UnifiedStaffPanel() {
 
           {activeTab === 'bookings' && (
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">All Bookings</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">All Bookings</h2>
+                <button
+                  onClick={() => setShowAddBooking(true)}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                >
+                  + Add Booking
+                </button>
+              </div>
               <div className="space-y-4">
                 {bookings.map((booking) => (
                   <div key={booking.id} className="border border-gray-200 rounded-lg p-4">
@@ -450,7 +549,15 @@ function UnifiedStaffPanel() {
 
           {activeTab === 'tournaments' && (
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">All Tournaments</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">All Tournaments</h2>
+                <button
+                  onClick={() => setShowAddTournament(true)}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                >
+                  + Add Tournament
+                </button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {tournaments.map((tournament) => (
                   <div key={tournament.id} className="border border-gray-200 rounded-lg p-6">
@@ -479,7 +586,15 @@ function UnifiedStaffPanel() {
 
           {activeTab === 'courts' && (
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Court Management</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Court Management</h2>
+                <button
+                  onClick={() => setShowAddCourt(true)}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                >
+                  + Add Court
+                </button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courts.map((court) => (
                   <div key={court.id} className="border border-gray-200 rounded-lg p-6">
@@ -830,6 +945,330 @@ function UnifiedStaffPanel() {
                   className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600"
                 >
                   Update User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Court Modal */}
+      {showAddCourt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full max-h-screen overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Court</h2>
+            <form onSubmit={handleCreateCourt}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Court Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newCourt.name}
+                    onChange={(e) => setNewCourt({ ...newCourt, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., Center Court 1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Court Type *</label>
+                  <select
+                    value={newCourt.court_type}
+                    onChange={(e) => setNewCourt({ ...newCourt, court_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="hard">Hard Court</option>
+                    <option value="clay">Clay Court</option>
+                    <option value="grass">Grass Court</option>
+                    <option value="carpet">Carpet Court</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={newCourt.location}
+                    onChange={(e) => setNewCourt({ ...newCourt, location: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., Main Building, Floor 2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price per Hour (KES) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={newCourt.price_per_hour}
+                    onChange={(e) => setNewCourt({ ...newCourt, price_per_hour: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., 500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={newCourt.description}
+                    onChange={(e) => setNewCourt({ ...newCourt, description: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    rows="3"
+                    placeholder="Court description and features..."
+                  />
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="is_indoor"
+                    checked={newCourt.is_indoor}
+                    onChange={(e) => setNewCourt({ ...newCourt, is_indoor: e.target.checked })}
+                    className="mr-2"
+                  />
+                  <label htmlFor="is_indoor" className="text-sm font-medium text-gray-700">
+                    Indoor Court
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCourt(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
+                >
+                  Add Court
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Tournament Modal */}
+      {showAddTournament && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full max-h-screen overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Tournament</h2>
+            <form onSubmit={handleCreateTournament}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tournament Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTournament.name}
+                    onChange={(e) => setNewTournament({ ...newTournament, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., Summer Championship 2024"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={newTournament.description}
+                    onChange={(e) => setNewTournament({ ...newTournament, description: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    rows="3"
+                    placeholder="Tournament description..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={newTournament.location}
+                    onChange={(e) => setNewTournament({ ...newTournament, location: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., Tennis Club Main Courts"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={newTournament.start_date}
+                      onChange={(e) => setNewTournament({ ...newTournament, start_date: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input
+                      type="date"
+                      value={newTournament.end_date}
+                      onChange={(e) => setNewTournament({ ...newTournament, end_date: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration Deadline</label>
+                  <input
+                    type="date"
+                    value={newTournament.registration_deadline}
+                    onChange={(e) => setNewTournament({ ...newTournament, registration_deadline: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Participants</label>
+                    <input
+                      type="number"
+                      min="2"
+                      value={newTournament.max_participants}
+                      onChange={(e) => setNewTournament({ ...newTournament, max_participants: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Entry Fee (KES)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newTournament.entry_fee}
+                      onChange={(e) => setNewTournament({ ...newTournament, entry_fee: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Prize Money (KES)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newTournament.prize_money}
+                    onChange={(e) => setNewTournament({ ...newTournament, prize_money: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tournament Type</label>
+                  <select
+                    value={newTournament.tournament_type}
+                    onChange={(e) => setNewTournament({ ...newTournament, tournament_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="knockout">Knockout</option>
+                    <option value="round_robin">Round Robin</option>
+                    <option value="league">League</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTournament(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
+                >
+                  Add Tournament
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Booking Modal */}
+      {showAddBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full max-h-screen overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Booking</h2>
+            <form onSubmit={handleCreateBooking}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">User *</label>
+                  <select
+                    required
+                    value={newBooking.user_id}
+                    onChange={(e) => setNewBooking({ ...newBooking, user_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">Select User</option>
+                    {users.filter(u => u.role === 'player').map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.username} ({user.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Court *</label>
+                  <select
+                    required
+                    value={newBooking.court_id}
+                    onChange={(e) => setNewBooking({ ...newBooking, court_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">Select Court</option>
+                    {courts.filter(c => c.is_available).map(court => (
+                      <option key={court.id} value={court.id}>
+                        {court.name} - {court.price_per_hour} KES/hr
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={newBooking.start_time}
+                      onChange={(e) => setNewBooking({ ...newBooking, start_time: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={newBooking.end_time}
+                      onChange={(e) => setNewBooking({ ...newBooking, end_time: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    value={newBooking.notes}
+                    onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    rows="3"
+                    placeholder="Booking notes..."
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBooking(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
+                >
+                  Add Booking
                 </button>
               </div>
             </form>
