@@ -358,9 +358,22 @@ function PlayerDashboard() {
                 </div>
                 <div className="space-y-3">
                   {messages.slice(0, 3).map((message) => (
-                    <div key={message.id} className={`p-4 rounded-xl border-2 ${
-                      !message.is_read ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'
-                    }`}>
+                    <div 
+                      key={message.id} 
+                      onClick={async () => {
+                        if (!message.is_read) {
+                          try {
+                            await api.markMessageAsRead(message.id);
+                            message.is_read = true;
+                            setMessages([...messages]);
+                          } catch (error) {
+                            console.error('Error marking message as read:', error);
+                          }
+                        }
+                      }}
+                      className={`p-4 rounded-xl border-2 cursor-pointer hover:shadow-md transition-shadow ${
+                        !message.is_read ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'
+                      }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm">{message.sender?.username}</span>
                         <span className="text-xs text-gray-400">{formatDate(message.created_at)}</span>
@@ -566,6 +579,60 @@ function PlayerDashboard() {
                 <div className="text-center py-12">
                   <div className="text-5xl mb-3">🔔</div>
                   <div className="text-gray-500">No notifications yet</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Messages Tab */}
+        {activeTab === 'messages' && (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Inbox</h2>
+              <button
+                onClick={() => setShowMessageModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-md"
+              >
+                + Compose
+              </button>
+            </div>
+            <div className="space-y-3">
+              {messages.length > 0 ? messages.map((message) => (
+                <div 
+                  key={message.id} 
+                  onClick={async () => {
+                    if (!message.is_read) {
+                      try {
+                        await api.markMessageAsRead(message.id);
+                        message.is_read = true;
+                        setMessages([...messages]);
+                      } catch (error) {
+                        console.error('Error marking message as read:', error);
+                      }
+                    }
+                  }}
+                  className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      {!message.is_read && <span className="w-2 h-2 bg-green-500 rounded-full"></span>}
+                      <div>
+                        <p className="font-medium">{message.sender?.username || 'Unknown'}</p>
+                        <p className="text-xs text-gray-500">To: {message.receiver?.username}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400">{formatDate(message.created_at)}</span>
+                  </div>
+                  <h3 className="font-semibold mt-2">{message.subject}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{message.content}</p>
+                </div>
+              )) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-3xl">📭</span>
+                  </div>
+                  <p className="text-gray-500">No messages in inbox</p>
                 </div>
               )}
             </div>

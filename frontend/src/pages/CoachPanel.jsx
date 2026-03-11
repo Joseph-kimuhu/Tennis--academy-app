@@ -388,7 +388,20 @@ function CoachPanel() {
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Messages</h2>
               {messages.slice(0, 5).map((message) => (
-                <div key={message.id} className={`p-3 rounded-xl mb-2 ${!message.is_read ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                <div 
+                  key={message.id} 
+                  onClick={async () => {
+                    if (!message.is_read) {
+                      try {
+                        await api.markMessageAsRead(message.id);
+                        message.is_read = true;
+                        setMessages([...messages]);
+                      } catch (error) {
+                        console.error('Error marking message as read:', error);
+                      }
+                    }
+                  }}
+                  className={`p-3 rounded-xl mb-2 cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-blue-50' : 'bg-gray-50'}`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-sm">{message.sender?.username}</span>
                     <span className="text-xs text-gray-400">{formatDate(message.created_at)}</span>
@@ -493,7 +506,20 @@ function CoachPanel() {
             </div>
             <div className="space-y-3">
               {messages.length > 0 ? messages.map((message) => (
-                <div key={message.id} className={`p-4 rounded-xl ${!message.is_read ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}>
+                <div 
+                  key={message.id}
+                  onClick={async () => {
+                    if (!message.is_read) {
+                      try {
+                        await api.markMessageAsRead(message.id);
+                        message.is_read = true;
+                        setMessages([...messages]);
+                      } catch (error) {
+                        console.error('Error marking message as read:', error);
+                      }
+                    }
+                  }}
+                  className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
                       {!message.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
