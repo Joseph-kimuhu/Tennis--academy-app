@@ -232,9 +232,15 @@ class FirebaseApiService {
   }
 
   async getPlayerStatistics(playerId) {
+    console.log('Getting player statistics for:', playerId);
     const statsDoc = await getDoc(doc(db, 'player_statistics', playerId));
-    if (!statsDoc.exists()) return null;
-    return { id: statsDoc.id, ...statsDoc.data() };
+    if (!statsDoc.exists()) {
+      console.log('No stats found for player:', playerId);
+      return null;
+    }
+    const stats = { id: statsDoc.id, ...statsDoc.data() };
+    console.log('Stats retrieved:', stats);
+    return stats;
   }
 
   async createPlayerStatistics(playerId, statsData) {
@@ -258,6 +264,7 @@ class FirebaseApiService {
   }
 
   async updatePlayerStatistics(playerId, statsData) {
+    console.log('Updating player statistics for:', playerId, 'with data:', statsData);
     const statsRef = doc(db, 'player_statistics', playerId);
     const statsDoc = await getDoc(statsRef);
     
@@ -274,6 +281,7 @@ class FirebaseApiService {
         updatedAt: serverTimestamp()
       });
     }
+    console.log('Stats updated successfully for:', playerId);
     return { id: playerId, ...statsData };
   }
 
