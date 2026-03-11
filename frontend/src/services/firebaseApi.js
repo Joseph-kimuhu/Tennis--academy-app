@@ -955,6 +955,25 @@ class FirebaseApiService {
       ranking_points: userData.ranking_points || 0
     };
   }
+
+  async getStaffStats() {
+    const usersQ = query(collection(db, 'users'), limit(100));
+    const usersSnapshot = await getDocs(usersQ);
+    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    const courtsQ = query(collection(db, 'courts'), limit(100));
+    const courtsSnapshot = await getDocs(courtsQ);
+    
+    const tournamentsQ = query(collection(db, 'tournaments'), limit(100));
+    const tournamentsSnapshot = await getDocs(tournamentsQ);
+    const tournaments = tournamentsSnapshot.docs.map(doc => doc.data());
+    
+    return {
+      total_players: users.filter(u => u.role !== 'coach' && u.role !== 'admin').length,
+      total_courts: courtsSnapshot.size,
+      active_tournaments: tournaments.filter(t => t.status === 'active').length
+    };
+  }
 }
 
 const api = new FirebaseApiService();
