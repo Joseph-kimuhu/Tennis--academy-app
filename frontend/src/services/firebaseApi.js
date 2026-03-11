@@ -49,29 +49,49 @@ class FirebaseApiService {
   async getPlayers(params = {}) {
     const { limit: limitCount = 50, skill_level, search } = params;
     
-    let q = collection(db, 'users');
-    const constraints = [where('role', '==', 'player')];
-    
-    if (skill_level) {
-      constraints.push(where('skill_level', '==', skill_level));
-    }
-    
-    constraints.push(orderBy('ranking_points', 'desc'));
-    constraints.push(limit(limitCount));
-    
-    const querySnapshot = await getDocs(query(...constraints));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
-
-  async getCoaches() {
+    // Get all users and filter by role in JavaScript (avoids index requirement)
     const q = query(
       collection(db, 'users'),
-      where('role', '==', 'coach'),
-      orderBy('ranking_points', 'desc')
+      orderBy('ranking_points', 'desc'),
+      limit(limitCount)
     );
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let players = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter to only players
+    players = players.filter(p => p.role === 'player' || !p.role);
+    
+    // Filter by skill level if provided
+    if (skill_level) {
+      players = players.filter(p => p.skill_level === skill_level);
+    }
+    
+    // Filter by search if provided
+    if (search) {
+      const searchLower = search.toLowerCase();
+      players = players.filter(p => 
+        p.username?.toLowerCase().includes(searchLower) ||
+        p.email?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return players;
+  }
+
+  async getCoaches() {
+    // Get all users and filter by role in JavaScript (avoids index requirement)
+    const q = query(
+      collection(db, 'users'),
+      orderBy('ranking_points', 'desc'),
+      limit(50)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter to only coaches
+    return users.filter(p => p.role === 'coach');
   }
 
   async updateUser(userId, userData) {
