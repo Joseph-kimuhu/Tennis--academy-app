@@ -19,6 +19,10 @@ function UnifiedStaffPanel() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [playerStats, setPlayerStats] = useState(null);
   const [statsForm, setStatsForm] = useState({
+    wins: 0,
+    losses: 0,
+    ranking_points: 0,
+    skill_level: 'beginner',
     serves: 0, aces: 0, double_faults: 0, first_serve_percentage: 0,
     second_serve_points_won: 0, break_points_saved: 0, break_points_faced: 0,
     total_games: 0, total_sets: 0, total_matches: 0, winning_streak: 0,
@@ -150,6 +154,10 @@ function UnifiedStaffPanel() {
       if (stats) {
         setPlayerStats(stats);
         setStatsForm({
+          wins: stats.wins || player.wins || 0,
+          losses: stats.losses || player.losses || 0,
+          ranking_points: stats.ranking_points || player.ranking_points || 0,
+          skill_level: stats.skill_level || player.skill_level || 'beginner',
           serves: stats.serves || 0,
           aces: stats.aces || 0,
           double_faults: stats.double_faults || 0,
@@ -169,6 +177,10 @@ function UnifiedStaffPanel() {
       } else {
         setPlayerStats(null);
         setStatsForm({
+          wins: player.wins || 0,
+          losses: player.losses || 0,
+          ranking_points: player.ranking_points || 0,
+          skill_level: player.skill_level || 'beginner',
           serves: 0, aces: 0, double_faults: 0, first_serve_percentage: 0,
           second_serve_points_won: 0, break_points_saved: 0, break_points_faced: 0,
           total_games: 0, total_sets: 0, total_matches: 0, winning_streak: 0,
@@ -188,8 +200,22 @@ function UnifiedStaffPanel() {
     try {
       console.log('Saving stats for player:', selectedPlayer?.id, statsForm);
       await api.updatePlayerStatistics(selectedPlayer.id, statsForm);
+      
+      // Also update the user's document with wins, losses, ranking_points, skill_level
+      const userUpdates = {};
+      if (statsForm.total_matches !== undefined) userUpdates.matches = statsForm.total_matches;
+      if (statsForm.winning_streak !== undefined) userUpdates.wins = statsForm.winning_streak;
+      if (statsForm.losing_streak !== undefined) userUpdates.losses = statsForm.losing_streak;
+      if (statsForm.ranking_points !== undefined) userUpdates.ranking_points = statsForm.ranking_points;
+      if (statsForm.skill_level) userUpdates.skill_level = statsForm.skill_level;
+      
+      if (Object.keys(userUpdates).length > 0) {
+        await api.updateProfile({ id: selectedPlayer.id, ...userUpdates });
+      }
+      
       setShowStatsModal(false);
       alert('Player statistics saved successfully!');
+      fetchData(); // Refresh the players list
     } catch (error) {
       console.error('Error saving player stats:', error);
       alert('Failed to save player statistics: ' + error.message);
@@ -2435,6 +2461,46 @@ function UnifiedStaffPanel() {
             </div>
             <form onSubmit={handleSaveStats}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Wins</label>
+                  <input
+                    type="number"
+                    value={statsForm.wins}
+                    onChange={(e) => setStatsForm({ ...statsForm, wins: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Losses</label>
+                  <input
+                    type="number"
+                    value={statsForm.losses}
+                    onChange={(e) => setStatsForm({ ...statsForm, losses: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Ranking Points</label>
+                  <input
+                    type="number"
+                    value={statsForm.ranking_points}
+                    onChange={(e) => setStatsForm({ ...statsForm, ranking_points: parseInt(e.target.value) || 0 })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Skill Level</label>
+                  <select
+                    value={statsForm.skill_level}
+                    onChange={(e) => setStatsForm({ ...statsForm, skill_level: e.target.value })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  >
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="professional">Professional</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Serves</label>
                   <input
