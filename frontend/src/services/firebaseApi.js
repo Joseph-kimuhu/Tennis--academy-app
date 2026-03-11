@@ -1183,6 +1183,61 @@ class FirebaseApiService {
     };
   }
 
+  async getAdminStats() {
+    try {
+      // Get all collections for system-wide stats
+      const [usersSnapshot, courtsSnapshot, tournamentsSnapshot, bookingsSnapshot, matchesSnapshot] = await Promise.all([
+        getDocs(query(collection(db, 'users'), limit(1000))),
+        getDocs(query(collection(db, 'courts'), limit(100))),
+        getDocs(query(collection(db, 'tournaments'), limit(100))),
+        getDocs(query(collection(db, 'bookings'), limit(1000))),
+        getDocs(query(collection(db, 'matches'), limit(1000)))
+      ]);
+
+      const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const courts = courtsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const tournaments = tournamentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const bookings = bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const matches = matchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Calculate stats
+      const totalUsers = users.length;
+      const totalCourts = courts.length;
+      const totalTournaments = tournaments.length;
+      const totalBookings = bookings.length;
+      const totalMatches = matches.length;
+      
+      const activeCourts = courts.filter(c => c.is_available).length;
+      const activeTournaments = tournaments.filter(t => t.status === 'active').length;
+      const completedTournaments = tournaments.filter(t => t.status === 'completed').length;
+      const confirmedBookings = bookings.filter(b => b.status === 'confirmed').length;
+      const completedMatches = matches.filter(m => m.status === 'completed').length;
+
+      const players = users.filter(u => u.role === 'player').length;
+      const coaches = users.filter(u => u.role === 'coach').length;
+      const admins = users.filter(u => u.role === 'admin').length;
+
+      return {
+        totalUsers,
+        totalCourts,
+        totalTournaments,
+        totalBookings,
+        totalMatches,
+        activeCourts,
+        activeTournaments,
+        completedTournaments,
+        confirmedBookings,
+        completedMatches,
+        players,
+        coaches,
+        admins
+      };
+    } catch (error) {
+      console.error('Error getting admin stats:', error);
+      return null;
+    }
+  }
+
   async getStaffStats() {
     const usersQ = query(collection(db, 'users'), limit(100));
     const usersSnapshot = await getDocs(usersQ);

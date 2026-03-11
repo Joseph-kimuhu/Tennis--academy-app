@@ -27,12 +27,21 @@ function Dashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, bookingsData, matchesData, notificationsData] = await Promise.all([
-        api.getMyStats(),
+      // Use different API calls based on user role
+      const promises = [
         api.getMyBookings({ upcoming: true, limit: 5 }),
         api.getMyMatches({ limit: 5 }),
         api.getNotifications({ limit: 10 }),
-      ]);
+      ];
+
+      // Add appropriate stats call based on user role
+      if (isAdmin || isCoach) {
+        promises.unshift(api.getAdminStats()); // Add admin stats for coaches and admins
+      } else {
+        promises.unshift(api.getMyStats()); // Use personal stats for players
+      }
+
+      const [statsData, bookingsData, matchesData, notificationsData] = await Promise.all(promises);
       setStats(statsData);
       setBookings(bookingsData || []);
       setMatches(matchesData || []);
@@ -131,53 +140,109 @@ function Dashboard() {
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Ranking Points</p>
-                <p className="text-3xl font-bold text-tennis-green">{stats?.ranking_points || 0}</p>
+          {(isAdmin || isCoach) ? (
+            // Admin/Coach Overview Stats
+            <>
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Users</p>
+                    <p className="text-3xl font-bold text-tennis-green">{stats?.totalUsers || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-tennis-green rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">👥</span>
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 bg-tennis-green rounded-full flex items-center justify-center">
-                <span className="text-white text-xl">🏆</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Matches Played</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.total_matches || 0}</p>
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Courts</p>
+                    <p className="text-3xl font-bold text-blue-600">{stats?.totalCourts || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">🏟️</span>
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xl">🎾</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Wins</p>
-                <p className="text-3xl font-bold text-green-600">{stats?.wins || 0}</p>
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Active Tournaments</p>
+                    <p className="text-3xl font-bold text-purple-600">{stats?.activeTournaments || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">🏆</span>
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xl">✓</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Win Rate</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.win_rate?.toFixed(1) || 0}%</p>
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Bookings</p>
+                    <p className="text-3xl font-bold text-orange-600">{stats?.totalBookings || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">📅</span>
+                  </div>
+                </div>
               </div>
-              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xl">📊</span>
+            </>
+          ) : (
+            // Player Personal Stats
+            <>
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Ranking Points</p>
+                    <p className="text-3xl font-bold text-tennis-green">{stats?.ranking_points || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-tennis-green rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">🏆</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Matches Played</p>
+                    <p className="text-3xl font-bold text-gray-900">{stats?.total_matches || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">🎾</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Wins</p>
+                    <p className="text-3xl font-bold text-green-600">{stats?.wins || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">✓</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Win Rate</p>
+                    <p className="text-3xl font-bold text-gray-900">{stats?.win_rate?.toFixed(1) || 0}%</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">📊</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
         )}
 
