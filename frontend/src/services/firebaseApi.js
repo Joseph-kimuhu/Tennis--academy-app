@@ -584,11 +584,12 @@ class FirebaseApiService {
       
       console.log('Found matches:', matches.length);
       
-      // Get player details for each match
+      // Get player and court details for each match
       const detailedMatches = [];
       for (const match of matches) {
         const detailedMatch = { ...match };
         
+        // Fetch player 1 details
         if (match.player1_id) {
           try {
             const player1Doc = await getDoc(doc(db, 'users', match.player1_id));
@@ -600,6 +601,7 @@ class FirebaseApiService {
           }
         }
         
+        // Fetch player 2 details
         if (match.player2_id) {
           try {
             const player2Doc = await getDoc(doc(db, 'users', match.player2_id));
@@ -608,6 +610,18 @@ class FirebaseApiService {
             }
           } catch (error) {
             console.warn('Error fetching player2:', error);
+          }
+        }
+        
+        // Fetch court details
+        if (match.court_id) {
+          try {
+            const courtDoc = await getDoc(doc(db, 'courts', match.court_id));
+            if (courtDoc.exists()) {
+              detailedMatch.court = { id: courtDoc.id, ...courtDoc.data() };
+            }
+          } catch (error) {
+            console.warn('Error fetching court:', error);
           }
         }
         

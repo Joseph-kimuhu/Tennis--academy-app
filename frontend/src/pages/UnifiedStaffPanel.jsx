@@ -2009,7 +2009,7 @@ function UnifiedStaffPanel() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-500">Court: {match.court_id || 'TBD'}</p>
+                        <p className="text-sm text-gray-500">Court: {match.court?.name || 'TBD'}</p>
                         {match.winner_id && (
                           <p className="text-sm font-medium text-green-600">
                             Winner: {match.winner_id === match.player1_id ? match.player1?.username : match.player2?.username}
