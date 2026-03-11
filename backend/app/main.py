@@ -12,6 +12,7 @@ from .database import engine, Base, SessionLocal, get_db
 from .models import User, UserRole
 from .routes import auth, users, bookings, tournaments, courts, clubs, staff, admin, coach_panel, coaching, matches
 from .auth import get_password_hash
+from .config import settings
 
 # Configure logging
 logging.basicConfig(
