@@ -1,5 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 const AuthContext = createContext(null);
 
@@ -9,36 +17,67 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    checkAuth();
+    // Listen for Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // Get user data from Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              username: userData.username || firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              role: userData.role || 'player',
+              skill_level: userData.skill_level || 'beginner',
+              ranking_points: userData.ranking_points || 0,
+              wins: userData.wins || 0,
+              losses: userData.losses || 0,
+              ...userData
+            });
+          } else {
+            // Create user document if it doesn't exist
+            const newUserData = {
+              email: firebaseUser.email,
+              username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              role: 'player',
+              skill_level: 'beginner',
+              ranking_points: 0,
+              wins: 0,
+              losses: 0,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            };
+            await setDoc(doc(db, 'users', firebaseUser.uid), newUserData);
+            setUser({ id: firebaseUser.uid, ...newUserData });
+          }
+        } catch (err) {
+          console.error('Error fetching user data:', err);
+          // Still set basic user info from Firebase
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+            role: 'player'
+          });
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
-
-  const checkAuth = async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const userData = await api.getMe();
-      setUser(userData);
-    } catch (err) {
-      console.error('Auth check failed:', err);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const login = async (email, password) => {
     setError(null);
     try {
-      await api.login(email, password);
-      const userData = await api.getMe();
-      setUser(userData);
+      const result = await signInWithEmailAndPassword(auth, email, password);
       return true;
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.message);
       return false;
     }
@@ -47,21 +86,53 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     setError(null);
     try {
-      await api.register(userData);
+      // Create Firebase auth user
+      const result = await createUserWithEmailAndPassword(
+        auth, 
+        userData.email, 
+        userData.password
+      );
+
+      // Update display name
+      if (userData.username) {
+        await updateProfile(result.user, {
+          displayName: userData.username
+        });
+      }
+
+      // Create user document in Firestore
+      const newUserData = {
+        email: userData.email,
+        username: userData.username || userData.email.split('@')[0],
+        role: userData.role || 'player',
+        skill_level: userData.skill_level || 'beginner',
+        ranking_points: 0,
+        wins: 0,
+        losses: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      await setDoc(doc(db, 'users', result.user.uid), newUserData);
       return true;
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.message);
       return false;
     }
   };
 
-  const logout = () => {
-    api.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   const updateUser = (userData) => {
-    setUser(userData);
+    setUser(prev => ({ ...prev, ...userData }));
   };
 
   const value = {
