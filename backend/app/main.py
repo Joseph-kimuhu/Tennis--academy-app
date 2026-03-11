@@ -161,8 +161,15 @@ def seed_default_users():
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("==> Seeding default users...")
-    seed_default_users()
+    """Initialize database and create tables"""
+    logger.info("==> 🎾 Starting Tennis Academy Application...")
+    
+    # Create database tables
+    create_tables()
+    
+    # Seeding disabled - admins and coaches will create their own accounts
+    logger.info("==> 🛡️  Automatic seeding disabled - staff will create accounts manually")
+    
     logger.info("==> Application startup complete")
     logger.info("==> Server is ready to accept connections")
 
