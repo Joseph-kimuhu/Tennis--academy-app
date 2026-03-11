@@ -15,6 +15,8 @@ function UnifiedStaffPanel() {
     const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showAddCourt, setShowAddCourt] = useState(false);
+  const [showEditCourt, setShowEditCourt] = useState(false);
+  const [editingCourt, setEditingCourt] = useState(null);
   const [showAddTournament, setShowAddTournament] = useState(false);
   const [showAddBooking, setShowAddBooking] = useState(false);
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
@@ -310,6 +312,40 @@ function UnifiedStaffPanel() {
       fetchData();
     } catch (error) {
       alert('Failed to update court status: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const startEditCourt = (court) => {
+    setEditingCourt({
+      id: court.id,
+      name: court.name,
+      club_id: court.club_id || '',
+      court_type: court.court_type || 'hard',
+      is_indoor: court.is_indoor || false,
+      description: court.description || '',
+      price_per_hour: court.price_per_hour || 0,
+      location: court.location || '',
+      image_url: court.image_url || ''
+    });
+    setShowEditCourt(true);
+  };
+
+  const handleEditCourt = async (e) => {
+    e.preventDefault();
+    try {
+      let courtData = {
+        ...editingCourt,
+        club_id: editingCourt.club_id ? parseInt(editingCourt.club_id, 10) : null,
+        price_per_hour: parseFloat(editingCourt.price_per_hour)
+      };
+
+      await api.updateCourt(editingCourt.id, courtData);
+      alert('Court updated successfully!');
+      setShowEditCourt(false);
+      setEditingCourt(null);
+      fetchData();
+    } catch (error) {
+      alert('Failed to update court: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -749,7 +785,10 @@ function UnifiedStaffPanel() {
                       <p><strong>Price:</strong> {court.price_per_hour} KES/hour</p>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                      <button 
+                        onClick={() => startEditCourt(court)}
+                        className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                      >
                         Edit
                       </button>
                       <button 
@@ -1121,6 +1160,102 @@ function UnifiedStaffPanel() {
                   className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
                 >
                   Add Court
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Court Modal */}
+      {showEditCourt && editingCourt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full max-h-screen overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Court</h2>
+            <form onSubmit={handleEditCourt}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Court Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingCourt.name}
+                    onChange={(e) => setEditingCourt({ ...editingCourt, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., Center Court 1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Court Type *</label>
+                  <select
+                    value={editingCourt.court_type}
+                    onChange={(e) => setEditingCourt({ ...editingCourt, court_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="hard">Hard Court</option>
+                    <option value="clay">Clay Court</option>
+                    <option value="grass">Grass Court</option>
+                    <option value="carpet">Carpet Court</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <select
+                    value={editingCourt.is_indoor ? 'indoor' : 'outdoor'}
+                    onChange={(e) => setEditingCourt({ ...editingCourt, is_indoor: e.target.value === 'indoor' })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="outdoor">☀️ Outdoor</option>
+                    <option value="indoor">🏠 Indoor</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <input
+                    type="text"
+                    value={editingCourt.location}
+                    onChange={(e) => setEditingCourt({ ...editingCourt, location: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., 123 Main St, City"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price per Hour (KES) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="100"
+                    value={editingCourt.price_per_hour}
+                    onChange={(e) => setEditingCourt({ ...editingCourt, price_per_hour: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., 1000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={editingCourt.description}
+                    onChange={(e) => setEditingCourt({ ...editingCourt, description: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    rows={3}
+                    placeholder="e.g., Premium hard court with professional lighting"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditCourt(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600"
+                >
+                  Update Court
                 </button>
               </div>
             </form>
