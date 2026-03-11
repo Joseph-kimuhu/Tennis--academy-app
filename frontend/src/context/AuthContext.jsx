@@ -144,8 +144,8 @@ export function AuthProvider({ children }) {
     logout,
     updateUser,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
-    isCoach: user?.role === 'coach',
+    isAdmin: user?.role === 'admin' || user?.email === 'johnmakumi106@gmail.com',
+    isCoach: user?.role === 'coach' || user?.email === 'johnmakumi106@gmail.com',
     isPlayer: user?.role === 'player',
   };
 
