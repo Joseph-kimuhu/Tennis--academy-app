@@ -1238,6 +1238,50 @@ class FirebaseApiService {
     }
   }
 
+  async getAdminDashboard() {
+    // Get dashboard data from Firestore
+    try {
+      const [usersSnapshot, courtsSnapshot, tournamentsSnapshot, bookingsSnapshot] = await Promise.all([
+        getDocs(query(collection(db, 'users'), limit(1000))),
+        getDocs(query(collection(db, 'courts'), limit(100))),
+        getDocs(query(collection(db, 'tournaments'), limit(100))),
+        getDocs(query(collection(db, 'bookings'), limit(1000)))
+      ]);
+
+      const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const courts = courtsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const tournaments = tournamentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const bookings = bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const activeTournaments = tournaments.filter(t => t.status === 'active');
+      const recentBookings = bookings.slice(0, 5);
+
+      return {
+        total_users: users.length,
+        total_courts: courts.length,
+        total_bookings: bookings.length,
+        active_tournaments: activeTournaments.length,
+        recent_bookings: recentBookings,
+        active_tournaments_list: activeTournaments
+      };
+    } catch (error) {
+      console.error('Error getting admin dashboard:', error);
+      return null;
+    }
+  }
+
+  async getAdminUsers(params = {}) {
+    const { limit: limitCount = 20 } = params;
+    try {
+      const q = query(collection(db, 'users'), limit(limitCount));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error getting admin users:', error);
+      return [];
+    }
+  }
+
   async getStaffStats() {
     const usersQ = query(collection(db, 'users'), limit(100));
     const usersSnapshot = await getDocs(usersQ);
