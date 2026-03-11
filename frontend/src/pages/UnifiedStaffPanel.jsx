@@ -329,6 +329,19 @@ function UnifiedStaffPanel() {
     }
   };
 
+  const deleteCourt = async (courtId) => {
+    if (!confirm('Are you sure you want to delete this court? This action cannot be undone and will affect all future bookings.')) {
+      return;
+    }
+    try {
+      await api.deleteCourt(courtId);
+      alert('Court deleted successfully!');
+      fetchData();
+    } catch (error) {
+      alert('Failed to delete court: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   const startEditCourt = (court) => {
     setEditingCourt({
       id: court.id,
@@ -894,6 +907,14 @@ function UnifiedStaffPanel() {
                           Complete
                         </button>
                       )}
+                      {(tournament.status === 'draft' || tournament.status === 'active' || tournament.status === 'completed') && (
+                        <button 
+                          onClick={() => deleteTournament(tournament.id)}
+                          className="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       {tournament.status === 'active' && (
@@ -910,14 +931,6 @@ function UnifiedStaffPanel() {
                           className="flex-1 px-3 py-2 bg-teal-500 text-white rounded hover:bg-teal-600 text-sm"
                         >
                           View Matches
-                        </button>
-                      )}
-                      {tournament.status === 'completed' && (
-                        <button 
-                          onClick={() => deleteTournament(tournament.id)}
-                          className="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                        >
-                          Delete
                         </button>
                       )}
                     </div>
@@ -950,6 +963,18 @@ function UnifiedStaffPanel() {
                         {court.is_available ? 'Available' : 'Unavailable'}
                       </span>
                     </div>
+                    {court.image_url && (
+                      <div className="mb-4">
+                        <img 
+                          src={court.image_url} 
+                          alt={court.name}
+                          className="w-full h-40 object-cover rounded-lg"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="space-y-2 text-sm text-gray-600 mb-4">
                       <p><strong>Type:</strong> <span className="capitalize">{court.court_type}</span></p>
                       <p><strong>Location:</strong> {court.is_indoor ? '🏠 Indoor' : '☀️ Outdoor'}</p>
@@ -968,6 +993,12 @@ function UnifiedStaffPanel() {
                         className="flex-1 px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
                       >
                         {court.is_available ? 'Close' : 'Open'}
+                      </button>
+                      <button 
+                        onClick={() => deleteCourt(court.id)}
+                        className="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -1413,6 +1444,32 @@ function UnifiedStaffPanel() {
                     rows={3}
                     placeholder="e.g., Premium hard court with professional lighting"
                   />
+                </div>
+                {editingCourt.image_url && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Image</label>
+                    <div className="relative">
+                      <img 
+                        src={editingCourt.image_url} 
+                        alt="Current court image"
+                        className="w-full h-32 object-cover rounded-lg"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
+                  <input
+                    type="url"
+                    value={editingCourt.image_url || ''}
+                    onChange={(e) => setEditingCourt({ ...editingCourt, image_url: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="https://example.com/court-image.jpg"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Enter a URL to update the court image</p>
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
