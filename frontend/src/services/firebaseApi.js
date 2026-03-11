@@ -364,14 +364,20 @@ class FirebaseApiService {
   async getTournaments(params = {}) {
     const { limit: limitCount = 50, status } = params;
     
-    let constraints = [orderBy('start_date', 'desc'), limit(limitCount)];
+    // Get all tournaments and filter in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'tournaments'), limit(limitCount));
+    const querySnapshot = await getDocs(q);
+    let tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
+    // Filter by status
     if (status) {
-      constraints = [where('status', '==', status), ...constraints];
+      tournaments = tournaments.filter(t => t.status === status);
     }
     
-    const querySnapshot = await getDocs(query(collection(db, 'tournaments'), ...constraints));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort by start date
+    tournaments.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+    
+    return tournaments;
   }
 
   async getTournament(tournamentId) {
@@ -654,29 +660,24 @@ class FirebaseApiService {
     
     const { limit: limitCount = 10 } = params;
     
-    let q;
+    // Get all messages and filter in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'messages'), limit(50));
+    const querySnapshot = await getDocs(q);
+    let allMessages = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter by folder
     if (folder === 'inbox') {
-      q = query(
-        collection(db, 'messages'),
-        where('receiver_id', '==', userId),
-        orderBy('created_at', 'desc'),
-        limit(limitCount)
-      );
+      allMessages = allMessages.filter(m => m.receiver_id === userId);
     } else {
-      q = query(
-        collection(db, 'messages'),
-        where('sender_id', '==', userId),
-        orderBy('created_at', 'desc'),
-        limit(limitCount)
-      );
+      allMessages = allMessages.filter(m => m.sender_id === userId);
     }
     
-    const querySnapshot = await getDocs(q);
+    // Sort by created date
+    allMessages.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+    
     const messages = [];
     
-    for (const docSnap of querySnapshot.docs) {
-      const message = { id: docSnap.id, ...docSnap.data() };
-      
+    for (const message of allMessages.slice(0, limitCount)) {
       // Get sender info
       if (message.sender_id) {
         const senderDoc = await getDoc(doc(db, 'users', message.sender_id));
@@ -769,15 +770,24 @@ class FirebaseApiService {
   async getTrainingSessions(params = {}) {
     const { upcoming = false, limit: limitCount = 10 } = params;
     
-    let constraints = [orderBy('scheduled_date', upcoming ? 'asc' : 'desc'), limit(limitCount)];
+    // Get all sessions and filter in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'training_sessions'), limit(50));
+    const querySnapshot = await getDocs(q);
+    let sessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
+    // Filter upcoming
     if (upcoming) {
-      const now = new Date().toISOString();
-      constraints = [where('scheduled_date', '>=', now), ...constraints];
+      const now = new Date();
+      sessions = sessions.filter(s => new Date(s.scheduled_date) >= now);
     }
     
-    const querySnapshot = await getDocs(query(collection(db, 'training_sessions'), ...constraints));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort by scheduled date
+    sessions.sort((a, b) => upcoming 
+      ? new Date(a.scheduled_date) - new Date(b.scheduled_date)
+      : new Date(b.scheduled_date) - new Date(a.scheduled_date)
+    );
+    
+    return sessions.slice(0, limitCount);
   }
 
   async createTrainingSession(sessionData) {
@@ -796,14 +806,20 @@ class FirebaseApiService {
   async getAnnouncements(params = {}) {
     const { active_only = false, limit: limitCount = 10 } = params;
     
-    let constraints = [orderBy('created_at', 'desc'), limit(limitCount)];
+    // Get all announcements and filter in JavaScript (avoids index requirement)
+    const q = query(collection(db, 'announcements'), limit(50));
+    const querySnapshot = await getDocs(q);
+    let announcements = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
+    // Filter active only
     if (active_only) {
-      constraints = [where('is_active', '==', true), ...constraints];
+      announcements = announcements.filter(a => a.is_active === true);
     }
     
-    const querySnapshot = await getDocs(query(collection(db, 'announcements'), ...constraints));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort by created date
+    announcements.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+    
+    return announcements.slice(0, limitCount);
   }
 
   async createAnnouncement(announcementData) {
@@ -895,16 +911,17 @@ class FirebaseApiService {
   // ==================== COACH PANEL ====================
 
   async getCoachDashboard() {
-    const q = query(collection(db, 'users'), where('role', '==', 'player'));
-    const playersSnapshot = await getDocs(q);
-    const players = playersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Get all users and count players
+    const usersQ = query(collection(db, 'users'), limit(100));
+    const usersSnapshot = await getDocs(usersQ);
+    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const players = users.filter(u => u.role !== 'coach' && u.role !== 'admin');
     
-    const sessionsQ = query(
-      collection(db, 'training_sessions'),
-      where('scheduled_date', '>=', new Date().toISOString())
-    );
+    // Get upcoming sessions
+    const sessionsQ = query(collection(db, 'training_sessions'), limit(50));
     const sessionsSnapshot = await getDocs(sessionsQ);
-    const upcomingSessions = sessionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const allSessions = sessionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const upcomingSessions = allSessions.filter(s => new Date(s.scheduled_date) >= new Date());
     
     return {
       total_players: players.length,
