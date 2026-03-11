@@ -395,7 +395,7 @@ function Tournaments() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-4 pt-4 border-t-2 border-gray-200">
-                  {isAuthenticated && user?.role === 'player' && selectedTournament.status === 'upcoming' && (
+                  {isAuthenticated && user?.role === 'player' && (selectedTournament.status === 'upcoming' || selectedTournament.status === 'draft') && (
                     <button
                       onClick={() => handleJoinTournament(selectedTournament.id)}
                       disabled={isParticipant()}
@@ -408,7 +408,7 @@ function Tournaments() {
                       {isParticipant() ? '✅ Already Registered' : '🎾 Register for Tournament'}
                     </button>
                   )}
-                  {!isAuthenticated && selectedTournament.status === 'upcoming' && (
+                  {!isAuthenticated && (selectedTournament.status === 'upcoming' || selectedTournament.status === 'draft') && (
                     <button
                       onClick={() => alert('Please login to register for tournaments')}
                       className="flex-1 py-4 px-6 bg-gradient-to-r from-tennis-green to-tennis-green-light text-white rounded-xl font-bold text-lg hover:shadow-tennis-lg transition-all transform hover:scale-[1.02] shadow-md"
@@ -416,7 +416,7 @@ function Tournaments() {
                       🎾 Login to Register
                     </button>
                   )}
-                  {isAuthenticated && user?.role !== 'player' && selectedTournament.status === 'upcoming' && (
+                  {isAuthenticated && user?.role !== 'player' && (selectedTournament.status === 'upcoming' || selectedTournament.status === 'draft') && (
                     <div className="flex-1 py-4 px-6 bg-gray-100 text-gray-600 rounded-xl font-semibold text-center border-2 border-gray-300">
                       ℹ️ Only players can register for tournaments
                     </div>
