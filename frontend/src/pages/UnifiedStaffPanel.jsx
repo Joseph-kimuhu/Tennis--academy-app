@@ -11,6 +11,7 @@ function UnifiedStaffPanel() {
   const [bookings, setBookings] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [courts, setCourts] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
     const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -82,18 +83,20 @@ function UnifiedStaffPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, bookingsData, tournamentsData, courtsData] = await Promise.all([
+      const [statsData, usersData, bookingsData, tournamentsData, courtsData, messagesData] = await Promise.all([
         api.getStaffStats().catch(() => ({ total_users: 0, total_bookings: 0, active_tournaments: 0 })),
-        api.getAllUsers({ limit: 20 }), // Always get all users for coaches too
+        api.getAllUsers({ limit: 20 }),
         api.getAllBookings({ limit: 10 }),
         api.getAllTournaments({ limit: 10 }),
-        api.getCourts({ limit: 10 }).catch(() => [])
+        api.getCourts({ limit: 10 }).catch(() => []),
+        api.getMessages('inbox', { limit: 20 }).catch(() => [])
       ]);
       setStats(statsData);
       setUsers(usersData || []);
       setBookings(bookingsData || []);
       setTournaments(tournamentsData || []);
       setCourts(courtsData || []);
+      setMessages(messagesData || []);
     } catch (error) {
       console.error('Error fetching staff data:', error);
     }
@@ -555,6 +558,8 @@ function UnifiedStaffPanel() {
           <div className="flex overflow-x-auto">
             {[
               { id: 'overview', label: 'Overview', icon: '📊' },
+              { id: 'players', label: 'Players', icon: '🎾' },
+              { id: 'messages', label: 'Messages', icon: '✉️', badge: messages.filter(m => !m.is_read).length },
               { id: 'users', label: 'Users', icon: '👥' },
               { id: 'bookings', label: 'Bookings', icon: '📅' },
               { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
@@ -573,6 +578,11 @@ function UnifiedStaffPanel() {
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.label}
+                {tab.badge > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                    {tab.badge}
+                  </span>
+                )}
                 {activeTab === tab.id && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500"></div>
                 )}
@@ -657,6 +667,125 @@ function UnifiedStaffPanel() {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'players' && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Player Management</h2>
+              <p className="text-gray-600 mb-6">Manage and view all players in the system</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="pb-3 font-semibold text-gray-900">Player</th>
+                      <th className="pb-3 font-semibold text-gray-900">Skill Level</th>
+                      <th className="pb-3 font-semibold text-gray-900">Points</th>
+                      <th className="pb-3 font-semibold text-gray-900">W/L</th>
+                      <th className="pb-3 font-semibold text-gray-900">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.filter(u => u.role === 'player').map((player) => (
+                      <tr key={player.id} className="border-b border-gray-100">
+                        <td className="py-4">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                              {player.username?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-medium">{player.username}</p>
+                              <p className="text-sm text-gray-500">{player.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4">
+                          <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 capitalize font-medium">
+                            {player.skill_level || 'beginner'}
+                          </span>
+                        </td>
+                        <td className="py-4">
+                          <span className="font-bold text-green-600">{player.ranking_points || 0}</span>
+                        </td>
+                        <td className="py-4">
+                          <span className="text-green-600 font-medium">{player.wins || 0}</span>
+                          <span className="text-gray-400 mx-1">/</span>
+                          <span className="text-red-600 font-medium">{player.losses || 0}</span>
+                        </td>
+                        <td className="py-4">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => alert('View Stats feature coming soon')}
+                              className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+                            >
+                              📊 Stats
+                            </button>
+                            <button
+                              onClick={() => alert('Message feature coming soon')}
+                              className="px-3 py-1.5 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
+                            >
+                              ✉️ Message
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {users.filter(u => u.role === 'player').length === 0 && (
+                  <div className="p-12 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-3xl">🎾</span>
+                    </div>
+                    <p className="text-gray-500">No players found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'messages' && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Messages</h2>
+              <div className="space-y-3">
+                {messages.length > 0 ? messages.map((message) => (
+                  <div 
+                    key={message.id}
+                    onClick={async () => {
+                      if (!message.is_read) {
+                        try {
+                          await api.markMessageAsRead(message.id);
+                          message.is_read = true;
+                          setMessages([...messages]);
+                        } catch (error) {
+                          console.error('Error marking message as read:', error);
+                        }
+                      }
+                    }}
+                    className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        {!message.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
+                        <div>
+                          <p className="font-medium">{message.sender?.username || 'Unknown'}</p>
+                          <p className="text-xs text-gray-500">To: {message.receiver?.username}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-400">{message.created_at ? new Date(message.created_at).toLocaleDateString() : ''}</span>
+                    </div>
+                    <h3 className="font-semibold mt-2">{message.subject}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{message.content}</p>
+                  </div>
+                )) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-3xl">📭</span>
+                    </div>
+                    <p className="text-gray-500">No messages in inbox</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
