@@ -526,6 +526,39 @@ class FirebaseApiService {
     return detailedRegistrations;
   }
 
+  async getMyTournamentRegistrations() {
+    const userId = this.getCurrentUserId();
+    if (!userId) return [];
+    
+    const q = query(
+      collection(db, 'tournament_registrations'),
+      where('user_id', '==', userId)
+    );
+    
+    const snapshot = await getDocs(q);
+    const registrations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get tournament details for each registration
+    const myTournaments = [];
+    for (const reg of registrations) {
+      const tournamentDoc = await getDoc(doc(db, 'tournaments', reg.tournament_id));
+      if (tournamentDoc.exists()) {
+        myTournaments.push({
+          registration_id: reg.id,
+          tournament_id: reg.tournament_id,
+          status: reg.status,
+          payment_status: reg.payment_status,
+          payment_phone: reg.payment_phone,
+          payment_reference: reg.payment_reference,
+          registered_at: reg.registered_at,
+          tournament: { id: tournamentDoc.id, ...tournamentDoc.data() }
+        });
+      }
+    }
+    
+    return myTournaments;
+  }
+
   // ==================== MATCHES ====================
 
   async getMyMatches() {

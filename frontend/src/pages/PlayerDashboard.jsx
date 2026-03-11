@@ -26,6 +26,7 @@ function PlayerDashboard() {
   const [players, setPlayers] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [enrollingSession, setEnrollingSession] = useState(null);
+  const [myTournaments, setMyTournaments] = useState([]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -35,7 +36,7 @@ function PlayerDashboard() {
 
   const fetchData = async () => {
     try {
-      const [tournamentsData, courtsData, bookingsData, statsData, messagesData, sessionsData, announcementsData, matchesData, leaderboardData, coachesData, playersData, notificationsData, detailedStatsData] = await Promise.all([
+      const [tournamentsData, courtsData, bookingsData, statsData, messagesData, sessionsData, announcementsData, matchesData, leaderboardData, coachesData, playersData, notificationsData, detailedStatsData, myTournamentsData] = await Promise.all([
         api.getActiveTournaments().catch(() => []),
         api.getCourts({ limit: 6 }).catch(() => []),
         api.getMyBookings().catch(() => []),
@@ -48,7 +49,8 @@ function PlayerDashboard() {
         api.getCoaches().catch(() => []),
         api.getPlayers({ limit: 50, role: 'player' }).catch(() => []),
         api.getNotifications({ limit: 10 }).catch(() => []),
-        user ? api.getPlayerStatistics(user.id).catch(() => null) : Promise.resolve(null)
+        user ? api.getPlayerStatistics(user.id).catch(() => null) : Promise.resolve(null),
+        user ? api.getMyTournamentRegistrations().catch(() => []) : Promise.resolve([])
       ]);
 
       setActiveTournaments(tournamentsData || []);
@@ -64,6 +66,7 @@ function PlayerDashboard() {
       setCoaches(coachesData || []);
       setPlayers(playersData?.filter(p => p.id !== user?.id) || []);
       setNotifications(notificationsData || []);
+      setMyTournaments(myTournamentsData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -246,6 +249,45 @@ function PlayerDashboard() {
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
+            {/* My Tournaments */}
+            {myTournaments.length > 0 && (
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">My Tournaments</h2>
+                  <Link to="/tournaments" className="text-green-600 hover:text-green-700 text-sm font-medium">View All →</Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {myTournaments.slice(0, 3).map((reg) => (
+                    <div key={reg.registration_id} className="border-2 border-gray-200 rounded-xl p-4 hover:border-green-300 transition-colors">
+                      <div className="font-semibold text-lg mb-2">{reg.tournament?.name || 'Tournament'}</div>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span className={`px-3 py-1 text-xs rounded-full font-medium ${
+                          reg.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {reg.payment_status === 'paid' ? '✅ Paid' : '⏳ Payment Pending'}
+                        </span>
+                        <span className={`px-3 py-1 text-xs rounded-full font-medium ${
+                          reg.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          reg.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {reg.status === 'approved' ? '✅ Approved' : 
+                           reg.status === 'rejected' ? '❌ Rejected' : 
+                           reg.status === 'pending_payment' ? '⏳ Pending Payment' : '⏳ Pending'}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        📅 {reg.tournament?.start_date ? new Date(reg.tournament.start_date).toLocaleDateString() : 'TBD'}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        💰 Entry: {reg.tournament?.entry_fee || 0} KES
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Quick Actions */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
