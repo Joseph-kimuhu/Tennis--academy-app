@@ -14,6 +14,7 @@ function Profile() {
   });
   
   const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
@@ -53,6 +54,12 @@ function Profile() {
     setLoading(true);
     setMessage({ type: '', text: '' });
     
+    if (!passwordForm.currentPassword) {
+      setMessage({ type: 'error', text: 'Please enter your current password!' });
+      setLoading(false);
+      return;
+    }
+    
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setMessage({ type: 'error', text: 'Passwords do not match!' });
       setLoading(false);
@@ -66,9 +73,9 @@ function Profile() {
     }
     
     try {
-      await api.changePassword(passwordForm.newPassword);
+      await api.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
       setMessage({ type: 'success', text: 'Password changed successfully!' });
-      setPasswordForm({ newPassword: '', confirmPassword: '' });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -221,6 +228,17 @@ function Profile() {
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Change Password</h2>
           <form onSubmit={handlePasswordChange}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+              <input
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                required
+              />
+            </div>
+            
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
               <input

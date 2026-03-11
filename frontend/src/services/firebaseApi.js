@@ -20,7 +20,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
-import { updateEmail, updatePassword, updateProfile } from 'firebase/auth';
+import { updateEmail, updatePassword, updateProfile, signInWithEmailAndPassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 class FirebaseApiService {
   // Helper to get current user ID
@@ -115,10 +115,15 @@ class FirebaseApiService {
     return { id: updatedDoc.id, ...updatedDoc.data() };
   }
 
-  async changePassword(newPassword) {
+  async changePassword(currentPassword, newPassword) {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) throw new Error('Not authenticated');
     
+    // Re-authenticate user with current password
+    const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
+    await reauthenticateWithCredential(firebaseUser, credential);
+    
+    // Now change the password
     await updatePassword(firebaseUser, newPassword);
     return true;
   }
