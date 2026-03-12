@@ -20,11 +20,9 @@ function PlayerDashboard() {
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [enrollingSession, setEnrollingSession] = useState(null);
   const [myTournaments, setMyTournaments] = useState([]);
-<<<<<<< HEAD
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ paymentMethod: 'mpesa', phone: '', reference: '' });
   const [payingTournament, setPayingTournament] = useState(null);
-=======
   const [showBookingPaymentModal, setShowBookingPaymentModal] = useState(false);
   const [payingBooking, setPayingBooking] = useState(null);
   const [bookingPaymentForm, setBookingPaymentForm] = useState({
@@ -32,7 +30,6 @@ function PlayerDashboard() {
     phone: '',
     reference: ''
   });
->>>>>>> e8825bea97ef6951b2b1734f447fce23a9f71179
 
   // Utility functions
   const formatDate = (dateString) => {
@@ -94,7 +91,6 @@ function PlayerDashboard() {
     setLoading(false);
   };
 
-<<<<<<< HEAD
   const handleTournamentPayment = async (e) => {
     e.preventDefault();
     try {
@@ -131,7 +127,9 @@ function PlayerDashboard() {
       fetchData();
     } catch (error) {
       alert('Error: ' + error.message);
-=======
+    }
+  };
+
   const startBookingPayment = (booking) => {
     setPayingBooking(booking);
     setBookingPaymentForm({
@@ -158,7 +156,6 @@ function PlayerDashboard() {
       fetchData();
     } catch (error) {
       alert('Failed to submit payment: ' + (error.message || 'Unknown error'));
->>>>>>> e8825bea97ef6951b2b1734f447fce23a9f71179
     }
   };
 
