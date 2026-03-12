@@ -358,6 +358,61 @@ function PlayerDashboard() {
                 </div>
               </div>
 
+              {/* Available Courts */}
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">Available Courts</h2>
+                  <Link to="/courts" className="text-green-600 hover:text-green-700 text-sm font-medium">View All →</Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {courts.slice(0, 4).map((court) => (
+                    <div key={court.id} className="border-2 border-gray-200 rounded-xl overflow-hidden hover:border-green-300 transition-colors">
+                      {/* Court Image */}
+                      {court.image_url ? (
+                        <img 
+                          src={court.image_url} 
+                          alt={court.name}
+                          className="w-full h-32 object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-full h-32 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center"
+                        style={{ display: court.image_url ? 'none' : 'flex' }}
+                      >
+                        <span className="text-white text-4xl">🏟️</span>
+                      </div>
+                      
+                      {/* Court Info */}
+                      <div className="p-4">
+                        <div className="font-semibold text-lg mb-1">{court.name}</div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <div>🏷️ {court.court_type || 'Hard Court'}</div>
+                          <div>📍 {court.location || 'Main Facility'}</div>
+                          <div>💰 {court.price_per_hour || 0} KES/hr</div>
+                          <div className={`inline-block px-2 py-1 text-xs rounded-full font-medium ${
+                            court.is_available 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {court.is_available ? '✅ Available' : '❌ Occupied'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {courts.length === 0 && (
+                    <div className="col-span-2 text-center py-8">
+                      <div className="text-5xl mb-3">🏟️</div>
+                      <div className="text-gray-500 mb-2">No courts available</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Recent Messages */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
