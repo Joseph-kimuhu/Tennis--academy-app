@@ -442,83 +442,137 @@ function Tournaments() {
       
       {/* Payment Modal */}
       {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Complete Payment</h3>
-            
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-              <p className="font-semibold text-yellow-800 mb-2">💳 Payment Instructions</p>
-              <div id="paymentInstructions">
-                <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
-                  <li>Complete the payment using your selected method</li>
-                  <li>For M-Pesa: Go to M-Pesa → Pay Bill → Enter Business Number: <strong>0738839851</strong></li>
-                  <li>For Card/Bank: Use the provided payment details</li>
-                  <li>Enter the tournament fee amount: <strong>{selectedTournament?.entry_fee || 0} KES</strong></li>
-                  <li>Keep your transaction reference number</li>
-                </ol>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">💳</span>
               </div>
+              <h3 className="text-2xl font-bold text-gray-900">Complete Your Payment</h3>
+              <p className="text-gray-600 mt-2">Tournament Entry Fee: <span className="font-bold text-green-600 text-xl">{selectedTournament?.entry_fee || 0} KES</span></p>
+            </div>
+            
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+              <p className="font-bold text-blue-800 mb-3">📱 Payment Steps for M-Pesa:</p>
+              <ol className="text-sm text-blue-700 space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">1.</span> Go to <strong>M-Pesa</strong> on your phone
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">2.</span> Select <strong>Pay Bill</strong>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">3.</span> Enter Business Number: <strong className="text-blue-900">0738839851</strong>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">4.</span> Enter Amount: <strong className="text-blue-900">{selectedTournament?.entry_fee || 0}</strong> KES
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">5.</span> Enter your account number (any)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold">6.</span> Complete payment and enter the <strong>Transaction Reference</strong> below
+                </li>
+              </ol>
             </div>
             
             <form onSubmit={handlePaymentSubmit}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Method
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  💰 Select Payment Method
                 </label>
-                <select
-                  value={paymentForm.paymentMethod}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  required
-                >
-                  <option value="">Select payment method...</option>
-                  <option value="mpesa">M-Pesa</option>
-                  <option value="card">Card</option>
-                  <option value="cash">Cash</option>
-                  <option value="bank">Bank Transfer</option>
-                </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'mpesa' })}
+                    className={`py-3 px-4 rounded-xl font-bold border-2 transition-all ${
+                      paymentForm.paymentMethod === 'mpesa' 
+                        ? 'bg-green-500 text-white border-green-500' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-green-500'
+                    }`}
+                  >
+                    📱 M-Pesa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'card' })}
+                    className={`py-3 px-4 rounded-xl font-bold border-2 transition-all ${
+                      paymentForm.paymentMethod === 'card' 
+                        ? 'bg-blue-500 text-white border-blue-500' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-500'
+                    }`}
+                  >
+                    💳 Card
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'bank' })}
+                    className={`py-3 px-4 rounded-xl font-bold border-2 transition-all ${
+                      paymentForm.paymentMethod === 'bank' 
+                        ? 'bg-purple-500 text-white border-purple-500' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-purple-500'
+                    }`}
+                  >
+                    🏦 Bank
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'cash' })}
+                    className={`py-3 px-4 rounded-xl font-bold border-2 transition-all ${
+                      paymentForm.paymentMethod === 'cash' 
+                        ? 'bg-orange-500 text-white border-orange-500' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-orange-500'
+                    }`}
+                  >
+                    💵 Cash
+                  </button>
+                </div>
               </div>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {paymentForm.paymentMethod === 'mpesa' ? 'M-Pesa Phone Number' : 'Contact Information'}
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  {paymentForm.paymentMethod === 'mpesa' ? '📱 M-Pesa Phone Number Used' : '📞 Contact Phone Number'}
                 </label>
                 <input
                   type="tel"
                   value={paymentForm.phone}
                   onChange={(e) => setPaymentForm({ ...paymentForm, phone: e.target.value })}
-                  placeholder="e.g., 254712345678"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder={paymentForm.paymentMethod === 'mpesa' ? "e.g., 254712345678" : "Your phone number"}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Phone number you used to make the M-Pesa payment</p>
               </div>
               
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transaction Reference
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  🔢 M-Pesa Transaction Reference
                 </label>
                 <input
                   type="text"
                   value={paymentForm.reference}
                   onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
-                  placeholder="e.g., ABC123XYZ"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="e.g., MPE123456789"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-mono"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">The confirmation message you received from M-Pesa</p>
               </div>
               
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setShowPaymentModal(false)}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-all"
+                  className="flex-1 px-6 py-4 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-all text-lg"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-all"
+                  disabled={!paymentForm.paymentMethod || !paymentForm.phone || !paymentForm.reference}
+                  className="flex-1 px-6 py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-all text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Confirm Payment
+                  ✅ Submit Payment
                 </button>
               </div>
             </form>
