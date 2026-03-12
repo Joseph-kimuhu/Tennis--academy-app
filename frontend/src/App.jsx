@@ -14,8 +14,6 @@ import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 
 import Dashboard from "./pages/Dashboard";
-import Admin from "./pages/Admin";
-import CoachPanel from "./pages/CoachPanel";
 import PlayerDashboard from "./pages/PlayerDashboard";
 import UnifiedStaffPanel from "./pages/UnifiedStaffPanel";
 
