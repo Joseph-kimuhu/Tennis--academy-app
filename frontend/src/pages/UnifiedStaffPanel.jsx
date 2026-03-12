@@ -1092,16 +1092,36 @@ function UnifiedStaffPanel() {
                     {booking.payment_status !== 'paid' && booking.status !== 'cancelled' && (
                       <div className="flex gap-2 mt-4">
                         <button
-                          onClick={() => startPaymentConfirm(booking)}
+                          onClick={async () => {
+                            if (confirm('Approve this payment?')) {
+                              try {
+                                await api.approveBookingPayment(booking.id);
+                                alert('Payment approved!');
+                                fetchData();
+                              } catch (error) {
+                                alert('Failed to approve payment: ' + error.message);
+                              }
+                            }
+                          }}
                           className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
                         >
-                          Confirm Payment
+                          ✓ Approve
                         </button>
                         <button
-                          onClick={() => api.cancelBooking(booking.id).then(fetchData)}
+                          onClick={async () => {
+                            if (confirm('Reject this payment?')) {
+                              try {
+                                await api.rejectBookingPayment(booking.id);
+                                alert('Payment rejected!');
+                                fetchData();
+                              } catch (error) {
+                                alert('Failed to reject payment: ' + error.message);
+                              }
+                            }
+                          }}
                           className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
                         >
-                          Cancel
+                          ✕ Reject
                         </button>
                       </div>
                     )}
