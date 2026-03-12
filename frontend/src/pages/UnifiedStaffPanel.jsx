@@ -65,13 +65,6 @@ function UnifiedStaffPanel() {
     round: '1'
   });
   const [showAddBooking, setShowAddBooking] = useState(false);
-  const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
-  const [confirmingBooking, setConfirmingBooking] = useState(null);
-  const [paymentData, setPaymentData] = useState({
-    payment_method: '',
-    payment_phone: '',
-    payment_reference: ''
-  });
     const [newCourt, setNewCourt] = useState({
     name: '',
     club_id: '',
@@ -125,7 +118,7 @@ function UnifiedStaffPanel() {
       const [statsData, usersData, bookingsData, tournamentsData, courtsData, announcementsData, notificationsData] = await Promise.all([
         api.getAdminStats().catch(() => ({ totalUsers: 0, totalBookings: 0, activeTournaments: 0, totalCourts: 0, totalTournaments: 0 })),
         api.getAllUsers({ limit: 20 }),
-        api.getAllBookings({ limit: 10 }),
+        api.getAllBookings({ limit: 200 }),
         api.getAllTournaments({ limit: 10 }),
         api.getCourts({ limit: 10 }).catch(() => []),
         api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => []),
@@ -201,8 +194,8 @@ function UnifiedStaffPanel() {
       // Also update the user's document with wins, losses, ranking_points, skill_level
       const userUpdates = {};
       if (statsForm.total_matches !== undefined) userUpdates.matches = statsForm.total_matches;
-      if (statsForm.winning_streak !== undefined) userUpdates.wins = statsForm.winning_streak;
-      if (statsForm.losing_streak !== undefined) userUpdates.losses = statsForm.losing_streak;
+      if (statsForm.wins !== undefined) userUpdates.wins = statsForm.wins;
+      if (statsForm.losses !== undefined) userUpdates.losses = statsForm.losses;
       if (statsForm.ranking_points !== undefined) userUpdates.ranking_points = statsForm.ranking_points;
       if (statsForm.skill_level) userUpdates.skill_level = statsForm.skill_level;
       
@@ -432,28 +425,27 @@ function UnifiedStaffPanel() {
     }
   };
 
-  const handlePaymentConfirm = async (e) => {
-    e.preventDefault();
+  const handleApproveBookingPayment = async (bookingId) => {
     try {
-      await api.confirmBookingPayment(confirmingBooking.id, paymentData.payment_method, paymentData.payment_phone, paymentData.payment_reference);
-      alert('Payment confirmed successfully!');
-      setShowPaymentConfirm(false);
-      setConfirmingBooking(null);
-      setPaymentData({ payment_method: '', payment_phone: '', payment_reference: '' });
+      await api.approveBookingPayment(bookingId);
+      alert('Payment approved successfully!');
       fetchData();
     } catch (error) {
-      alert('Failed to confirm payment: ' + (error.message || 'Unknown error'));
+      alert('Failed to approve payment: ' + (error.message || 'Unknown error'));
     }
   };
 
-  const startPaymentConfirm = (booking) => {
-    setConfirmingBooking(booking);
-    setPaymentData({
-      payment_method: booking.payment_method || '',
-      payment_phone: booking.payment_phone || '',
-      payment_reference: booking.payment_reference || ''
-    });
-    setShowPaymentConfirm(true);
+  const handleRejectBookingPayment = async (bookingId) => {
+    if (!confirm('Reject this payment? The player can resubmit.')) {
+      return;
+    }
+    try {
+      await api.rejectBookingPayment(bookingId);
+      alert('Payment rejected.');
+      fetchData();
+    } catch (error) {
+      alert('Failed to reject payment: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const publishTournament = async (tournamentId) => {
@@ -1127,77 +1119,86 @@ function UnifiedStaffPanel() {
                 </button>
               </div>
               <div className="space-y-4">
-                {bookings.map((booking) => (
-                  <div key={booking.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <p className="font-semibold">{booking.court?.name || 'Court Booking'}</p>
-                        <p className="text-gray-600">User: {booking.user?.username}</p>
-                        <p className="text-sm text-gray-500">
-                          {new Date(booking.start_time).toLocaleDateString()} at{' '}
-                          {new Date(booking.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        {booking.payment_phone && (
-                          <p className="text-sm text-gray-500">Phone: {booking.payment_phone}</p>
-                        )}
-                        {booking.payment_reference && (
-                          <p className="text-sm text-gray-500">Ref: {booking.payment_reference}</p>
-                        )}
+                {bookings.map((booking) => {
+                  const paymentStatus = booking.payment_status || 'unpaid';
+                  return (
+                    <div key={booking.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="font-semibold">{booking.court?.name || 'Court Booking'}</p>
+                          <p className="text-gray-600">User: {booking.user?.username}</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(booking.start_time).toLocaleDateString()} at{' '}
+                            {new Date(booking.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          {booking.payment_method && (
+                            <p className="text-sm text-gray-500">Method: {booking.payment_method}</p>
+                          )}
+                          {booking.payment_phone && (
+                            <p className="text-sm text-gray-500">Phone: {booking.payment_phone}</p>
+                          )}
+                          {booking.payment_reference && (
+                            <p className="text-sm text-gray-500">Ref: {booking.payment_reference}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-3 py-1 text-sm rounded-full ${
+                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                            booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {booking.status}
+                          </span>
+                          <span className={`px-3 py-1 text-sm rounded-full ml-2 ${
+                            paymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
+                            paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            paymentStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {paymentStatus}
+                          </span>
+                          <p className="text-lg font-bold text-green-600 mt-2">{booking.court?.price_per_hour} KES</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className={`px-3 py-1 text-sm rounded-full ${
-                          booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-                          booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {booking.status}
-                        </span>
-                        <span className={`px-3 py-1 text-sm rounded-full ml-2 ${
-                          booking.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {booking.payment_status || 'pending'}
-                        </span>
-                        <p className="text-lg font-bold text-green-600 mt-2">{booking.court?.price_per_hour} KES</p>
-                      </div>
+                      {booking.status !== 'cancelled' && (
+                        <div className="flex gap-2 mt-4">
+                          {paymentStatus === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleApproveBookingPayment(booking.id)}
+                                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleRejectBookingPayment(booking.id)}
+                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {paymentStatus === 'unpaid' && (
+                            <span className="px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-700">
+                              Awaiting Payment
+                            </span>
+                          )}
+                          {paymentStatus === 'rejected' && (
+                            <span className="px-3 py-1 text-sm rounded-full bg-red-100 text-red-800">
+                              Payment Rejected
+                            </span>
+                          )}
+                          <button
+                            onClick={() => api.cancelBooking(booking.id).then(fetchData)}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm"
+                          >
+                            Cancel Booking
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {booking.payment_status !== 'paid' && booking.status !== 'cancelled' && (
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={async () => {
-                            if (confirm('Approve this payment?')) {
-                              try {
-                                await api.approveBookingPayment(booking.id);
-                                alert('Payment approved!');
-                                fetchData();
-                              } catch (error) {
-                                alert('Failed to approve payment: ' + error.message);
-                              }
-                            }
-                          }}
-                          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                        >
-                          ✓ Approve
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (confirm('Reject this payment?')) {
-                              try {
-                                await api.rejectBookingPayment(booking.id);
-                                alert('Payment rejected!');
-                                fetchData();
-                              } catch (error) {
-                                alert('Failed to reject payment: ' + error.message);
-                              }
-                            }
-                          }}
-                          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                        >
-                          ✕ Reject
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2211,80 +2212,6 @@ function UnifiedStaffPanel() {
                   className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
                 >
                   Add Booking
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Payment Confirmation Modal */}
-      {showPaymentConfirm && confirmingBooking && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Confirm Payment</h2>
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <p className="font-semibold">{confirmingBooking.court?.name || 'Court Booking'}</p>
-              <p className="text-gray-600">User: {confirmingBooking.user?.username}</p>
-              <p className="text-sm text-gray-500">
-                {new Date(confirmingBooking.start_time).toLocaleDateString()} at{' '}
-                {new Date(confirmingBooking.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-              <p className="text-lg font-bold text-green-600 mt-2">{confirmingBooking.court?.price_per_hour} KES</p>
-            </div>
-            <form onSubmit={handlePaymentConfirm}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                  <select
-                    value={paymentData.payment_method}
-                    onChange={(e) => setPaymentData({ ...paymentData, payment_method: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    required
-                  >
-                    <option value="">Select payment method...</option>
-                    <option value="mpesa">M-Pesa</option>
-                    <option value="card">Card</option>
-                    <option value="cash">Cash</option>
-                    <option value="bank">Bank Transfer</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Information</label>
-                  <input
-                    type="text"
-                    required
-                    value={paymentData.payment_phone}
-                    onChange={(e) => setPaymentData({ ...paymentData, payment_phone: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="e.g., 0712345678"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Transaction Reference</label>
-                  <input
-                    type="text"
-                    required
-                    value={paymentData.payment_reference}
-                    onChange={(e) => setPaymentData({ ...paymentData, payment_reference: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="e.g., ABC123XYZ"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentConfirm(false)}
-                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
-                >
-                  Confirm Payment
                 </button>
               </div>
             </form>

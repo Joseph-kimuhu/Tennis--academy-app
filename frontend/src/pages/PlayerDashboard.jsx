@@ -20,6 +20,13 @@ function PlayerDashboard() {
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [enrollingSession, setEnrollingSession] = useState(null);
   const [myTournaments, setMyTournaments] = useState([]);
+  const [showBookingPaymentModal, setShowBookingPaymentModal] = useState(false);
+  const [payingBooking, setPayingBooking] = useState(null);
+  const [bookingPaymentForm, setBookingPaymentForm] = useState({
+    paymentMethod: '',
+    phone: '',
+    reference: ''
+  });
 
   // Utility functions
   const formatDate = (dateString) => {
@@ -79,6 +86,35 @@ function PlayerDashboard() {
     }
 
     setLoading(false);
+  };
+
+  const startBookingPayment = (booking) => {
+    setPayingBooking(booking);
+    setBookingPaymentForm({
+      paymentMethod: booking.payment_method || '',
+      phone: booking.payment_phone || '',
+      reference: booking.payment_reference || ''
+    });
+    setShowBookingPaymentModal(true);
+  };
+
+  const handleBookingPaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!payingBooking) return;
+    try {
+      await api.submitBookingPayment(
+        payingBooking.id,
+        bookingPaymentForm.paymentMethod,
+        bookingPaymentForm.phone,
+        bookingPaymentForm.reference
+      );
+      setShowBookingPaymentModal(false);
+      setPayingBooking(null);
+      setBookingPaymentForm({ paymentMethod: '', phone: '', reference: '' });
+      fetchData();
+    } catch (error) {
+      alert('Failed to submit payment: ' + (error.message || 'Unknown error'));
+    }
   };
 
   if (loading) {
@@ -233,9 +269,15 @@ function PlayerDashboard() {
                       <div className="font-semibold text-lg mb-2">{reg.tournament?.name || 'Tournament'}</div>
                       <div className="flex flex-wrap gap-2 mb-3">
                         <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-                          reg.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          reg.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                          reg.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          reg.payment_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
                         }`}>
-                          {reg.payment_status === 'paid' ? '✅ Paid' : '⏳ Payment Pending'}
+                          {reg.payment_status === 'paid' ? '✅ Paid' :
+                           reg.payment_status === 'pending' ? '⏳ Payment Submitted' :
+                           reg.payment_status === 'rejected' ? '❌ Payment Rejected' :
+                           '💳 Payment Not Submitted'}
                         </span>
                         <span className={`px-3 py-1 text-xs rounded-full font-medium ${
                           reg.status === 'approved' ? 'bg-green-100 text-green-800' :
@@ -489,31 +531,69 @@ function PlayerDashboard() {
             </div>
             {myBookings.length > 0 ? (
               <div className="space-y-4">
-                {myBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mr-3">
-                      <span className="text-green-700 text-xl">🎾</span>
+                {myBookings.map((booking) => {
+                  const paymentStatus = booking.payment_status || 'unpaid';
+                  return (
+                    <div key={booking.id} className="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mr-3">
+                        <span className="text-green-700 text-xl">🎾</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{booking.court?.name || 'Court'}</p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(booking.start_time).toLocaleDateString()} •{" "}
+                          {new Date(booking.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                        {(booking.payment_method || booking.payment_phone || booking.payment_reference) && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {booking.payment_method ? `Method: ${booking.payment_method}` : ''}
+                            {booking.payment_phone ? ` • Phone: ${booking.payment_phone}` : ''}
+                            {booking.payment_reference ? ` • Ref: ${booking.payment_reference}` : ''}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-3 py-1 text-xs rounded-full font-medium ${
+                            booking.status === "confirmed"
+                              ? "bg-green-100 text-green-800"
+                              : booking.status === "cancelled"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {booking.status}
+                        </span>
+                        <span
+                          className={`px-3 py-1 text-xs rounded-full font-medium ${
+                            paymentStatus === "paid"
+                              ? "bg-green-100 text-green-800"
+                              : paymentStatus === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : paymentStatus === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {paymentStatus}
+                        </span>
+                        {booking.status !== "cancelled" && (paymentStatus === "unpaid" || paymentStatus === "rejected") && (
+                          <button
+                            onClick={() => startBookingPayment(booking)}
+                            className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Submit Payment
+                          </button>
+                        )}
+                        {booking.status !== "cancelled" && paymentStatus === "pending" && (
+                          <span className="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                            Awaiting Approval
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{booking.court?.name || 'Court'}</p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(booking.start_time).toLocaleDateString()} •{" "}
-                        {new Date(booking.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 text-xs rounded-full font-medium ${
-                        booking.status === "confirmed"
-                          ? "bg-green-100 text-green-800"
-                          : booking.status === "cancelled"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">
@@ -731,8 +811,84 @@ function PlayerDashboard() {
           </div>
         )}
 
-        {/* Players Tab removed (no in-app messaging between players) */}
+      {/* Players Tab removed (no in-app messaging between players) */}
       </div>
+
+      {/* Booking Payment Modal */}
+      {showBookingPaymentModal && payingBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Submit Payment</h3>
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <p className="font-semibold">{payingBooking.court?.name || 'Court Booking'}</p>
+              <p className="text-sm text-gray-600">
+                {new Date(payingBooking.start_time).toLocaleDateString()} •{" "}
+                {new Date(payingBooking.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">Amount: {payingBooking.court?.price_per_hour || 0} KES</p>
+            </div>
+            <form onSubmit={handleBookingPaymentSubmit}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                  <select
+                    value={bookingPaymentForm.paymentMethod}
+                    onChange={(e) => setBookingPaymentForm({ ...bookingPaymentForm, paymentMethod: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    required
+                  >
+                    <option value="">Select payment method...</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="card">Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank Transfer</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone / Contact</label>
+                  <input
+                    type="text"
+                    required
+                    value={bookingPaymentForm.phone}
+                    onChange={(e) => setBookingPaymentForm({ ...bookingPaymentForm, phone: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., 0712345678"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Transaction Reference</label>
+                  <input
+                    type="text"
+                    required
+                    value={bookingPaymentForm.reference}
+                    onChange={(e) => setBookingPaymentForm({ ...bookingPaymentForm, reference: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., ABC123XYZ"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBookingPaymentModal(false);
+                    setPayingBooking(null);
+                  }}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600"
+                >
+                  Submit Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Stats Modal */}
       {showStatsModal && (
