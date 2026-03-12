@@ -30,6 +30,10 @@ function UnifiedStaffPanel() {
   });
   const [savingStats, setSavingStats] = useState(false);
   const [messageFolder, setMessageFolder] = useState('inbox');
+  const [announcements, setAnnouncements] = useState([]);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', priority: 'normal' });
+  const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
   const [loading, setLoading] = useState(true);
     const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -101,13 +105,14 @@ function UnifiedStaffPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, bookingsData, tournamentsData, courtsData, messagesData] = await Promise.all([
+      const [statsData, usersData, bookingsData, tournamentsData, courtsData, messagesData, announcementsData] = await Promise.all([
         api.getStaffStats().catch(() => ({ total_users: 0, total_bookings: 0, active_tournaments: 0 })),
         api.getAllUsers({ limit: 20 }),
         api.getAllBookings({ limit: 10 }),
         api.getAllTournaments({ limit: 10 }),
         api.getCourts({ limit: 10 }).catch(() => []),
-        api.getMessages(messageFolder, { limit: 20 }).catch(() => [])
+        api.getMessages(messageFolder, { limit: 20 }).catch(() => []),
+        api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => [])
       ]);
       setStats(statsData);
       setUsers(usersData || []);
@@ -115,6 +120,7 @@ function UnifiedStaffPanel() {
       setTournaments(tournamentsData || []);
       setCourts(courtsData || []);
       setMessages(messagesData || []);
+      setAnnouncements(announcementsData || []);
     } catch (error) {
       console.error('Error fetching staff data:', error);
     }
@@ -221,6 +227,34 @@ function UnifiedStaffPanel() {
       alert('Failed to save player statistics: ' + error.message);
     }
     setSavingStats(false);
+  };
+
+  const handleCreateAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!announcementForm.title || !announcementForm.content) {
+      alert('Please fill in all fields');
+      return;
+    }
+    setSendingAnnouncement(true);
+    try {
+      // Create the announcement
+      await api.createAnnouncement(announcementForm);
+      
+      // Get all players and create notifications for each
+      const players = users.filter(u => u.role === 'player');
+      for (const player of players) {
+        await api.createNotification(player.id, announcementForm.title, announcementForm.content, 'announcement');
+      }
+      
+      setShowAnnouncementModal(false);
+      setAnnouncementForm({ title: '', content: '', priority: 'normal' });
+      alert('Announcement sent to all players!');
+      fetchData(); // Refresh announcements
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      alert('Failed to create announcement: ' + error.message);
+    }
+    setSendingAnnouncement(false);
   };
 
   const setActiveUserFilter = (filter) => {
@@ -680,6 +714,7 @@ function UnifiedStaffPanel() {
               { id: 'overview', label: 'Overview', icon: '📊' },
               { id: 'players', label: 'Players', icon: '🎾' },
               { id: 'messages', label: 'Messages', icon: '✉️', badge: messages.filter(m => !m.is_read).length },
+              { id: 'announcements', label: 'Announcements', icon: '📢' },
               { id: 'users', label: 'Users', icon: '👥' },
               { id: 'bookings', label: 'Bookings', icon: '📅' },
               { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
@@ -930,6 +965,47 @@ function UnifiedStaffPanel() {
                       <span className="text-3xl">📭</span>
                     </div>
                     <p className="text-gray-500">No messages in inbox</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'announcements' && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Announcements</h2>
+                <button
+                  onClick={() => setShowAnnouncementModal(true)}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium shadow-md"
+                >
+                  + New Announcement
+                </button>
+              </div>
+              <div className="space-y-4">
+                {announcements.length > 0 ? announcements.map((announcement) => (
+                  <div key={announcement.id} className="border border-gray-200 rounded-xl p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-lg">{announcement.title}</h3>
+                      <span className={`px-3 py-1 text-xs rounded-full ${
+                        announcement.priority === 'urgent' ? 'bg-red-100 text-red-800' : 
+                        announcement.priority === 'high' ? 'bg-orange-100 text-orange-800' : 
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {announcement.priority || 'normal'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 mb-2">{announcement.content}</p>
+                    <p className="text-xs text-gray-400">
+                      Posted: {announcement.created_at ? new Date(announcement.created_at).toLocaleDateString() : 'Recently'}
+                    </p>
+                  </div>
+                )) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-3xl">📢</span>
+                    </div>
+                    <p className="text-gray-500">No announcements yet</p>
                   </div>
                 )}
               </div>
@@ -2634,6 +2710,76 @@ function UnifiedStaffPanel() {
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium disabled:opacity-50"
                 >
                   {savingStats ? 'Saving...' : 'Save Statistics'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Announcement Modal */}
+      {showAnnouncementModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">New Announcement</h3>
+              <button
+                onClick={() => setShowAnnouncementModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">This announcement will be sent to ALL players as a notification.</p>
+            <form onSubmit={handleCreateAnnouncement}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={announcementForm.title}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Announcement title"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                <select
+                  value={announcementForm.priority}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, priority: e.target.value })}
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea
+                  value={announcementForm.content}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  rows="4"
+                  placeholder="Write your announcement..."
+                  required
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAnnouncementModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingAnnouncement}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium disabled:opacity-50"
+                >
+                  {sendingAnnouncement ? 'Sending...' : 'Send to All Players'}
                 </button>
               </div>
             </form>
