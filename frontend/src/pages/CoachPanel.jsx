@@ -1156,9 +1156,12 @@ function CoachPanel() {
                           <p className="text-sm text-gray-500">{reg.email}</p>
                           <div className="flex gap-4 mt-2 text-sm">
                             <span className={`px-2 py-1 rounded ${
-                              reg.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                              reg.payment_status === 'paid' ? 'bg-green-100 text-green-700' :
+                              reg.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              reg.payment_status === 'rejected' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
                             }`}>
-                              Payment: {reg.payment_status}
+                              Payment: {reg.payment_status || 'unpaid'}
                             </span>
                             <span className={`px-2 py-1 rounded ${
                               reg.status === 'approved' ? 'bg-green-100 text-green-700' :
@@ -1168,7 +1171,7 @@ function CoachPanel() {
                               Status: {reg.status}
                             </span>
                           </div>
-                          {reg.payment_status === 'paid' && (
+                          {(reg.payment_status === 'paid' || reg.payment_status === 'pending') && (
                             <div className="mt-2 text-sm text-gray-600">
                               <p>Phone: {reg.payment_phone}</p>
                               <p>Reference: {reg.payment_reference}</p>

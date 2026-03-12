@@ -401,6 +401,10 @@ class FirebaseApiService {
       ...bookingData,
       user_id: userId,
       status: 'confirmed',
+      payment_status: 'unpaid',
+      payment_method: '',
+      payment_phone: '',
+      payment_reference: '',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
@@ -424,6 +428,40 @@ class FirebaseApiService {
       status: 'cancelled',
       updatedAt: serverTimestamp()
     });
+  }
+
+  async submitBookingPayment(bookingId, paymentMethod, paymentPhone, paymentReference) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      payment_method: paymentMethod,
+      payment_status: 'pending',
+      payment_phone: paymentPhone,
+      payment_reference: paymentReference,
+      payment_submitted_at: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  }
+
+  async approveBookingPayment(bookingId) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      payment_status: 'paid',
+      payment_confirmed_at: serverTimestamp(),
+      status: 'confirmed',
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  }
+
+  async rejectBookingPayment(bookingId) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      payment_status: 'rejected',
+      payment_rejected_at: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return true;
   }
 
   async confirmBookingPayment(bookingId, paymentMethod, paymentPhone, paymentReference) {
@@ -721,7 +759,7 @@ class FirebaseApiService {
       tournament_id: tournamentId,
       user_id: userId,
       status: 'pending_payment',
-      payment_status: 'pending',
+      payment_status: 'unpaid',
       payment_method: '',
       payment_phone: '',
       payment_reference: '',
@@ -775,7 +813,7 @@ class FirebaseApiService {
       payment_phone: paymentPhone,
       payment_reference: paymentReference,
       payment_status: 'pending',
-      payment_confirmed_at: null,
+      payment_submitted_at: serverTimestamp(),
       status: 'pending_payment'
     });
     return true;
@@ -802,8 +840,8 @@ class FirebaseApiService {
     await updateDoc(registrationRef, {
       status: 'approved',
       payment_status: 'paid',
-      payment_confirmed_at: serverTimestamp(),
-      approved_at: serverTimestamp()
+      approved_at: serverTimestamp(),
+      payment_confirmed_at: serverTimestamp()
     });
     
     // Notify player of approval
@@ -831,8 +869,7 @@ class FirebaseApiService {
     await updateDoc(registrationRef, {
       status: 'rejected',
       payment_status: 'rejected',
-      payment_confirmed_at: null,
-      rejection_reason: reason,
+      rejection_reason: reason || 'Payment not verified',
       rejected_at: serverTimestamp()
     });
     
