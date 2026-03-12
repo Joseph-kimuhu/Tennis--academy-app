@@ -2445,9 +2445,9 @@ function UnifiedStaffPanel() {
                         </span>
                       </div>
                     </div>
-                    {(reg.payment_status === 'pending' || !reg.payment_status) && (
+                    {(reg.payment_status === 'pending' || reg.payment_status === 'pending_payment' || !reg.payment_status || reg.payment_status === '') && (
                       <div className="mt-4 pt-4 border-t border-gray-200">
-                        {reg.payment_status === 'pending' ? (
+                        {reg.payment_status === 'pending' || reg.payment_status === 'pending_payment' ? (
                           <>
                             <div className="grid grid-cols-2 gap-4 text-sm">
                               <div>
