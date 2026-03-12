@@ -78,13 +78,23 @@ function PlayerDashboard() {
       setPlayers(playersData?.filter(p => p.id !== user?.id) || []);
       // Only show John Makumi as recipient
       const allAdmins = [...(adminsData || []), ...(coachesData || [])];
+      console.log('All admins details:', allAdmins.map(admin => ({ 
+        id: admin.id, 
+        username: admin.username, 
+        email: admin.email, 
+        role: admin.role 
+      })));
+      
       const johnMakumi = allAdmins.filter(user => 
         user.email === 'johnmakumi106@gmail.com' || 
-        user.username === 'johnmakumi'
+        user.username === 'johnmakumi' ||
+        user.email?.toLowerCase() === 'johnmakumi106@gmail.com' ||
+        user.username?.toLowerCase() === 'johnmakumi'
       );
-      setAdmins(johnMakumi); // Only set John Makumi, not fallback to others
+      // Temporarily show all admins for debugging, will switch to johnMakumi only after we find him
+      setAdmins(johnMakumi.length > 0 ? johnMakumi : allAdmins);
       console.log('John Makumi found:', johnMakumi);
-      console.log('All admins:', allAdmins);
+      console.log('Setting admins to:', johnMakumi.length > 0 ? johnMakumi : allAdmins);
       setNotifications(notificationsData || []);
       setMyTournaments(myTournamentsData || []);
     } catch (error) {
