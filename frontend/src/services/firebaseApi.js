@@ -922,50 +922,53 @@ class FirebaseApiService {
     
     const { limit: limitCount = 10 } = params;
     
-    // Get all messages and filter in JavaScript (avoids index requirement)
-    const q = query(collection(db, 'messages'), limit(50));
-    const querySnapshot = await getDocs(q);
-    let allMessages = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Filter by folder
-    if (folder === 'inbox') {
-      allMessages = allMessages.filter(m => m.receiver_id === userId);
-    } else {
-      allMessages = allMessages.filter(m => m.sender_id === userId);
-    }
-    
-    // Sort by created date
-    allMessages.sort((a, b) => {
-      const dateA = a.created_at || a.createdAt;
-      const dateB = b.created_at || b.createdAt;
-      return new Date(dateB) - new Date(dateA);
-    });
-    
-    const messages = [];
-    
-    for (const message of allMessages.slice(0, limitCount)) {
-      // Get sender info
-      if (message.sender_id) {
-        const senderDoc = await getDoc(doc(db, 'users', message.sender_id));
-        if (senderDoc.exists()) {
-          message.sender = { id: senderDoc.id, ...senderDoc.data() };
-        }
+    try {
+      // Create proper queries based on folder to respect Firestore rules
+      let q;
+      if (folder === 'inbox') {
+        // Query messages where current user is the receiver
+        q = query(
+          collection(db, 'messages'),
+          where('receiver_id', '==', userId),
+          orderBy('created_at', 'desc'),
+          limit(limitCount || 10)
+        );
+      } else {
+        // Query messages where current user is the sender
+        q = query(
+          collection(db, 'messages'),
+          where('sender_id', '==', userId),
+          orderBy('created_at', 'desc'),
+          limit(limitCount || 10)
+        );
       }
       
-      // Get receiver info
-      if (message.receiver_id) {
-        const receiverDoc = await getDoc(doc(db, 'users', message.receiver_id));
-        if (receiverDoc.exists()) {
-          message.receiver = { id: receiverDoc.id, ...receiverDoc.data() };
-        }
-      }
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      messages.push(message);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      // Fallback: try to get all messages if specific query fails
+      try {
+        const fallbackQ = query(collection(db, 'messages'), limit(50));
+        const fallbackSnapshot = await getDocs(fallbackQ);
+        let allMessages = fallbackSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Filter by folder
+        if (folder === 'inbox') {
+          allMessages = allMessages.filter(m => m.receiver_id === userId);
+        } else {
+          allMessages = allMessages.filter(m => m.sender_id === userId);
+        }
+        return allMessages;
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+        return [];
+      }
     }
-    
-    return messages;
   }
-
+    
+    
   async sendMessage(messageData) {
     const userId = this.getCurrentUserId();
     if (!userId) throw new Error('Not authenticated');
