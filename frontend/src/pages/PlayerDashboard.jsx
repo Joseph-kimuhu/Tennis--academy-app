@@ -97,13 +97,24 @@ function PlayerDashboard() {
       // First register for tournament
       await api.registerForTournament(payingTournament.id);
       
-      // Then confirm payment
-      const registrations = await api.getMyTournamentRegistrations();
-      const myReg = registrations.find(r => r.tournament?.id === payingTournament.id);
+      // Then confirm payment - wait a bit for registration to be created
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (myReg) {
-        await api.confirmTournamentPayment(myReg.id, paymentForm.paymentMethod, paymentForm.phone, paymentForm.reference);
+      const registrations = await api.getMyTournamentRegistrations();
+      if (!registrations || registrations.length === 0) {
+        alert('Registration not found. Please try again.');
+        return;
       }
+      
+      // Find the registration for this tournament
+      const myReg = registrations.find(r => r.tournament && r.tournament.id === payingTournament.id);
+      
+      if (!myReg) {
+        alert('Registration not found. Please refresh and try again.');
+        return;
+      }
+      
+      await api.confirmTournamentPayment(myReg.id, paymentForm.paymentMethod, paymentForm.phone, paymentForm.reference);
       
       setShowPaymentModal(false);
       setPayingTournament(null);
@@ -126,7 +137,8 @@ function PlayerDashboard() {
       
       fetchData();
     } catch (error) {
-      alert('Error: ' + error.message);
+      console.error('Payment error:', error);
+      alert('Error: ' + (error.message || 'Unknown error'));
     }
   };
 
