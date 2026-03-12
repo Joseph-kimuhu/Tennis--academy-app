@@ -25,6 +25,7 @@ function PlayerDashboard() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [coaches, setCoaches] = useState([]);
   const [players, setPlayers] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [enrollingSession, setEnrollingSession] = useState(null);
   const [myTournaments, setMyTournaments] = useState([]);
@@ -44,7 +45,7 @@ function PlayerDashboard() {
 
   const fetchData = async () => {
     try {
-      const [tournamentsData, courtsData, bookingsData, statsData, messagesData, sessionsData, announcementsData, matchesData, leaderboardData, coachesData, playersData, notificationsData, detailedStatsData, myTournamentsData] = await Promise.all([
+      const [tournamentsData, courtsData, bookingsData, statsData, messagesData, sessionsData, announcementsData, matchesData, leaderboardData, coachesData, playersData, adminsData, notificationsData, detailedStatsData, myTournamentsData] = await Promise.all([
         api.getActiveTournaments().catch(() => []),
         api.getCourts({ limit: 6 }).catch(() => []),
         api.getMyBookings().catch(() => []),
@@ -56,6 +57,7 @@ function PlayerDashboard() {
         api.getLeaderboard({ limit: 10 }).catch(() => []),
         api.getCoaches().catch(() => []),
         api.getPlayers({ limit: 50, role: 'player' }).catch(() => []),
+        api.getPlayers({ limit: 50, role: 'admin' }).catch(() => []),
         api.getNotifications({ limit: 10 }).catch(() => []),
         user ? api.getPlayerStatistics(user.id).catch(() => null) : Promise.resolve(null),
         user ? api.getMyTournamentRegistrations().catch(() => []) : Promise.resolve([])
@@ -73,6 +75,7 @@ function PlayerDashboard() {
       setLeaderboard(leaderboardData || []);
       setCoaches(coachesData || []);
       setPlayers(playersData?.filter(p => p.id !== user?.id) || []);
+      setAdmins(adminsData || []);
       setNotifications(notificationsData || []);
       setMyTournaments(myTournamentsData || []);
     } catch (error) {
@@ -475,20 +478,30 @@ function PlayerDashboard() {
                       <div>👥 {tournament.participant_count || 0} players</div>
                       <div>💰 {tournament.entry_fee || 0} KES</div>
                     </div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await api.registerForTournament(tournament.id);
-                          alert('Successfully registered for tournament!');
-                          fetchData();
-                        } catch (error) {
-                          alert('Failed to register: ' + error.message);
-                        }
-                      }}
-                      className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
-                    >
-                      Register Now
-                    </button>
+                    {(() => {
+                      const isRegistered = myTournaments.some(reg => reg.tournament?.id === tournament.id);
+                      return (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await api.registerForTournament(tournament.id);
+                              alert('Successfully registered for tournament!');
+                              fetchData();
+                            } catch (error) {
+                              alert('Failed to register: ' + error.message);
+                            }
+                          }}
+                          disabled={isRegistered}
+                          className={`w-full px-4 py-2 rounded-lg font-medium ${
+                            isRegistered 
+                              ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+                              : 'bg-green-500 text-white hover:bg-green-600'
+                          }`}
+                        >
+                          {isRegistered ? 'Already Registered' : 'Register Now'}
+                        </button>
+                      );
+                    })()}
                   </div>
                 ))}
                 {activeTournaments.length === 0 && (
@@ -732,11 +745,8 @@ function PlayerDashboard() {
                   required
                 >
                   <option value="">Select recipient...</option>
-                  {coaches.map((coach) => (
-                    <option key={coach.id} value={coach.id}>{coach.username} (Coach)</option>
-                  ))}
-                  {players.map((player) => (
-                    <option key={player.id} value={player.id}>{player.username}</option>
+                  {admins.map((admin) => (
+                    <option key={admin.id} value={admin.id}>{admin.username} (Admin)</option>
                   ))}
                 </select>
               </div>

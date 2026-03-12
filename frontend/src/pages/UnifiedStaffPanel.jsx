@@ -61,6 +61,7 @@ function UnifiedStaffPanel() {
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
   const [confirmingBooking, setConfirmingBooking] = useState(null);
   const [paymentData, setPaymentData] = useState({
+    payment_method: '',
     payment_phone: '',
     payment_reference: ''
   });
@@ -455,11 +456,11 @@ function UnifiedStaffPanel() {
   const handlePaymentConfirm = async (e) => {
     e.preventDefault();
     try {
-      await api.confirmBookingPayment(confirmingBooking.id, paymentData.payment_phone, paymentData.payment_reference);
+      await api.confirmBookingPayment(confirmingBooking.id, paymentData.payment_method, paymentData.payment_phone, paymentData.payment_reference);
       alert('Payment confirmed successfully!');
       setShowPaymentConfirm(false);
       setConfirmingBooking(null);
-      setPaymentData({ payment_phone: '', payment_reference: '' });
+      setPaymentData({ payment_method: '', payment_phone: '', payment_reference: '' });
       fetchData();
     } catch (error) {
       alert('Failed to confirm payment: ' + (error.message || 'Unknown error'));
@@ -469,6 +470,7 @@ function UnifiedStaffPanel() {
   const startPaymentConfirm = (booking) => {
     setConfirmingBooking(booking);
     setPaymentData({
+      payment_method: booking.payment_method || '',
       payment_phone: booking.payment_phone || '',
       payment_reference: booking.payment_reference || ''
     });
@@ -2235,7 +2237,22 @@ function UnifiedStaffPanel() {
             <form onSubmit={handlePaymentConfirm}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                  <select
+                    value={paymentData.payment_method}
+                    onChange={(e) => setPaymentData({ ...paymentData, payment_method: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    required
+                  >
+                    <option value="">Select payment method...</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="card">Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank Transfer</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Information</label>
                   <input
                     type="text"
                     required
@@ -2246,7 +2263,7 @@ function UnifiedStaffPanel() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Reference</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Transaction Reference</label>
                   <input
                     type="text"
                     required

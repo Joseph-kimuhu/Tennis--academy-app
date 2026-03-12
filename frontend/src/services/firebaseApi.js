@@ -426,9 +426,10 @@ class FirebaseApiService {
     });
   }
 
-  async confirmBookingPayment(bookingId, paymentPhone, paymentReference) {
+  async confirmBookingPayment(bookingId, paymentMethod, paymentPhone, paymentReference) {
     const bookingRef = doc(db, 'bookings', bookingId);
     await updateDoc(bookingRef, {
+      payment_method: paymentMethod,
       payment_status: 'paid',
       payment_phone: paymentPhone,
       payment_reference: paymentReference,
@@ -674,6 +675,18 @@ class FirebaseApiService {
     
     const tournamentData = tournamentDoc.data();
     
+    // Check if user is already registered
+    const existingRegistrationQuery = query(
+      collection(db, 'tournament_registrations'),
+      where('tournament_id', '==', tournamentId),
+      where('user_id', '==', userId)
+    );
+    const existingRegistrationSnapshot = await getDocs(existingRegistrationQuery);
+    
+    if (!existingRegistrationSnapshot.empty) {
+      throw new Error('You are already registered for this tournament');
+    }
+    
     // Get user info for notification
     const userDoc = await getDoc(doc(db, 'users', userId));
     const playerName = userDoc.exists() ? userDoc.data().username : 'A player';
@@ -684,6 +697,7 @@ class FirebaseApiService {
       user_id: userId,
       status: 'pending_payment',
       payment_status: 'pending',
+      payment_method: '',
       payment_phone: '',
       payment_reference: '',
       registered_at: serverTimestamp()
@@ -729,9 +743,10 @@ class FirebaseApiService {
     return participants;
   }
 
-  async confirmTournamentPayment(registrationId, paymentPhone, paymentReference) {
+  async confirmTournamentPayment(registrationId, paymentMethod, paymentPhone, paymentReference) {
     const registrationRef = doc(db, 'tournament_registrations', registrationId);
     await updateDoc(registrationRef, {
+      payment_method: paymentMethod,
       payment_phone: paymentPhone,
       payment_reference: paymentReference,
       payment_status: 'paid',
