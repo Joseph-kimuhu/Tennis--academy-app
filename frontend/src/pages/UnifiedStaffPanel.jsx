@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 
 function UnifiedStaffPanel() {
   const { user, isAdmin, isCoach, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [userFilter, setUserFilter] = useState('all');
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -95,6 +97,13 @@ function UnifiedStaffPanel() {
 
   // Coaches get full admin access
   const hasFullAccess = isAdmin || isCoach;
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (isAdmin || isCoach) {

@@ -97,7 +97,13 @@ function Navbar() {
             {isAuthenticated && (
               <div className="relative">
                 <button
-                  onClick={() => navigate('/dashboard?tab=messages')}
+                  onClick={() => {
+                    if (isAdmin || isCoach) {
+                      navigate('/staff-panel?tab=messages');
+                    } else {
+                      navigate('/player-dashboard?tab=messages');
+                    }
+                  }}
                   className="p-2 rounded-xl hover:bg-gray-100 transition-colors relative"
                   title="Notifications"
                 >

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 
 function PlayerDashboard() {
   const { user, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
   const [activeTournaments, setActiveTournaments] = useState([]);
   const [courts, setCourts] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
@@ -16,7 +17,7 @@ function PlayerDashboard() {
   const [myMatches, setMyMatches] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -27,6 +28,13 @@ function PlayerDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [enrollingSession, setEnrollingSession] = useState(null);
   const [myTournaments, setMyTournaments] = useState([]);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
