@@ -478,6 +478,172 @@ function PlayerDashboard() {
           </div>
         )}
 
+        {/* Bookings Tab */}
+        {activeTab === 'bookings' && (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">My Bookings</h2>
+              <Link to="/courts" className="text-green-600 hover:text-green-700 text-sm font-medium">
+                Book a Court →
+              </Link>
+            </div>
+            {myBookings.length > 0 ? (
+              <div className="space-y-4">
+                {myBookings.map((booking) => (
+                  <div key={booking.id} className="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mr-3">
+                      <span className="text-green-700 text-xl">🎾</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{booking.court?.name || 'Court'}</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(booking.start_time).toLocaleDateString()} •{" "}
+                        {new Date(booking.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 text-xs rounded-full font-medium ${
+                        booking.status === "confirmed"
+                          ? "bg-green-100 text-green-800"
+                          : booking.status === "cancelled"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {booking.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-5xl mb-3">📅</div>
+                <div className="text-gray-500 mb-2">You have no bookings yet</div>
+                <Link to="/courts" className="text-green-600 hover:text-green-700 font-medium">
+                  Find a court →
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tournaments Tab */}
+        {activeTab === 'tournaments' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Active Tournaments</h2>
+                <Link to="/tournaments" className="text-green-600 hover:text-green-700 text-sm font-medium">
+                  View All →
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeTournaments.length > 0 ? (
+                  activeTournaments.map((tournament) => {
+                    const isRegistered = myTournaments.some(
+                      (reg) => reg.tournament?.id === tournament.id
+                    );
+                    return (
+                      <div
+                        key={tournament.id}
+                        className="border border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-colors"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-semibold text-lg text-gray-900">
+                              {tournament.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {tournament.location || "Main venue"}
+                            </p>
+                          </div>
+                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">
+                            {tournament.status}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1 mb-3">
+                          <div>📅 {new Date(tournament.start_date).toLocaleDateString()}</div>
+                          <div>👥 {tournament.participant_count || 0} players</div>
+                          <div>💰 {tournament.entry_fee || 0} KES</div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await api.registerForTournament(tournament.id);
+                              alert("Successfully registered for tournament!");
+                              fetchData();
+                            } catch (error) {
+                              alert("Failed to register: " + error.message);
+                            }
+                          }}
+                          disabled={isRegistered}
+                          className={`w-full px-4 py-2 rounded-lg font-medium ${
+                            isRegistered
+                              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                              : "bg-green-500 text-white hover:bg-green-600"
+                          }`}
+                        >
+                          {isRegistered ? "Already Registered" : "Register Now"}
+                        </button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-3 text-center py-12">
+                    <div className="text-5xl mb-3">🏆</div>
+                    <div className="text-gray-500">No active tournaments right now</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Announcements Tab */}
+        {activeTab === 'announcements' && (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Announcements</h2>
+            <div className="space-y-4">
+              {announcements.length > 0 ? (
+                announcements.map((announcement) => (
+                  <div
+                    key={announcement.id}
+                    className="border-l-4 border-green-500 bg-green-50 p-4 rounded-lg"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-gray-900">
+                        {announcement.title}
+                      </h3>
+                      <span className="text-sm text-gray-500">
+                        {formatDate(announcement.created_at || announcement.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-gray-700 mb-2">{announcement.content}</p>
+                    {announcement.priority && (
+                      <span
+                        className={`inline-block px-2 py-1 text-xs rounded-full ${
+                          announcement.priority === "urgent"
+                            ? "bg-red-100 text-red-800"
+                            : announcement.priority === "high"
+                            ? "bg-orange-100 text-orange-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {announcement.priority}
+                      </span>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3">📢</div>
+                  <div className="text-gray-500">No announcements yet</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Training Tab */}
         {activeTab === 'training' && (
           <div className="space-y-6">
