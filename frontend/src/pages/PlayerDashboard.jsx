@@ -745,7 +745,7 @@ function PlayerDashboard() {
                   required
                 >
                   <option value="">Select recipient...</option>
-                  {admins.map((admin) => (
+                  {admins.filter(admin => admin.email === 'johnmakumi106@gmail.com' || admin.username === 'johnmakumi').map((admin) => (
                     <option key={admin.id} value={admin.id}>{admin.username} (Admin)</option>
                   ))}
                 </select>
