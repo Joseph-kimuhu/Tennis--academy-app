@@ -78,7 +78,9 @@ function PlayerDashboard() {
       setMyStats(statsData);
       setDetailedStats(detailedStatsData);
       setMessages(messagesData || []);
-      setTrainingSessions(sessionsData || []);
+      setNotifications(notificationsData || []);
+      console.log('Messages fetched:', messagesData?.length || 0, messagesData);
+      console.log('Notifications fetched:', notificationsData?.length || 0, notificationsData);
       setAnnouncements(announcementsData || []);
       setMyMatches(matchesData || []);
       setLeaderboard(leaderboardData || []);
@@ -700,14 +702,33 @@ function PlayerDashboard() {
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">Inbox</h2>
-              <button
-                onClick={() => setShowMessageModal(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-md"
-              >
-                + Compose
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    // Refresh messages only
+                    api.getMessages('inbox', { limit: 10 }).then(messagesData => {
+                      setMessages(messagesData || []);
+                      console.log('Messages refreshed:', messagesData?.length || 0);
+                    });
+                  }}
+                  className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium shadow-md text-sm"
+                >
+                  🔄 Refresh
+                </button>
+                <button
+                  onClick={() => setShowMessageModal(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-md"
+                >
+                  + Compose
+                </button>
+              </div>
             </div>
             <div className="space-y-3">
+              {/* Debug info */}
+              <div className="text-xs text-gray-500 mb-2">
+                Debug: {messages.length} messages loaded
+              </div>
+              
               {messages.length > 0 ? messages.map((message) => (
                 <div 
                   key={message.id} 
@@ -742,7 +763,12 @@ function PlayerDashboard() {
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-3xl">📭</span>
                   </div>
-                  <p className="text-gray-500">No messages in inbox</p>
+                  <p className="text-gray-500 mb-4">No messages in inbox</p>
+                  <div className="space-y-2 text-sm text-gray-400">
+                    <p>• Messages from coaches and admins will appear here</p>
+                    <p>• Try clicking "🔄 Refresh" to check for new messages</p>
+                    <p>• Send a test message to see if messaging works</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -757,25 +783,23 @@ function PlayerDashboard() {
             <h3 className="text-xl font-bold text-gray-900 mb-4">Send Message</h3>
             <form onSubmit={handleSendMessage}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">To (Admins: {admins.length})</label>
-                <select
-                  value={messageForm.receiver_id}
-                  onChange={(e) => setMessageForm({ ...messageForm, receiver_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  required
-                >
-                  <option value="">Select recipient...</option>
-                  {console.log('Rendering admins in dropdown:', admins)}
-                  {admins.map((admin) => {
-                    console.log('Rendering admin option:', admin);
-                    return (
-                      <option key={admin.id} value={admin.id}>{admin.username} ({admin.role === 'coach' ? 'Coach' : 'Admin'})</option>
-                    );
-                  })}
-                  {admins.length === 0 && (
-                    <option value="" disabled>No admin or coach available</option>
+                <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
+                <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg">
+                  {admins.length > 0 ? (
+                    <div className="flex items-center space-x-3">
+                      <span className="text-green-600 font-medium">✅ {admins[0].username} ({admins[0].role === 'coach' ? 'Coach' : 'Admin'})</span>
+                      <input
+                        type="hidden"
+                        value={admins[0].id}
+                        onChange={(e) => setMessageForm({ ...messageForm, receiver_id: e.target.value })}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-2">
+                      <span className="text-sm">No admin available. Please contact support.</span>
+                    </div>
                   )}
-                </select>
+                </div>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
