@@ -13,10 +13,6 @@ function UnifiedStaffPanel() {
   const [bookings, setBookings] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [courts, setCourts] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  const [messageForm, setMessageForm] = useState({ receiver_id: '', subject: '', content: '', message_type: 'general' });
-  const [sendingMessage, setSendingMessage] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [playerStats, setPlayerStats] = useState(null);
@@ -31,7 +27,6 @@ function UnifiedStaffPanel() {
     losing_streak: 0, longest_win_streak: 0, longest_lose_streak: 0, coach_notes: ''
   });
   const [savingStats, setSavingStats] = useState(false);
-  const [messageFolder, setMessageFolder] = useState('inbox');
   const [announcements, setAnnouncements] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
@@ -125,13 +120,12 @@ function UnifiedStaffPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, bookingsData, tournamentsData, courtsData, messagesData, announcementsData, notificationsData] = await Promise.all([
+      const [statsData, usersData, bookingsData, tournamentsData, courtsData, announcementsData, notificationsData] = await Promise.all([
         api.getAdminStats().catch(() => ({ totalUsers: 0, totalBookings: 0, activeTournaments: 0, totalCourts: 0, totalTournaments: 0 })),
         api.getAllUsers({ limit: 20 }),
         api.getAllBookings({ limit: 10 }),
         api.getAllTournaments({ limit: 10 }),
         api.getCourts({ limit: 10 }).catch(() => []),
-        api.getMessages(messageFolder, { limit: 20 }).catch(() => []),
         api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => []),
         api.getNotifications({ limit: 20 }).catch(() => [])
       ]);
@@ -140,39 +134,12 @@ function UnifiedStaffPanel() {
       setBookings(bookingsData || []);
       setTournaments(tournamentsData || []);
       setCourts(courtsData || []);
-      setMessages(messagesData || []);
       setAnnouncements(announcementsData || []);
       setNotifications(notificationsData || []);
     } catch (error) {
       console.error('Error fetching staff data:', error);
     }
     setLoading(false);
-  };
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!messageForm.receiver_id || !messageForm.subject || !messageForm.content) {
-      alert('Please fill in all fields');
-      return;
-    }
-    setSendingMessage(true);
-    try {
-      console.log('Sending message:', messageForm);
-      await api.sendMessage(messageForm);
-      setShowMessageModal(false);
-      setMessageForm({ receiver_id: '', subject: '', content: '', message_type: 'general' });
-      alert('Message sent successfully!');
-      fetchData(); // Refresh messages
-    } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message: ' + error.message);
-    }
-    setSendingMessage(false);
-  };
-
-  const openMessageModal = (playerId = '') => {
-    setMessageForm({ ...messageForm, receiver_id: playerId });
-    setShowMessageModal(true);
   };
 
   const handleSelectPlayer = async (player) => {
@@ -736,7 +703,6 @@ function UnifiedStaffPanel() {
             {[
               { id: 'overview', label: 'Overview', icon: '📊' },
               { id: 'players', label: 'Players', icon: '🎾' },
-              { id: 'messages', label: 'Messages', icon: '✉️', badge: messages.filter(m => !m.is_read).length },
               { id: 'announcements', label: 'Announcements', icon: '📢' },
               { id: 'users', label: 'Users', icon: '👥' },
               { id: 'bookings', label: 'Bookings', icon: '📅' },
@@ -892,20 +858,12 @@ function UnifiedStaffPanel() {
                           <span className="text-red-600 font-medium">{player.losses || 0}</span>
                         </td>
                         <td className="py-4">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleSelectPlayer(player)}
-                              className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
-                            >
-                              📊 Stats
-                            </button>
-                            <button
-                              onClick={() => openMessageModal(player.id)}
-                              className="px-3 py-1.5 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
-                            >
-                              ✉️ Message
-                            </button>
-                          </div>
+                        <button
+                          onClick={() => handleSelectPlayer(player)}
+                          className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+                        >
+                          📊 Stats
+                        </button>
                         </td>
                       </tr>
                     ))}
@@ -923,76 +881,7 @@ function UnifiedStaffPanel() {
             </div>
           )}
 
-          {activeTab === 'messages' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Messages</h2>
-                <button
-                  onClick={() => openMessageModal()}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium shadow-md"
-                >
-                  + Compose
-                </button>
-              </div>
-              <div className="mb-4 flex space-x-2">
-                <button
-                  onClick={() => { setMessageFolder('inbox'); fetchData(); }}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    messageFolder === 'inbox' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  Inbox
-                </button>
-                <button
-                  onClick={() => { setMessageFolder('sent'); fetchData(); }}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    messageFolder === 'sent' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  Sent
-                </button>
-              </div>
-              <div className="space-y-3">
-                {messages.length > 0 ? messages.map((message) => (
-                  <div 
-                    key={message.id}
-                    onClick={async () => {
-                      if (!message.is_read && messageFolder === 'inbox') {
-                        try {
-                          await api.markMessageAsRead(message.id);
-                          message.is_read = true;
-                          setMessages([...messages]);
-                        } catch (error) {
-                          console.error('Error marking message as read:', error);
-                        }
-                      }
-                    }}
-                    className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read && messageFolder === 'inbox' ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        {!message.is_read && messageFolder === 'inbox' && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
-                        <div>
-                          <p className="font-medium">{messageFolder === 'inbox' ? message.sender?.username || 'Unknown' : `To: ${message.receiver?.username || 'Unknown'}`}</p>
-                          <p className="text-xs text-gray-500">{messageFolder === 'inbox' ? `To: ${message.receiver?.username}` : `To: ${message.receiver?.username}`}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
-                    </div>
-                    <h3 className="font-semibold mt-2">{message.subject}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{message.content}</p>
-                  </div>
-                )) : (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl">📭</span>
-                    </div>
-                    <p className="text-gray-500">No messages in inbox</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Messages tab removed to disable in-app staff messaging */}
 
           {activeTab === 'announcements' && (
             <div>

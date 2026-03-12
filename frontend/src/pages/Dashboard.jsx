@@ -274,18 +274,7 @@ function Dashboard() {
             </div>
           </Link>
 
-          <Link
-            to="/leaderboard"
-            className="bg-white rounded-xl shadow-md p-6 card-hover flex items-center space-x-4"
-          >
-            <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">📈</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg">View Rankings</h3>
-              <p className="text-sm text-gray-500">See top players</p>
-            </div>
-          </Link>
+          {/* Leaderboard quick action removed */}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -41,7 +41,6 @@ function Navbar() {
   const navLinks = [
     { path: '/courts', label: 'Courts' },
     { path: '/tournaments', label: 'Tournaments' },
-    { path: '/leaderboard', label: 'Leaderboard' },
   ];
 
   return (
@@ -112,9 +111,9 @@ function Navbar() {
                 <button
                   onClick={() => {
                     if (isAdmin || isCoach) {
-                      navigate('/staff-panel?tab=messages');
+                      navigate('/staff-panel?tab=announcements');
                     } else {
-                      navigate('/player-dashboard?tab=messages');
+                      navigate('/player-dashboard?tab=notifications');
                     }
                   }}
                   className="p-2 rounded-xl hover:bg-gray-100 transition-colors relative"
@@ -171,7 +170,7 @@ function Navbar() {
                       </span>
                     </div>
                     <Link
-                      to="/dashboard"
+                      to={isAdmin ? "/staff-panel" : "/player-dashboard"}
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       onClick={() => setIsProfileOpen(false)}
                     >

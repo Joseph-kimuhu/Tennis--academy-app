@@ -6,7 +6,6 @@ function CoachPanel() {
   const { isAdmin, isCoach, user } = useAuth();
   const [dashboard, setDashboard] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [messages, setMessages] = useState([]);
   const [trainingSessions, setTrainingSessions] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [tournaments, setTournaments] = useState([]);
@@ -26,7 +25,6 @@ function CoachPanel() {
   };
   const [playerStats, setPlayerStats] = useState(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
-  const [showMessageModal, setShowMessageModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -35,8 +33,6 @@ function CoachPanel() {
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [tournamentRegistrations, setTournamentRegistrations] = useState([]);
   const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
-
-  const [messageForm, setMessageForm] = useState({ receiver_id: '', subject: '', content: '', message_type: 'general' });
   const [sessionForm, setSessionForm] = useState({
     title: '', description: '', scheduled_date: '', duration_minutes: 60, max_participants: 4, session_type: 'general'
   });
@@ -79,10 +75,9 @@ function CoachPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [dashboardData, playersData, messagesData, sessionsData, announcementsData, tournamentsData, courtsData, clubsData] = await Promise.all([
+      const [dashboardData, playersData, sessionsData, announcementsData, tournamentsData, courtsData, clubsData] = await Promise.all([
         api.getCoachDashboard().catch(() => null),
         api.getCoachPlayers({ limit: 100 }).catch(() => []),
-        api.getMessages('inbox', { limit: 10 }).catch(() => []),
         api.getTrainingSessions({ upcoming: true, limit: 10 }).catch(() => []),
         api.getAnnouncements({ active_only: true, limit: 5 }).catch(() => []),
         api.getTournaments({ limit: 50 }).catch(() => []),
@@ -91,7 +86,6 @@ function CoachPanel() {
       ]);
       setDashboard(dashboardData);
       setPlayers(playersData || []);
-      setMessages(messagesData || []);
       setTrainingSessions(sessionsData || []);
       setAnnouncements(announcementsData || []);
       setTournaments(tournamentsData || []);
@@ -140,26 +134,7 @@ function CoachPanel() {
     setShowStatsModal(true);
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    setSendingMessage(true);
-    try {
-      // Convert receiver_id to integer since HTML select returns string
-      const messageData = {
-        ...messageForm,
-        receiver_id: parseInt(messageForm.receiver_id, 10)
-      };
-      await api.sendMessage(messageData);
-      setShowMessageModal(false);
-      setMessageForm({ receiver_id: '', subject: '', content: '', message_type: 'general' });
-      alert('Message sent successfully!');
-      fetchData();
-    } catch (error) {
-      alert('Failed to send message: ' + error.message);
-    } finally {
-      setSendingMessage(false);
-    }
-  };
+  // Messaging handlers removed (coach messaging disabled)
 
   const handleSaveStats = async (e) => {
     e.preventDefault();
@@ -299,17 +274,7 @@ function CoachPanel() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Pending Messages</p>
-                <p className="text-3xl font-bold text-gray-900">{dashboard?.pending_messages || 0}</p>
-              </div>
-              <div className="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">✉️</span>
-              </div>
-            </div>
-          </div>
+          {/* Pending messages card removed since messaging is disabled */}
 
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
@@ -334,7 +299,6 @@ function CoachPanel() {
               { id: 'announcements', label: 'Announcements', icon: '📢' },
               { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
               { id: 'courts', label: 'Courts', icon: '🎱' },
-              { id: 'messages', label: 'Messages', icon: '✉️', badge: messages.filter(m => !m.is_read).length },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -347,11 +311,6 @@ function CoachPanel() {
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.label}
-                {tab.badge > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                    {tab.badge}
-                  </span>
-                )}
                 {activeTab === tab.id && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"></div>
                 )}
@@ -385,35 +344,7 @@ function CoachPanel() {
               )}
             </div>
 
-            {/* Recent Messages */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Messages</h2>
-              {messages.slice(0, 5).map((message) => (
-                <div 
-                  key={message.id} 
-                  onClick={async () => {
-                    if (!message.is_read) {
-                      try {
-                        await api.markMessageAsRead(message.id);
-                        message.is_read = true;
-                        setMessages([...messages]);
-                      } catch (error) {
-                        console.error('Error marking message as read:', error);
-                      }
-                    }
-                  }}
-                  className={`p-3 rounded-xl mb-2 cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-blue-50' : 'bg-gray-50'}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-sm">{message.sender?.username}</span>
-                    <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
-                  </div>
-                  <p className="text-sm text-gray-600 truncate">{message.subject}</p>
-                </div>
-              ))}
-              {messages.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No messages yet</p>
-              )}
-            </div>
+            {/* Recent messages removed (messaging disabled) */}
           </div>
         )}
 
@@ -494,57 +425,7 @@ function CoachPanel() {
           </div>
         )}
 
-        {activeTab === 'messages' && (
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Inbox</h2>
-              <button
-                onClick={() => openMessageModal()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md"
-              >
-                + Compose
-              </button>
-            </div>
-            <div className="space-y-3">
-              {messages.length > 0 ? messages.map((message) => (
-                <div 
-                  key={message.id}
-                  onClick={async () => {
-                    if (!message.is_read) {
-                      try {
-                        await api.markMessageAsRead(message.id);
-                        message.is_read = true;
-                        setMessages([...messages]);
-                      } catch (error) {
-                        console.error('Error marking message as read:', error);
-                      }
-                    }
-                  }}
-                  className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      {!message.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
-                      <div>
-                        <p className="font-medium">{message.sender?.username || 'Unknown'}</p>
-                        <p className="text-xs text-gray-500">To: {message.receiver?.username}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
-                  </div>
-                  <h3 className="font-semibold mt-2">{message.subject}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{message.content}</p>
-                </div>
-              )) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl">📭</span>
-                  </div>
-                  <p className="text-gray-500">No messages in inbox</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Messages tab removed (messaging disabled for coaches) */}
 
         {/* Training Sessions Tab */}
         {activeTab === 'training' && (
@@ -1064,89 +945,7 @@ function CoachPanel() {
         </div>
       )}
 
-      {/* Message Modal */}
-      {showMessageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold flex items-center">
-                  <span className="mr-2">✉️</span> Send Message
-                </h2>
-                <button onClick={() => setShowMessageModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">
-                  ×
-                </button>
-              </div>
-            </div>
-            <form onSubmit={handleSendMessage} className="p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">To (Player)</label>
-                <select
-                  value={messageForm.receiver_id}
-                  onChange={(e) => setMessageForm({ ...messageForm, receiver_id: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select a player</option>
-                  {players.map((player) => (
-                    <option key={player.id} value={player.id}>{player.username}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                <input
-                  type="text"
-                  value={messageForm.subject}
-                  onChange={(e) => setMessageForm({ ...messageForm, subject: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., You have a game next week!"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message Type</label>
-                <select
-                  value={messageForm.message_type}
-                  onChange={(e) => setMessageForm({ ...messageForm, message_type: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="general">General</option>
-                  <option value="notification">Notification</option>
-                  <option value="game_reminder">Game Reminder</option>
-                </select>
-              </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                <textarea
-                  value={messageForm.content}
-                  onChange={(e) => setMessageForm({ ...messageForm, content: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows="4"
-                  placeholder="Write your message to the player..."
-                  required
-                ></textarea>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowMessageModal(false)}
-                  className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={sendingMessage}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium disabled:opacity-50"
-                >
-                  {sendingMessage ? 'Sending...' : 'Send Message'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Message modal removed (messaging disabled) */}
 
       {/* Training Session Modal */}
       {showSessionModal && (

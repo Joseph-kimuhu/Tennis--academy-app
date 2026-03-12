@@ -414,7 +414,6 @@ function Home() {
               <ul className="space-y-2 text-black">
                 <li><Link to="/courts" className="hover:text-blue-600">Courts</Link></li>
                 <li><Link to="/tournaments" className="hover:text-blue-600">Tournaments</Link></li>
-                <li><Link to="/leaderboard" className="hover:text-blue-600">Leaderboard</Link></li>
               </ul>
             </div>
             <div>
@@ -422,7 +421,7 @@ function Home() {
               <ul className="space-y-2 text-black">
                 <li><Link to="/login" className="hover:text-blue-600">Login</Link></li>
                 <li><Link to="/register" className="hover:text-white">Register</Link></li>
-                <li><Link to="/dashboard" className="hover:text-white">Dashboard</Link></li>
+                <li><Link to="/player-dashboard" className="hover:text-white">Dashboard</Link></li>
               </ul>
             </div>
             <div>

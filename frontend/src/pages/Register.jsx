@@ -51,7 +51,7 @@ function Register() {
         // Auto-login after registration
         const loginSuccess = await login(formData.email, formData.password);
         if (loginSuccess) {
-          navigate('/dashboard');
+      navigate('/player-dashboard');
         } else {
           navigate('/login');
         }

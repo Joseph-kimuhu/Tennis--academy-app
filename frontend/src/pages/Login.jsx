@@ -17,7 +17,7 @@ function Login() {
 
     const success = await login(email, password);
     if (success) {
-      navigate('/dashboard');
+      navigate('/player-dashboard');
     } else {
       setError('Invalid email or password');
     }

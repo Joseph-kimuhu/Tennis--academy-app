@@ -11,22 +11,13 @@ function PlayerDashboard() {
   const [myBookings, setMyBookings] = useState([]);
   const [myStats, setMyStats] = useState(null);
   const [detailedStats, setDetailedStats] = useState(null);
-  const [messages, setMessages] = useState([]);
   const [trainingSessions, setTrainingSessions] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
-  const [myMatches, setMyMatches] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
-  const [showMessageModal, setShowMessageModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
-  const [messageForm, setMessageForm] = useState({ receiver_id: '', subject: '', content: '', message_type: 'general' });
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [coaches, setCoaches] = useState([]);
-  const [players, setPlayers] = useState([]);
-  const [admins, setAdmins] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const [enrollingSession, setEnrollingSession] = useState(null);
   const [myTournaments, setMyTournaments] = useState([]);
 
@@ -53,23 +44,26 @@ function PlayerDashboard() {
 
   const fetchData = async () => {
     try {
-      const [tournamentsData, courtsData, bookingsData, statsData, messagesData, sessionsData, announcementsData, matchesData, leaderboardData, coachesData, playersData, adminsData, allUsersData, notificationsData, detailedStatsData, myTournamentsData] = await Promise.all([
+      const [
+        tournamentsData,
+        courtsData,
+        bookingsData,
+        statsData,
+        sessionsData,
+        announcementsData,
+        notificationsData,
+        detailedStatsData,
+        myTournamentsData,
+      ] = await Promise.all([
         api.getActiveTournaments().catch(() => []),
         api.getCourts({ limit: 6 }).catch(() => []),
         api.getMyBookings().catch(() => []),
         api.getMyStats().catch(() => null),
-        api.getMessages('inbox', { limit: 10 }).catch(() => []),
         api.getTrainingSessions({ upcoming: true, limit: 10 }).catch(() => []),
         api.getAnnouncements({ active_only: true, limit: 5 }).catch(() => []),
-        api.getMyMatches().catch(() => []),
-        api.getLeaderboard({ limit: 10 }).catch(() => []),
-        api.getCoaches().catch(() => []),
-        api.getPlayers({ limit: 50, role: 'player' }).catch(() => []),
-        api.getPlayers({ limit: 50, role: 'admin' }).catch(() => []),
-        api.getAllUsers({ limit: 100 }).catch(() => []), // Fallback to get all users
         api.getNotifications({ limit: 10 }).catch(() => []),
         user ? api.getPlayerStatistics(user.id).catch(() => null) : Promise.resolve(null),
-        user ? api.getMyTournamentRegistrations().catch(() => []) : Promise.resolve([])
+        user ? api.getMyTournamentRegistrations().catch(() => []) : Promise.resolve([]),
       ]);
 
       setActiveTournaments(tournamentsData || []);
@@ -77,34 +71,7 @@ function PlayerDashboard() {
       setMyBookings(bookingsData || []);
       setMyStats(statsData);
       setDetailedStats(detailedStatsData);
-      setMessages(messagesData || []);
-      setNotifications(notificationsData || []);
-      console.log('Messages fetched:', messagesData?.length || 0, messagesData);
-      console.log('Notifications fetched:', notificationsData?.length || 0, notificationsData);
       setAnnouncements(announcementsData || []);
-      setMyMatches(matchesData || []);
-      setLeaderboard(leaderboardData || []);
-      setCoaches(coachesData || []);
-      setPlayers(playersData?.filter(p => p.id !== user?.id) || []);
-      // Only show John Makumi as recipient
-      const allAdmins = [...(adminsData || []), ...(coachesData || [])];
-      console.log('All admins details:', allAdmins.map(admin => ({ 
-        id: admin.id, 
-        username: admin.username, 
-        email: admin.email, 
-        role: admin.role 
-      })));
-      
-      const johnMakumi = allAdmins.filter(user => 
-        user.email === 'johnmakumi106@gmail.com' || 
-        user.username === 'johnmakumi' ||
-        user.email?.toLowerCase() === 'johnmakumi106@gmail.com' ||
-        user.username?.toLowerCase() === 'johnmakumi'
-      );
-      // Temporarily show all admins for debugging, will switch to johnMakumi only after we find him
-      setAdmins(johnMakumi.length > 0 ? johnMakumi : allAdmins);
-      console.log('John Makumi found:', johnMakumi);
-      console.log('Setting admins to:', johnMakumi.length > 0 ? johnMakumi : allAdmins);
       setNotifications(notificationsData || []);
       setMyTournaments(myTournamentsData || []);
     } catch (error) {
@@ -112,26 +79,6 @@ function PlayerDashboard() {
     }
 
     setLoading(false);
-  };
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    setSendingMessage(true);
-    try {
-      const messageData = {
-        ...messageForm,
-        receiver_id: parseInt(messageForm.receiver_id, 10)
-      };
-      await api.sendMessage(messageData);
-      setShowMessageModal(false);
-      setMessageForm({ receiver_id: '', subject: '', content: '', message_type: 'general' });
-      alert('Message sent successfully!');
-      fetchData();
-    } catch (error) {
-      alert('Failed to send message: ' + error.message);
-    } finally {
-      setSendingMessage(false);
-    }
   };
 
   if (loading) {
@@ -160,32 +107,26 @@ function PlayerDashboard() {
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {user?.username}! 🎾</h1>
-              <p className="text-green-100">Ready to dominate the court today?</p>
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {user?.username}! 🎾</h1>
+                <p className="text-green-100">Ready to dominate the court today?</p>
+              </div>
+              <div className="mt-4 md:mt-0 flex space-x-3">
+                <button
+                  onClick={() => setShowStatsModal(true)}
+                  className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-colors shadow-md flex items-center"
+                >
+                  <span className="mr-2">📊</span> My Stats
+                </button>
+                <Link
+                  to="/courts"
+                  className="px-6 py-3 bg-green-700/50 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center"
+                >
+                  <span className="mr-2">🏟️</span> Book Court
+                </Link>
+              </div>
             </div>
-            <div className="mt-4 md:mt-0 flex space-x-3">
-              <button
-                onClick={() => setShowStatsModal(true)}
-                className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-colors shadow-md flex items-center"
-              >
-                <span className="mr-2">📊</span> My Stats
-              </button>
-              <button
-                onClick={() => setShowMessageModal(true)}
-                className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-colors shadow-md flex items-center"
-              >
-                <span className="mr-2">✉️</span> Message Coach
-              </button>
-              <Link
-                to="/courts"
-                className="px-6 py-3 bg-green-700/50 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center"
-              >
-                <span className="mr-2">🏟️</span> Book Court
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -196,7 +137,7 @@ function PlayerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Matches Played</p>
-                <p className="text-3xl font-bold text-gray-900">{myStats?.matches_played || 0}</p>
+                <p className="text-3xl font-bold text-gray-900">{myStats?.total_matches || 0}</p>
               </div>
               <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
                 <span className="text-2xl">🎾</span>
@@ -249,9 +190,6 @@ function PlayerDashboard() {
               { id: 'bookings', label: 'My Bookings', icon: '📅', badge: myBookings.length },
               { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
               { id: 'training', label: 'Training', icon: '🎾' },
-              { id: 'matches', label: 'My Matches', icon: '⚔️' },
-              { id: 'messages', label: 'Messages', icon: '✉️', badge: messages.filter(m => !m.is_read).length },
-              { id: 'leaderboard', label: 'Leaderboard', icon: '🏅' },
               { id: 'announcements', label: 'Announcements', icon: '📢', badge: announcements.length },
               { id: 'notifications', label: 'Notifications', icon: '🔔', badge: notifications.filter(n => !n.is_read).length },
             ].map((tab) => (
@@ -438,42 +376,45 @@ function PlayerDashboard() {
                 </div>
               </div>
 
-              {/* Recent Messages */}
+              {/* Recent Notifications */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">Messages</h2>
-                  <button onClick={() => setActiveTab('messages')} className="text-green-600 hover:text-green-700 text-sm font-medium">View All →</button>
+                  <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
+                  <button onClick={() => setActiveTab('notifications')} className="text-green-600 hover:text-green-700 text-sm font-medium">View All →</button>
                 </div>
                 <div className="space-y-3">
-                  {messages.slice(0, 3).map((message) => (
+                  {notifications.slice(0, 3).map((notification) => (
                     <div 
-                      key={message.id} 
+                      key={notification.id} 
                       onClick={async () => {
-                        if (!message.is_read) {
+                        if (!notification.is_read) {
                           try {
-                            await api.markMessageAsRead(message.id);
-                            message.is_read = true;
-                            setMessages([...messages]);
+                            await api.markNotificationAsRead(notification.id);
+                            notification.is_read = true;
+                            setNotifications([...notifications]);
                           } catch (error) {
-                            console.error('Error marking message as read:', error);
+                            console.error('Error marking notification as read:', error);
                           }
                         }
                       }}
-                      className={`p-4 rounded-xl border-2 cursor-pointer hover:shadow-md transition-shadow ${
-                        !message.is_read ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'
-                      }`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm">{message.sender?.username}</span>
-                        <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
+                      className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          {!notification.is_read && <span className="w-2 h-2 bg-green-500 rounded-full"></span>}
+                          <div>
+                            <p className="font-medium">{notification.title || 'Notification'}</p>
+                            <p className="text-xs text-gray-500">{formatDate(notification.created_at)}</p>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm font-semibold text-gray-800">{message.subject}</p>
-                      <p className="text-sm text-gray-600 truncate mt-1">{message.content}</p>
+                      <p className="text-sm text-gray-600 mt-2">{notification.message || notification.content}</p>
                     </div>
                   ))}
-                  {messages.length === 0 && (
+                  {notifications.length === 0 && (
                     <div className="text-center py-12">
-                      <div className="text-5xl mb-3">📭</div>
-                      <div className="text-gray-500">No messages yet</div>
+                      <div className="text-5xl mb-3">🔔</div>
+                      <div className="text-gray-500">No notifications yet</div>
                     </div>
                   )}
                 </div>
@@ -582,79 +523,6 @@ function PlayerDashboard() {
           </div>
         )}
 
-        {/* Players Tab */}
-        {activeTab === 'players' && (
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold">Other Players ({players.length})</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Player</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Skill Level</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">W/L Record</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {players.map((player) => (
-                    <tr key={player.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-green-600 font-bold">
-                              {player.username?.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{player.username}</p>
-                            <p className="text-xs text-gray-500">{player.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 capitalize font-medium">
-                          {player.skill_level || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-bold text-green-600">{player.ranking_points || 0}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-green-600 font-medium">{player.wins || 0}</span>
-                        <span className="text-gray-400 mx-1">/</span>
-                        <span className="text-red-600 font-medium">{player.losses || 0}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => {
-                            setMessageForm({ receiver_id: player.id, subject: '', content: '', message_type: 'general' });
-                            setShowMessageModal(true);
-                          }}
-                          className="px-3 py-1.5 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
-                        >
-                          ✉️ Message
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {players.length === 0 && (
-                <div className="p-12 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl">👥</span>
-                  </div>
-                  <p className="text-gray-500">No other players found</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="bg-white rounded-xl shadow-md p-6">
@@ -697,162 +565,8 @@ function PlayerDashboard() {
           </div>
         )}
 
-        {/* Messages Tab */}
-        {activeTab === 'messages' && (
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Inbox</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    // Refresh messages only
-                    api.getMessages('inbox', { limit: 10 }).then(messagesData => {
-                      setMessages(messagesData || []);
-                      console.log('Messages refreshed:', messagesData?.length || 0);
-                    });
-                  }}
-                  className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium shadow-md text-sm"
-                >
-                  🔄 Refresh
-                </button>
-                <button
-                  onClick={() => setShowMessageModal(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-md"
-                >
-                  + Compose
-                </button>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {/* Debug info */}
-              <div className="text-xs text-gray-500 mb-2">
-                Debug: {messages.length} messages loaded
-              </div>
-              
-              {messages.length > 0 ? messages.map((message) => (
-                <div 
-                  key={message.id} 
-                  onClick={async () => {
-                    if (!message.is_read) {
-                      try {
-                        await api.markMessageAsRead(message.id);
-                        message.is_read = true;
-                        setMessages([...messages]);
-                      } catch (error) {
-                        console.error('Error marking message as read:', error);
-                      }
-                    }
-                  }}
-                  className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      {!message.is_read && <span className="w-2 h-2 bg-green-500 rounded-full"></span>}
-                      <div>
-                        <p className="font-medium">{message.sender?.username || 'Unknown'}</p>
-                        <p className="text-xs text-gray-500">To: {message.receiver?.username}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
-                  </div>
-                  <h3 className="font-semibold mt-2">{message.subject}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{message.content}</p>
-                </div>
-              )) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl">📭</span>
-                  </div>
-                  <p className="text-gray-500 mb-4">No messages in inbox</p>
-                  <div className="space-y-2 text-sm text-gray-400">
-                    <p>• Messages from coaches and admins will appear here</p>
-                    <p>• Try clicking "🔄 Refresh" to check for new messages</p>
-                    <p>• Send a test message to see if messaging works</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Players Tab removed (no in-app messaging between players) */}
       </div>
-
-      {/* Message Modal */}
-      {showMessageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Send Message</h3>
-            <form onSubmit={handleSendMessage}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
-                <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg">
-                  {admins.length > 0 ? (
-                    <div className="flex items-center space-x-3">
-                      <span className="text-green-600 font-medium">✅ {admins[0].username} ({admins[0].role === 'coach' ? 'Coach' : 'Admin'})</span>
-                      <input
-                        type="hidden"
-                        value={admins[0].id}
-                        onChange={(e) => setMessageForm({ ...messageForm, receiver_id: e.target.value })}
-                      />
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 py-2">
-                      <span className="text-sm">No admin available. Please contact support.</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                <input
-                  type="text"
-                  value={messageForm.subject}
-                  onChange={(e) => setMessageForm({ ...messageForm, subject: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message Type</label>
-                <select
-                  value={messageForm.message_type}
-                  onChange={(e) => setMessageForm({ ...messageForm, message_type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="general">General</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="feedback">Feedback</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                <textarea
-                  value={messageForm.content}
-                  onChange={(e) => setMessageForm({ ...messageForm, content: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  rows="4"
-                  required
-                />
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowMessageModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={sendingMessage}
-                  className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium disabled:opacity-50"
-                >
-                  {sendingMessage ? 'Sending...' : 'Send Message'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Stats Modal */}
       {showStatsModal && (
