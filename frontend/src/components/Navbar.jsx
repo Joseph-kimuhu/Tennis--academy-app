@@ -76,6 +76,19 @@ function Navbar() {
               </Link>
             ))}
 
+            {isAuthenticated && (
+              <Link
+                to="/player-dashboard"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive('/player-dashboard') 
+                    ? 'bg-[#2E7D32] text-white' 
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
+                }`}
+              >
+                Dashboard
+              </Link>
+            )}
+
             
             {isAdmin && (
               <Link
@@ -267,9 +280,9 @@ function Navbar() {
             {isAuthenticated && (
               <>
                 <Link
-                  to="/dashboard"
+                  to="/player-dashboard"
                   className={`block px-4 py-3 rounded-lg text-sm font-medium ${
-                    isActive('/dashboard') 
+                    isActive('/player-dashboard') 
                       ? 'bg-[#2E7D32] text-white' 
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
