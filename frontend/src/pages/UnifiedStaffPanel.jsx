@@ -52,6 +52,8 @@ function UnifiedStaffPanel() {
   const [editingTournament, setEditingTournament] = useState(null);
   const [showAddMatch, setShowAddMatch] = useState(false);
   const [showTournamentMatches, setShowTournamentMatches] = useState(false);
+  const [showTournamentRegistrations, setShowTournamentRegistrations] = useState(false);
+  const [tournamentRegistrations, setTournamentRegistrations] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [tournamentMatches, setTournamentMatches] = useState([]);
   const [newMatch, setNewMatch] = useState({
@@ -589,17 +591,86 @@ function UnifiedStaffPanel() {
     }
   };
 
-  const startAddMatch = (tournament) => {
-    setSelectedTournament(tournament);
-    setNewMatch({
-      player1_id: '',
-      player2_id: '',
-      tournament_id: tournament.id,
-      scheduled_time: '',
-      court_id: '',
-      round: '1'
-    });
-    setShowAddMatch(true);
+  const startAddMatch = async (tournament) => {
+    // First check if there are players registered for this tournament
+    try {
+      const participants = await api.getTournamentParticipants(tournament.id);
+      const approvedPlayers = participants.filter(p => p.payment_status === 'paid');
+      
+      if (approvedPlayers.length < 2) {
+        alert('You need at least 2 players with approved payments to create a match.\n\nCurrent approved players: ' + approvedPlayers.length + '\n\nPlayers must first register and have their payment approved before matches can be created.');
+        return;
+      }
+      
+      setSelectedTournament(tournament);
+      setNewMatch({
+        player1_id: '',
+        player2_id: '',
+        tournament_id: tournament.id,
+        scheduled_time: '',
+        court_id: '',
+        round: '1'
+      });
+      setShowAddMatch(true);
+    } catch (error) {
+      console.error('Error checking registrations:', error);
+      alert('Failed to check tournament registrations. Please try again.');
+    }
+  };
+
+  const viewTournamentRegistrations = async (tournament) => {
+    try {
+      const registrations = await api.getTournamentParticipants(tournament.id);
+      // Get user details for each registration
+      const registrationsWithDetails = await Promise.all(
+        registrations.map(async (reg) => {
+          try {
+            const userDoc = await api.getUser(reg.user_id);
+            return {
+              ...reg,
+              user: userDoc
+            };
+          } catch (e) {
+            return { ...reg, user: { username: 'Unknown', email: '' } };
+          }
+        })
+      );
+      setTournamentRegistrations(registrationsWithDetails);
+      setSelectedTournament(tournament);
+      setShowTournamentRegistrations(true);
+    } catch (error) {
+      console.error('Error fetching registrations:', error);
+      alert('Failed to load tournament registrations');
+    }
+  };
+
+  const handleApproveTournamentPayment = async (registrationId) => {
+    try {
+      await api.approveTournamentRegistration(registrationId);
+      alert('Payment approved successfully!');
+      // Refresh registrations
+      if (selectedTournament) {
+        viewTournamentRegistrations(selectedTournament);
+      }
+    } catch (error) {
+      alert('Failed to approve payment: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handleRejectTournamentPayment = async (registrationId) => {
+    if (!confirm('Are you sure you want to reject this payment? This will remove the player from the tournament.')) {
+      return;
+    }
+    try {
+      await api.rejectTournamentRegistration(registrationId);
+      alert('Payment rejected and registration removed.');
+      // Refresh registrations
+      if (selectedTournament) {
+        viewTournamentRegistrations(selectedTournament);
+      }
+    } catch (error) {
+      alert('Failed to reject payment: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const handleCreateMatch = async (e) => {
@@ -1214,6 +1285,14 @@ function UnifiedStaffPanel() {
                           className="flex-1 px-3 py-2 bg-teal-500 text-white rounded hover:bg-teal-600 text-sm"
                         >
                           View Matches
+                        </button>
+                      )}
+                      {(tournament.status === 'draft' || tournament.status === 'active') && (
+                        <button 
+                          onClick={() => viewTournamentRegistrations(tournament)}
+                          className="flex-1 px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
+                        >
+                          📋 Registrations
                         </button>
                       )}
                     </div>
@@ -2376,6 +2455,129 @@ function UnifiedStaffPanel() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tournament Registrations Modal */}
+      {showTournamentRegistrations && selectedTournament && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                📋 Registrations - {selectedTournament.name}
+              </h2>
+              <button
+                onClick={() => setShowTournamentRegistrations(false)}
+                className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Instructions:</strong> Review player registrations below. Approve payments for players who have submitted payment. Only players with approved payments can participate in tournament matches.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {tournamentRegistrations.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">👥</div>
+                  <p className="text-gray-500 text-lg">No players have registered for this tournament yet.</p>
+                  <p className="text-gray-400 text-sm mt-2">Players can register from the Tournaments page.</p>
+                </div>
+              ) : (
+                tournamentRegistrations.map((reg) => (
+                  <div key={reg.id} className={`border-2 rounded-xl p-4 ${
+                    reg.payment_status === 'paid' ? 'border-green-300 bg-green-50' : 
+                    reg.payment_status === 'pending' ? 'border-orange-300 bg-orange-50' : 
+                    'border-red-300 bg-red-50'
+                  }`}>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-tennis-green to-tennis-green-light text-white rounded-full flex items-center justify-center font-bold text-lg">
+                          {reg.user?.username?.[0]?.toUpperCase() || '?'}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-lg">{reg.user?.username || 'Unknown Player'}</p>
+                          <p className="text-sm text-gray-500">{reg.user?.email || ''}</p>
+                          <p className="text-xs text-gray-400">
+                            Registered: {reg.registered_at ? new Date(reg.registered_at).toLocaleDateString() : 'Unknown'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`px-4 py-2 text-sm font-bold rounded-full ${
+                          reg.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 
+                          reg.payment_status === 'pending' ? 'bg-orange-100 text-orange-800' : 
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {reg.payment_status === 'paid' ? '✅ Approved' : 
+                           reg.payment_status === 'pending' ? '⏳ Pending' : 
+                           '❌ Rejected'}
+                        </span>
+                      </div>
+                    </div>
+                    {reg.payment_status === 'pending' && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500">Payment Method</p>
+                            <p className="font-medium">{reg.payment_method || 'Not specified'}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Phone</p>
+                            <p className="font-medium">{reg.payment_phone || 'Not specified'}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-gray-500">Transaction Reference</p>
+                            <p className="font-medium">{reg.payment_reference || 'Not specified'}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3 mt-4">
+                          <button
+                            onClick={() => handleApproveTournamentPayment(reg.id)}
+                            className="flex-1 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600"
+                          >
+                            ✅ Approve Payment
+                          </button>
+                          <button
+                            onClick={() => handleRejectTournamentPayment(reg.id)}
+                            className="flex-1 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600"
+                          >
+                            ❌ Reject Payment
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {reg.payment_status === 'paid' && (
+                      <div className="mt-4 pt-4 border-t border-green-200">
+                        <p className="text-sm text-green-700">
+                          ✓ Payment approved. This player is eligible to participate in tournament matches.
+                        </p>
+                      </div>
+                    )}
+                    {reg.payment_status === 'rejected' && (
+                      <div className="mt-4 pt-4 border-t border-red-200">
+                        <p className="text-sm text-red-700">
+                          ✕ Payment was rejected. This player is not eligible to participate.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            {tournamentRegistrations.length > 0 && (
+              <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Total Registrations: <strong>{tournamentRegistrations.length}</strong></span>
+                  <span className="text-green-600">Approved: <strong>{tournamentRegistrations.filter(r => r.payment_status === 'paid').length}</strong></span>
+                  <span className="text-orange-600">Pending: <strong>{tournamentRegistrations.filter(r => r.payment_status === 'pending').length}</strong></span>
+                  <span className="text-red-600">Rejected: <strong>{tournamentRegistrations.filter(r => r.payment_status === 'rejected').length}</strong></span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
