@@ -17,6 +17,7 @@ import PlayerDashboard from "./pages/PlayerDashboard";
 import UnifiedStaffPanel from "./pages/UnifiedStaffPanel";
 import RoleConverter from "./components/RoleConverter";
 import UserVerifier from "./components/UserVerifier";
+import CreateJohnMakumi from "./components/CreateJohnMakumi";
 
 
 // Protected Route
@@ -124,6 +125,16 @@ function AppRoutes() {
             element={
               <ProtectedRoute requireAdmin>
                 <UserVerifier />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Create John Makumi route - remove after use */}
+          <Route
+            path="/create-john"
+            element={
+              <ProtectedRoute requireAdmin>
+                <CreateJohnMakumi />
               </ProtectedRoute>
             }
           />
