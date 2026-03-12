@@ -33,11 +33,21 @@ function UnifiedStaffPanel() {
   const [savingStats, setSavingStats] = useState(false);
   const [messageFolder, setMessageFolder] = useState('inbox');
   const [announcements, setAnnouncements] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', priority: 'normal' });
   const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
   const [loading, setLoading] = useState(true);
-    const [showEditUser, setShowEditUser] = useState(false);
+
+  // Utility functions
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showAddCourt, setShowAddCourt] = useState(false);
   const [showEditCourt, setShowEditCourt] = useState(false);

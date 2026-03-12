@@ -16,6 +16,14 @@ function CoachPanel() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  // Utility functions
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
   const [playerStats, setPlayerStats] = useState(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -223,13 +231,6 @@ function CoachPanel() {
   const openMessageModal = (playerId = '') => {
     setMessageForm({ receiver_id: playerId, subject: '', content: '', message_type: 'general' });
     setShowMessageModal(true);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
   };
 
   if (!isCoach && !isAdmin) {
