@@ -376,7 +376,7 @@ function PlayerDashboard() {
                       }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm">{message.sender?.username}</span>
-                        <span className="text-xs text-gray-400">{formatDate(message.created_at)}</span>
+                        <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
                       </div>
                       <p className="text-sm font-semibold text-gray-800">{message.subject}</p>
                       <p className="text-sm text-gray-600 truncate mt-1">{message.content}</p>
@@ -563,7 +563,21 @@ function PlayerDashboard() {
             <h2 className="text-xl font-bold text-gray-900 mb-4">Notifications</h2>
             <div className="space-y-3">
               {notifications.length > 0 ? notifications.map((notification) => (
-                <div key={notification.id} className={`p-4 rounded-xl ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}>
+                <div 
+                  key={notification.id} 
+                  onClick={async () => {
+                    if (!notification.is_read) {
+                      try {
+                        await api.markNotificationAsRead(notification.id);
+                        notification.is_read = true;
+                        setNotifications([...notifications]);
+                      } catch (error) {
+                        console.error('Error marking notification as read:', error);
+                      }
+                    }
+                  }}
+                  className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
                       {!notification.is_read && <span className="w-2 h-2 bg-green-500 rounded-full"></span>}
@@ -622,7 +636,7 @@ function PlayerDashboard() {
                         <p className="text-xs text-gray-500">To: {message.receiver?.username}</p>
                       </div>
                     </div>
-                    <span className="text-xs text-gray-400">{formatDate(message.created_at)}</span>
+                    <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
                   </div>
                   <h3 className="font-semibold mt-2">{message.subject}</h3>
                   <p className="text-sm text-gray-600 mt-1">{message.content}</p>

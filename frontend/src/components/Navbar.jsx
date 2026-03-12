@@ -14,8 +14,8 @@ function Navbar() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchUnreadNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(fetchUnreadNotifications, 30000);
+      // Poll for new notifications every 10 seconds for real-time updates
+      const interval = setInterval(fetchUnreadNotifications, 10000);
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);

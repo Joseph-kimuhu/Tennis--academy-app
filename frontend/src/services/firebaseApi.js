@@ -920,7 +920,11 @@ class FirebaseApiService {
     }
     
     // Sort by created date
-    allMessages.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+    allMessages.sort((a, b) => {
+      const dateA = a.created_at || a.createdAt;
+      const dateB = b.created_at || b.createdAt;
+      return new Date(dateB) - new Date(dateA);
+    });
     
     const messages = [];
     
@@ -951,6 +955,10 @@ class FirebaseApiService {
     const userId = this.getCurrentUserId();
     if (!userId) throw new Error('Not authenticated');
     
+    // Get sender info for notification
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const sender = userDoc.exists() ? userDoc.data() : {};
+    
     console.log('Firebase sendMessage - userId:', userId, 'messageData:', messageData);
     
     try {
@@ -958,8 +966,16 @@ class FirebaseApiService {
         ...messageData,
         sender_id: userId,
         is_read: false,
-        createdAt: serverTimestamp()
+        created_at: serverTimestamp()
       });
+      
+      // Create notification for the receiver
+      await this.createNotification(
+        messageData.receiver_id,
+        `New Message from ${sender.username || 'Someone'}`,
+        messageData.subject,
+        'message'
+      );
       
       console.log('Message created with ID:', docRef.id);
       return { id: docRef.id, ...messageData };
@@ -1078,16 +1094,47 @@ class FirebaseApiService {
   }
 
   async createAnnouncement(announcementData) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    // Get sender info
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const sender = userDoc.exists() ? userDoc.data() : {};
+    
     const docRef = await addDoc(collection(db, 'announcements'), {
       ...announcementData,
       is_active: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
     });
+    
+    // Create notifications for all users
+    await this.notifyAllUsers(
+      announcementData.title || 'New Announcement',
+      announcementData.content || 'Check announcements for details',
+      'announcement'
+    );
+    
     return { id: docRef.id, ...announcementData };
   }
 
   // ==================== NOTIFICATIONS ====================
+
+  async notifyAllUsers(title, message, type = 'general') {
+    // Get all users
+    const usersQuery = query(collection(db, 'users'), limit(1000));
+    const usersSnapshot = await getDocs(usersQuery);
+    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Create notification for each user (except the sender)
+    const currentUserId = this.getCurrentUserId();
+    
+    for (const user of users) {
+      if (user.id !== currentUserId) {
+        await this.createNotification(user.id, title, message, type);
+      }
+    }
+  }
 
   async getNotifications(params = {}) {
     const userId = this.getCurrentUserId();
@@ -1116,7 +1163,8 @@ class FirebaseApiService {
     
     const querySnapshot = await getDocs(q);
     const notifications = querySnapshot.docs.map(doc => doc.data());
-    return notifications.filter(n => n.is_read === false).length;
+    const unreadCount = notifications.filter(n => n.is_read === false).length;
+    return { unread_count: unreadCount };
   }
 
   async markNotificationAsRead(notificationId) {

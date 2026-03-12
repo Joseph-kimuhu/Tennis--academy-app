@@ -404,7 +404,7 @@ function CoachPanel() {
                   className={`p-3 rounded-xl mb-2 cursor-pointer hover:shadow-md transition-shadow ${!message.is_read ? 'bg-blue-50' : 'bg-gray-50'}`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-sm">{message.sender?.username}</span>
-                    <span className="text-xs text-gray-400">{formatDate(message.created_at)}</span>
+                    <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
                   </div>
                   <p className="text-sm text-gray-600 truncate">{message.subject}</p>
                 </div>
@@ -528,7 +528,7 @@ function CoachPanel() {
                         <p className="text-xs text-gray-500">To: {message.receiver?.username}</p>
                       </div>
                     </div>
-                    <span className="text-xs text-gray-400">{formatDate(message.created_at)}</span>
+                    <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
                   </div>
                   <h3 className="font-semibold mt-2">{message.subject}</h3>
                   <p className="text-sm text-gray-600 mt-1">{message.content}</p>

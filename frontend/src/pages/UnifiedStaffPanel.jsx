@@ -105,14 +105,15 @@ function UnifiedStaffPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, bookingsData, tournamentsData, courtsData, messagesData, announcementsData] = await Promise.all([
+      const [statsData, usersData, bookingsData, tournamentsData, courtsData, messagesData, announcementsData, notificationsData] = await Promise.all([
         api.getAdminStats().catch(() => ({ totalUsers: 0, totalBookings: 0, activeTournaments: 0, totalCourts: 0, totalTournaments: 0 })),
         api.getAllUsers({ limit: 20 }),
         api.getAllBookings({ limit: 10 }),
         api.getAllTournaments({ limit: 10 }),
         api.getCourts({ limit: 10 }).catch(() => []),
         api.getMessages(messageFolder, { limit: 20 }).catch(() => []),
-        api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => [])
+        api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => []),
+        api.getNotifications({ limit: 20 }).catch(() => [])
       ]);
       setStats(statsData);
       setUsers(usersData || []);
@@ -121,6 +122,7 @@ function UnifiedStaffPanel() {
       setCourts(courtsData || []);
       setMessages(messagesData || []);
       setAnnouncements(announcementsData || []);
+      setNotifications(notificationsData || []);
     } catch (error) {
       console.error('Error fetching staff data:', error);
     }
@@ -954,7 +956,7 @@ function UnifiedStaffPanel() {
                           <p className="text-xs text-gray-500">{messageFolder === 'inbox' ? `To: ${message.receiver?.username}` : `To: ${message.receiver?.username}`}</p>
                         </div>
                       </div>
-                      <span className="text-xs text-gray-400">{message.created_at ? new Date(message.created_at).toLocaleDateString() : ''}</span>
+                      <span className="text-xs text-gray-400">{formatDate(message.created_at || message.createdAt)}</span>
                     </div>
                     <h3 className="font-semibold mt-2">{message.subject}</h3>
                     <p className="text-sm text-gray-600 mt-1">{message.content}</p>
