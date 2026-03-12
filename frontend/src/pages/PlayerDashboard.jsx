@@ -76,14 +76,15 @@ function PlayerDashboard() {
       setLeaderboard(leaderboardData || []);
       setCoaches(coachesData || []);
       setPlayers(playersData?.filter(p => p.id !== user?.id) || []);
-      // Combine admins and coaches to find John Makumi
+      // Only show John Makumi as recipient
       const allAdmins = [...(adminsData || []), ...(coachesData || [])];
       const johnMakumi = allAdmins.filter(user => 
         user.email === 'johnmakumi106@gmail.com' || 
         user.username === 'johnmakumi'
       );
-      setAdmins(johnMakumi.length > 0 ? johnMakumi : allAdmins);
+      setAdmins(johnMakumi); // Only set John Makumi, not fallback to others
       console.log('John Makumi found:', johnMakumi);
+      console.log('All admins:', allAdmins);
       setNotifications(notificationsData || []);
       setMyTournaments(myTournamentsData || []);
     } catch (error) {

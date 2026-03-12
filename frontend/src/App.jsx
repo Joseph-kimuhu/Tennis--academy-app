@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 
 import PlayerDashboard from "./pages/PlayerDashboard";
 import UnifiedStaffPanel from "./pages/UnifiedStaffPanel";
+import RoleConverter from "./components/RoleConverter";
 
 
 // Protected Route
@@ -102,6 +103,16 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <PlayerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Temporary role converter route - remove after use */}
+          <Route
+            path="/convert-roles"
+            element={
+              <ProtectedRoute requireAdmin>
+                <RoleConverter />
               </ProtectedRoute>
             }
           />
