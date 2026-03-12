@@ -756,7 +756,7 @@ function PlayerDashboard() {
             <h3 className="text-xl font-bold text-gray-900 mb-4">Send Message</h3>
             <form onSubmit={handleSendMessage}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">To (Admins: {admins.length})</label>
                 <select
                   value={messageForm.receiver_id}
                   onChange={(e) => setMessageForm({ ...messageForm, receiver_id: e.target.value })}
@@ -764,9 +764,13 @@ function PlayerDashboard() {
                   required
                 >
                   <option value="">Select recipient...</option>
-                  {admins.map((admin) => (
-                    <option key={admin.id} value={admin.id}>{admin.username} ({admin.role === 'coach' ? 'Coach' : 'Admin'})</option>
-                  ))}
+                  {console.log('Rendering admins in dropdown:', admins)}
+                  {admins.map((admin) => {
+                    console.log('Rendering admin option:', admin);
+                    return (
+                      <option key={admin.id} value={admin.id}>{admin.username} ({admin.role === 'coach' ? 'Coach' : 'Admin'})</option>
+                    );
+                  })}
                   {admins.length === 0 && (
                     <option value="" disabled>No admin or coach available</option>
                   )}
