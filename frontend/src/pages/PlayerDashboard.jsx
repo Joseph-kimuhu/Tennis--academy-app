@@ -30,6 +30,14 @@ function PlayerDashboard() {
   const [enrollingSession, setEnrollingSession] = useState(null);
   const [myTournaments, setMyTournaments] = useState([]);
 
+  // Utility functions
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (tab) {
@@ -122,13 +130,6 @@ function PlayerDashboard() {
     } finally {
       setSendingMessage(false);
     }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
   };
 
   if (loading) {
