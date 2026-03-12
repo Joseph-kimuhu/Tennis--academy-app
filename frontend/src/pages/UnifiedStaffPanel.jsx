@@ -2447,34 +2447,58 @@ function UnifiedStaffPanel() {
                     </div>
                     {(reg.payment_status === 'pending' || !reg.payment_status) && (
                       <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-500">Payment Method</p>
-                            <p className="font-medium">{reg.payment_method || 'Not specified'}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Phone</p>
-                            <p className="font-medium">{reg.payment_phone || 'Not specified'}</p>
-                          </div>
-                          <div className="col-span-2">
-                            <p className="text-gray-500">Transaction Reference</p>
-                            <p className="font-medium">{reg.payment_reference || 'Not specified'}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-3 mt-4">
-                          <button
-                            onClick={() => handleApproveTournamentPayment(reg.id)}
-                            className="flex-1 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600"
-                          >
-                            ✅ Approve Payment
-                          </button>
-                          <button
-                            onClick={() => handleRejectTournamentPayment(reg.id)}
-                            className="flex-1 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600"
-                          >
-                            ❌ Reject Payment
-                          </button>
-                        </div>
+                        {reg.payment_status === 'pending' ? (
+                          <>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-500">Payment Method</p>
+                                <p className="font-medium">{reg.payment_method || 'Not specified'}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500">Phone</p>
+                                <p className="font-medium">{reg.payment_phone || 'Not specified'}</p>
+                              </div>
+                              <div className="col-span-2">
+                                <p className="text-gray-500">Transaction Reference</p>
+                                <p className="font-medium">{reg.payment_reference || 'Not specified'}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-3 mt-4">
+                              <button
+                                onClick={() => handleApproveTournamentPayment(reg.id)}
+                                className="flex-1 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600"
+                              >
+                                ✅ Approve Payment
+                              </button>
+                              <button
+                                onClick={() => handleRejectTournamentPayment(reg.id)}
+                                className="flex-1 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600"
+                              >
+                                ❌ Reject Payment
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-blue-700 mb-3">
+                              📝 Player registered but hasn't submitted payment details yet.
+                            </p>
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => handleApproveTournamentPayment(reg.id)}
+                                className="flex-1 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600"
+                              >
+                                ✅ Approve Anyway
+                              </button>
+                              <button
+                                onClick={() => handleRejectTournamentPayment(reg.id)}
+                                className="flex-1 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600"
+                              >
+                                ❌ Reject
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                     {reg.payment_status === 'paid' && (
