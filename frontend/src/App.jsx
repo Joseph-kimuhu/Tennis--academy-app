@@ -13,7 +13,6 @@ import Tournaments from "./pages/Tournaments";
 import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 
-import Dashboard from "./pages/Dashboard";
 import PlayerDashboard from "./pages/PlayerDashboard";
 import UnifiedStaffPanel from "./pages/UnifiedStaffPanel";
 
@@ -57,11 +56,7 @@ function AppRoutes() {
     );
   }
 
-  const getDefaultDashboard = () => {
-    if (isAdmin || isCoach) return <UnifiedStaffPanel />;
-    return <PlayerDashboard />;
-  };
-
+  
   return (
     <div className="min-h-screen flex flex-col">
 
@@ -92,15 +87,7 @@ function AppRoutes() {
             }
           />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                {getDefaultDashboard()}
-              </ProtectedRoute>
-            }
-          />
-
+          
           <Route
             path="/staff-panel"
             element={

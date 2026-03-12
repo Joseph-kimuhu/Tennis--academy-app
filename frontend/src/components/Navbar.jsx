@@ -76,19 +76,7 @@ function Navbar() {
               </Link>
             ))}
 
-            {isAuthenticated && (
-              <Link
-                to="/dashboard"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/dashboard') 
-                    ? 'bg-[#2E7D32] text-white' 
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
-                }`}
-              >
-                Dashboard
-              </Link>
-            )}
-
+            
             {isAdmin && (
               <Link
                 to="/staff-panel"
