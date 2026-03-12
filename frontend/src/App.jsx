@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import PlayerDashboard from "./pages/PlayerDashboard";
 import UnifiedStaffPanel from "./pages/UnifiedStaffPanel";
 import RoleConverter from "./components/RoleConverter";
+import UserVerifier from "./components/UserVerifier";
 
 
 // Protected Route
@@ -113,6 +114,16 @@ function AppRoutes() {
             element={
               <ProtectedRoute requireAdmin>
                 <RoleConverter />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* User verifier route - remove after use */}
+          <Route
+            path="/verify-users"
+            element={
+              <ProtectedRoute requireAdmin>
+                <UserVerifier />
               </ProtectedRoute>
             }
           />
