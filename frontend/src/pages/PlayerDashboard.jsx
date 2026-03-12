@@ -45,7 +45,7 @@ function PlayerDashboard() {
 
   const fetchData = async () => {
     try {
-      const [tournamentsData, courtsData, bookingsData, statsData, messagesData, sessionsData, announcementsData, matchesData, leaderboardData, coachesData, playersData, adminsData, notificationsData, detailedStatsData, myTournamentsData] = await Promise.all([
+      const [tournamentsData, courtsData, bookingsData, statsData, messagesData, sessionsData, announcementsData, matchesData, leaderboardData, coachesData, playersData, adminsData, allUsersData, notificationsData, detailedStatsData, myTournamentsData] = await Promise.all([
         api.getActiveTournaments().catch(() => []),
         api.getCourts({ limit: 6 }).catch(() => []),
         api.getMyBookings().catch(() => []),
@@ -58,6 +58,7 @@ function PlayerDashboard() {
         api.getCoaches().catch(() => []),
         api.getPlayers({ limit: 50, role: 'player' }).catch(() => []),
         api.getPlayers({ limit: 50, role: 'admin' }).catch(() => []),
+        api.getAllUsers({ limit: 100 }).catch(() => []), // Fallback to get all users
         api.getNotifications({ limit: 10 }).catch(() => []),
         user ? api.getPlayerStatistics(user.id).catch(() => null) : Promise.resolve(null),
         user ? api.getMyTournamentRegistrations().catch(() => []) : Promise.resolve([])
@@ -75,7 +76,14 @@ function PlayerDashboard() {
       setLeaderboard(leaderboardData || []);
       setCoaches(coachesData || []);
       setPlayers(playersData?.filter(p => p.id !== user?.id) || []);
-      setAdmins(adminsData || []);
+      // Combine admins and coaches to find John Makumi
+      const allAdmins = [...(adminsData || []), ...(coachesData || [])];
+      const johnMakumi = allAdmins.filter(user => 
+        user.email === 'johnmakumi106@gmail.com' || 
+        user.username === 'johnmakumi'
+      );
+      setAdmins(johnMakumi.length > 0 ? johnMakumi : allAdmins);
+      console.log('John Makumi found:', johnMakumi);
       setNotifications(notificationsData || []);
       setMyTournaments(myTournamentsData || []);
     } catch (error) {
@@ -745,9 +753,12 @@ function PlayerDashboard() {
                   required
                 >
                   <option value="">Select recipient...</option>
-                  {admins.filter(admin => admin.email === 'johnmakumi106@gmail.com' || admin.username === 'johnmakumi').map((admin) => (
-                    <option key={admin.id} value={admin.id}>{admin.username} (Admin)</option>
+                  {admins.map((admin) => (
+                    <option key={admin.id} value={admin.id}>{admin.username} ({admin.role === 'coach' ? 'Coach' : 'Admin'})</option>
                   ))}
+                  {admins.length === 0 && (
+                    <option value="" disabled>No admin or coach available</option>
+                  )}
                 </select>
               </div>
               <div className="mb-4">
