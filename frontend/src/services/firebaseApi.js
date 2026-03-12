@@ -429,11 +429,33 @@ class FirebaseApiService {
   async confirmBookingPayment(bookingId, paymentPhone, paymentReference) {
     const bookingRef = doc(db, 'bookings', bookingId);
     await updateDoc(bookingRef, {
-      payment_status: 'paid',
+      payment_status: 'pending',
       payment_phone: paymentPhone,
       payment_reference: paymentReference,
+      payment_confirmed_at: null,
+      status: 'pending_payment',
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  }
+
+  async approveBookingPayment(bookingId) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      payment_status: 'paid',
       payment_confirmed_at: serverTimestamp(),
       status: 'confirmed',
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  }
+
+  async rejectBookingPayment(bookingId) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      payment_status: 'rejected',
+      payment_confirmed_at: null,
+      status: 'payment_rejected',
       updatedAt: serverTimestamp()
     });
     return true;
@@ -734,8 +756,9 @@ class FirebaseApiService {
     await updateDoc(registrationRef, {
       payment_phone: paymentPhone,
       payment_reference: paymentReference,
-      payment_status: 'paid',
-      payment_confirmed_at: serverTimestamp()
+      payment_status: 'pending',
+      payment_confirmed_at: null,
+      status: 'pending_payment'
     });
     return true;
   }
@@ -757,9 +780,11 @@ class FirebaseApiService {
     const tournamentDoc = await getDoc(doc(db, 'tournaments', registrationData.tournament_id));
     const tournamentName = tournamentDoc.exists() ? tournamentDoc.data().name : 'the tournament';
     
-    // Update registration status to approved
+    // Update registration status to approved and payment to paid
     await updateDoc(registrationRef, {
       status: 'approved',
+      payment_status: 'paid',
+      payment_confirmed_at: serverTimestamp(),
       approved_at: serverTimestamp()
     });
     
@@ -787,6 +812,8 @@ class FirebaseApiService {
     
     await updateDoc(registrationRef, {
       status: 'rejected',
+      payment_status: 'rejected',
+      payment_confirmed_at: null,
       rejection_reason: reason,
       rejected_at: serverTimestamp()
     });
