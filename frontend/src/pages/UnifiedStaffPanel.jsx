@@ -106,7 +106,7 @@ function UnifiedStaffPanel() {
     setLoading(true);
     try {
       const [statsData, usersData, bookingsData, tournamentsData, courtsData, messagesData, announcementsData] = await Promise.all([
-        api.getStaffStats().catch(() => ({ total_users: 0, total_bookings: 0, active_tournaments: 0 })),
+        api.getAdminStats().catch(() => ({ totalUsers: 0, totalBookings: 0, activeTournaments: 0, totalCourts: 0, totalTournaments: 0 })),
         api.getAllUsers({ limit: 20 }),
         api.getAllBookings({ limit: 10 }),
         api.getAllTournaments({ limit: 10 }),
@@ -757,7 +757,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">👥</span>
                     <span className="text-sm text-blue-600 font-bold">Total</span>
                   </div>
-                  <p className="text-3xl font-bold text-blue-600">{stats?.total_users || 0}</p>
+                  <p className="text-3xl font-bold text-blue-600">{stats?.totalUsers || 0}</p>
                   <p className="text-gray-600">{isAdmin ? 'Users' : 'Players'}</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
@@ -765,7 +765,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">📅</span>
                     <span className="text-sm text-green-600 font-bold">Total</span>
                   </div>
-                  <p className="text-3xl font-bold text-green-600">{stats?.total_bookings || 0}</p>
+                  <p className="text-3xl font-bold text-green-600">{stats?.totalBookings || 0}</p>
                   <p className="text-gray-600">Bookings</p>
                 </div>
                 <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border-2 border-yellow-200">
@@ -773,7 +773,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">🏆</span>
                     <span className="text-sm text-yellow-700 font-bold">Active</span>
                   </div>
-                  <p className="text-3xl font-bold text-yellow-600">{stats?.active_tournaments || 0}</p>
+                  <p className="text-3xl font-bold text-yellow-600">{stats?.activeTournaments || 0}</p>
                   <p className="text-gray-600">Tournaments</p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200">
