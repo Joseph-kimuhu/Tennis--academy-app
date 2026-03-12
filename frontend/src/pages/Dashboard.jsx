@@ -8,7 +8,6 @@ function Dashboard() {
   const [searchParams] = useSearchParams();
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
-  const [matches, setMatches] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
@@ -30,7 +29,6 @@ function Dashboard() {
       // Use different API calls based on user role
       const promises = [
         api.getMyBookings({ upcoming: true, limit: 5 }),
-        api.getMyMatches({ limit: 5 }),
         api.getNotifications({ limit: 10 }),
       ];
 
@@ -41,10 +39,9 @@ function Dashboard() {
         promises.unshift(api.getMyStats()); // Use personal stats for players
       }
 
-      const [statsData, bookingsData, matchesData, notificationsData] = await Promise.all(promises);
+      const [statsData, bookingsData, notificationsData] = await Promise.all(promises);
       setStats(statsData);
       setBookings(bookingsData || []);
-      setMatches(matchesData || []);
       setNotifications(notificationsData || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -261,31 +258,9 @@ function Dashboard() {
             </div>
           </Link>
 
-          <Link
-            to="/tournaments"
-            className="bg-white rounded-xl shadow-md p-6 card-hover flex items-center space-x-4"
-          >
-            <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🏆</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg">Join Tournament</h3>
-              <p className="text-sm text-gray-500">Compete in tournaments</p>
-            </div>
-          </Link>
+          {/* Tournament quick action kept for players */}
 
-          <Link
-            to="/leaderboard"
-            className="bg-white rounded-xl shadow-md p-6 card-hover flex items-center space-x-4"
-          >
-            <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">📈</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg">View Rankings</h3>
-              <p className="text-sm text-gray-500">See top players</p>
-            </div>
-          </Link>
+          {/* Leaderboard quick action removed */}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -326,39 +301,7 @@ function Dashboard() {
             )}
           </div>
 
-          {/* Recent Matches */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Recent Matches</h2>
-            </div>
-            {matches.length > 0 ? (
-              <div className="space-y-4">
-                {matches.map((match) => (
-                  <div key={match.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{match.player1?.username}</span>
-                        <span className="text-gray-500">vs</span>
-                        <span className="font-medium">{match.player2?.username}</span>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {new Date(match.scheduled_time || match.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {match.winner_id && (
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        match.winner_id === user?.id ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {match.winner_id === user?.id ? 'Won' : 'Lost'}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">No matches yet</p>
-            )}
-          </div>
+          {/* Recent matches block removed – “My Matches” hidden */}
         </div>
 
         {/* Performance Chart */}
@@ -380,18 +323,7 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Admin Section */}
-        {isAdmin && (
-          <div className="mt-8 bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold mb-4">Admin Panel</h2>
-            <Link
-              to="/admin"
-              className="inline-block bg-tennis-green text-white px-4 py-2 rounded-lg hover:bg-tennis-green-dark"
-            >
-              Go to Admin Dashboard →
-            </Link>
-          </div>
-        )}
+        {/* Admin Section removed – admins use UnifiedStaffPanel only */}
       </div>
     </div>
   );

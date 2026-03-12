@@ -11,7 +11,8 @@ function Tournaments() {
   const [participants, setParticipants] = useState([]);
   const [showBracket, setShowBracket] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ phone: '', reference: '' });
+  const [paymentForm, setPaymentForm] = useState({ paymentMethod: '', phone: '', reference: '' });
+  const [myTournaments, setMyTournaments] = useState([]);
   const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
@@ -25,8 +26,13 @@ function Tournaments() {
       if (filter.status) params.status = filter.status;
       if (filter.tournament_type) params.tournament_type = filter.tournament_type;
       
-      const data = await api.getTournaments(params);
-      setTournaments(data || []);
+      const [tournamentsData, myTournamentsData] = await Promise.all([
+        api.getTournaments(params),
+        user ? api.getMyTournamentRegistrations().catch(() => []) : Promise.resolve([])
+      ]);
+      
+      setTournaments(tournamentsData || []);
+      setMyTournaments(myTournamentsData || []);
     } catch (error) {
       console.error('Error fetching tournaments:', error);
     }
@@ -55,7 +61,7 @@ function Tournaments() {
       
       // Show payment modal instead of success notification
       setShowPaymentModal(true);
-      setPaymentForm({ phone: '', reference: '' });
+      setPaymentForm({ paymentMethod: '', phone: '', reference: '' });
       
       fetchTournaments();
       handleTournamentSelect(selectedTournament);
@@ -75,7 +81,7 @@ function Tournaments() {
       }
       
       const registrationId = myRegistrations[0].id;
-      await api.confirmTournamentPayment(registrationId, paymentForm.phone, paymentForm.reference);
+      await api.confirmTournamentPayment(registrationId, paymentForm.paymentMethod, paymentForm.phone, paymentForm.reference);
       
       setShowPaymentModal(false);
       
@@ -87,7 +93,7 @@ function Tournaments() {
           <span class="text-2xl">✅</span>
           <div>
             <p class="font-bold">Payment Submitted!</p>
-            <p class="text-sm text-green-50">Your payment is being processed. Coach will approve shortly.</p>
+            <p class="text-sm text-green-50">Your payment is being processed. Admin will review and approve shortly.</p>
           </div>
         </div>
       `;
@@ -442,20 +448,39 @@ function Tournaments() {
             
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
               <p className="font-semibold text-yellow-800 mb-2">💳 Payment Instructions</p>
-              <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
-                <li>Go to M-Pesa on your phone</li>
-                <li>Select "Pay Bill"</li>
-                <li>Enter Business Number: <strong>0738839851</strong></li>
-                <li>Enter Account Number: <strong>{selectedTournament?.name}</strong></li>
-                <li>Enter the tournament fee amount</li>
-                <li>Enter your M-Pesa PIN to confirm</li>
-              </ol>
+              <div id="paymentInstructions">
+                <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
+                  <li>Complete the payment using your selected method</li>
+                  <li>For M-Pesa: Go to M-Pesa → Pay Bill → Enter Business Number: <strong>0738839851</strong></li>
+                  <li>For Card/Bank: Use the provided payment details</li>
+                  <li>Enter the tournament fee amount: <strong>{selectedTournament?.entry_fee || 0} KES</strong></li>
+                  <li>Keep your transaction reference number</li>
+                </ol>
+              </div>
             </div>
             
             <form onSubmit={handlePaymentSubmit}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  M-Pesa Phone Number
+                  Payment Method
+                </label>
+                <select
+                  value={paymentForm.paymentMethod}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                >
+                  <option value="">Select payment method...</option>
+                  <option value="mpesa">M-Pesa</option>
+                  <option value="card">Card</option>
+                  <option value="cash">Cash</option>
+                  <option value="bank">Bank Transfer</option>
+                </select>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {paymentForm.paymentMethod === 'mpesa' ? 'M-Pesa Phone Number' : 'Contact Information'}
                 </label>
                 <input
                   type="tel"
@@ -469,7 +494,7 @@ function Tournaments() {
               
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  M-Pesa Transaction Reference
+                  Transaction Reference
                 </label>
                 <input
                   type="text"

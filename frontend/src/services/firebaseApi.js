@@ -426,10 +426,14 @@ class FirebaseApiService {
     });
   }
 
-  async confirmBookingPayment(bookingId, paymentPhone, paymentReference) {
+  async confirmBookingPayment(bookingId, paymentMethod, paymentPhone, paymentReference) {
     const bookingRef = doc(db, 'bookings', bookingId);
     await updateDoc(bookingRef, {
+
       payment_status: 'pending',
+
+      payment_method: paymentMethod,
+      payment_status: 'paid',
       payment_phone: paymentPhone,
       payment_reference: paymentReference,
       payment_confirmed_at: null,
@@ -696,6 +700,18 @@ class FirebaseApiService {
     
     const tournamentData = tournamentDoc.data();
     
+    // Check if user is already registered
+    const existingRegistrationQuery = query(
+      collection(db, 'tournament_registrations'),
+      where('tournament_id', '==', tournamentId),
+      where('user_id', '==', userId)
+    );
+    const existingRegistrationSnapshot = await getDocs(existingRegistrationQuery);
+    
+    if (!existingRegistrationSnapshot.empty) {
+      throw new Error('You are already registered for this tournament');
+    }
+    
     // Get user info for notification
     const userDoc = await getDoc(doc(db, 'users', userId));
     const playerName = userDoc.exists() ? userDoc.data().username : 'A player';
@@ -706,6 +722,7 @@ class FirebaseApiService {
       user_id: userId,
       status: 'pending_payment',
       payment_status: 'pending',
+      payment_method: '',
       payment_phone: '',
       payment_reference: '',
       registered_at: serverTimestamp()
@@ -751,9 +768,10 @@ class FirebaseApiService {
     return participants;
   }
 
-  async confirmTournamentPayment(registrationId, paymentPhone, paymentReference) {
+  async confirmTournamentPayment(registrationId, paymentMethod, paymentPhone, paymentReference) {
     const registrationRef = doc(db, 'tournament_registrations', registrationId);
     await updateDoc(registrationRef, {
+      payment_method: paymentMethod,
       payment_phone: paymentPhone,
       payment_reference: paymentReference,
       payment_status: 'pending',
@@ -934,49 +952,60 @@ class FirebaseApiService {
     
     const { limit: limitCount = 10 } = params;
     
-    // Get all messages and filter in JavaScript (avoids index requirement)
-    const q = query(collection(db, 'messages'), limit(50));
-    const querySnapshot = await getDocs(q);
-    let allMessages = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Filter by folder
-    if (folder === 'inbox') {
-      allMessages = allMessages.filter(m => m.receiver_id === userId);
-    } else {
-      allMessages = allMessages.filter(m => m.sender_id === userId);
-    }
-    
-    // Sort by created date
-    allMessages.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
-    
-    const messages = [];
-    
-    for (const message of allMessages.slice(0, limitCount)) {
-      // Get sender info
-      if (message.sender_id) {
-        const senderDoc = await getDoc(doc(db, 'users', message.sender_id));
-        if (senderDoc.exists()) {
-          message.sender = { id: senderDoc.id, ...senderDoc.data() };
-        }
+    try {
+      // Create proper queries based on folder to respect Firestore rules
+      let q;
+      if (folder === 'inbox') {
+        // Query messages where current user is the receiver
+        q = query(
+          collection(db, 'messages'),
+          where('receiver_id', '==', userId),
+          orderBy('created_at', 'desc'),
+          limit(limitCount || 10)
+        );
+      } else {
+        // Query messages where current user is the sender
+        q = query(
+          collection(db, 'messages'),
+          where('sender_id', '==', userId),
+          orderBy('created_at', 'desc'),
+          limit(limitCount || 10)
+        );
       }
       
-      // Get receiver info
-      if (message.receiver_id) {
-        const receiverDoc = await getDoc(doc(db, 'users', message.receiver_id));
-        if (receiverDoc.exists()) {
-          message.receiver = { id: receiverDoc.id, ...receiverDoc.data() };
-        }
-      }
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      messages.push(message);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      // Fallback: try to get all messages if specific query fails
+      try {
+        const fallbackQ = query(collection(db, 'messages'), limit(50));
+        const fallbackSnapshot = await getDocs(fallbackQ);
+        let allMessages = fallbackSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Filter by folder
+        if (folder === 'inbox') {
+          allMessages = allMessages.filter(m => m.receiver_id === userId);
+        } else {
+          allMessages = allMessages.filter(m => m.sender_id === userId);
+        }
+        return allMessages;
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+        return [];
+      }
     }
-    
-    return messages;
   }
-
+    
+    
   async sendMessage(messageData) {
     const userId = this.getCurrentUserId();
     if (!userId) throw new Error('Not authenticated');
+    
+    // Get sender info for notification
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const sender = userDoc.exists() ? userDoc.data() : {};
     
     console.log('Firebase sendMessage - userId:', userId, 'messageData:', messageData);
     
@@ -985,8 +1014,16 @@ class FirebaseApiService {
         ...messageData,
         sender_id: userId,
         is_read: false,
-        createdAt: serverTimestamp()
+        created_at: serverTimestamp()
       });
+      
+      // Create notification for the receiver
+      await this.createNotification(
+        messageData.receiver_id,
+        `New Message from ${sender.username || 'Someone'}`,
+        messageData.subject,
+        'message'
+      );
       
       console.log('Message created with ID:', docRef.id);
       return { id: docRef.id, ...messageData };
@@ -1105,16 +1142,47 @@ class FirebaseApiService {
   }
 
   async createAnnouncement(announcementData) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    // Get sender info
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const sender = userDoc.exists() ? userDoc.data() : {};
+    
     const docRef = await addDoc(collection(db, 'announcements'), {
       ...announcementData,
       is_active: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
     });
+    
+    // Create notifications for all users
+    await this.notifyAllUsers(
+      announcementData.title || 'New Announcement',
+      announcementData.content || 'Check announcements for details',
+      'announcement'
+    );
+    
     return { id: docRef.id, ...announcementData };
   }
 
   // ==================== NOTIFICATIONS ====================
+
+  async notifyAllUsers(title, message, type = 'general') {
+    // Get all users
+    const usersQuery = query(collection(db, 'users'), limit(1000));
+    const usersSnapshot = await getDocs(usersQuery);
+    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Create notification for each user (except the sender)
+    const currentUserId = this.getCurrentUserId();
+    
+    for (const user of users) {
+      if (user.id !== currentUserId) {
+        await this.createNotification(user.id, title, message, type);
+      }
+    }
+  }
 
   async getNotifications(params = {}) {
     const userId = this.getCurrentUserId();
@@ -1143,7 +1211,8 @@ class FirebaseApiService {
     
     const querySnapshot = await getDocs(q);
     const notifications = querySnapshot.docs.map(doc => doc.data());
-    return notifications.filter(n => n.is_read === false).length;
+    const unreadCount = notifications.filter(n => n.is_read === false).length;
+    return { unread_count: unreadCount };
   }
 
   async markNotificationAsRead(notificationId) {

@@ -10,14 +10,13 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Courts from "./pages/Courts";
 import Tournaments from "./pages/Tournaments";
-import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 
-import Dashboard from "./pages/Dashboard";
-import Admin from "./pages/Admin";
-import CoachPanel from "./pages/CoachPanel";
 import PlayerDashboard from "./pages/PlayerDashboard";
 import UnifiedStaffPanel from "./pages/UnifiedStaffPanel";
+import RoleConverter from "./components/RoleConverter";
+import UserVerifier from "./components/UserVerifier";
+import CreateJohnMakumi from "./components/CreateJohnMakumi";
 
 
 // Protected Route
@@ -59,11 +58,7 @@ function AppRoutes() {
     );
   }
 
-  const getDefaultDashboard = () => {
-    if (isAdmin || isCoach) return <UnifiedStaffPanel />;
-    return <PlayerDashboard />;
-  };
-
+  
   return (
     <div className="min-h-screen flex flex-col">
 
@@ -83,8 +78,6 @@ function AppRoutes() {
 
           <Route path="/tournaments" element={<Tournaments />} />
 
-          <Route path="/leaderboard" element={<Leaderboard />} />
-
           <Route
             path="/profile"
             element={
@@ -94,15 +87,7 @@ function AppRoutes() {
             }
           />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                {getDefaultDashboard()}
-              </ProtectedRoute>
-            }
-          />
-
+          
           <Route
             path="/staff-panel"
             element={
@@ -117,6 +102,36 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <PlayerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Temporary role converter route - remove after use */}
+          <Route
+            path="/convert-roles"
+            element={
+              <ProtectedRoute requireAdmin>
+                <RoleConverter />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* User verifier route - remove after use */}
+          <Route
+            path="/verify-users"
+            element={
+              <ProtectedRoute requireAdmin>
+                <UserVerifier />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Create John Makumi route - remove after use */}
+          <Route
+            path="/create-john"
+            element={
+              <ProtectedRoute requireAdmin>
+                <CreateJohnMakumi />
               </ProtectedRoute>
             }
           />

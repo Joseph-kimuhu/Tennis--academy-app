@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 
 function UnifiedStaffPanel() {
   const { user, isAdmin, isCoach, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [userFilter, setUserFilter] = useState('all');
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [courts, setCourts] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  const [messageForm, setMessageForm] = useState({ receiver_id: '', subject: '', content: '', message_type: 'general' });
-  const [sendingMessage, setSendingMessage] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [playerStats, setPlayerStats] = useState(null);
@@ -29,13 +27,22 @@ function UnifiedStaffPanel() {
     losing_streak: 0, longest_win_streak: 0, longest_lose_streak: 0, coach_notes: ''
   });
   const [savingStats, setSavingStats] = useState(false);
-  const [messageFolder, setMessageFolder] = useState('inbox');
   const [announcements, setAnnouncements] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', priority: 'normal' });
   const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
   const [loading, setLoading] = useState(true);
-    const [showEditUser, setShowEditUser] = useState(false);
+
+  // Utility functions
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showAddCourt, setShowAddCourt] = useState(false);
   const [showEditCourt, setShowEditCourt] = useState(false);
@@ -59,6 +66,7 @@ function UnifiedStaffPanel() {
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
   const [confirmingBooking, setConfirmingBooking] = useState(null);
   const [paymentData, setPaymentData] = useState({
+    payment_method: '',
     payment_phone: '',
     payment_reference: ''
   });
@@ -97,6 +105,13 @@ function UnifiedStaffPanel() {
   const hasFullAccess = isAdmin || isCoach;
 
   useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (isAdmin || isCoach) {
       fetchData();
     }
@@ -105,52 +120,26 @@ function UnifiedStaffPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, bookingsData, tournamentsData, courtsData, messagesData, announcementsData] = await Promise.all([
-        api.getStaffStats().catch(() => ({ total_users: 0, total_bookings: 0, active_tournaments: 0 })),
+      const [statsData, usersData, bookingsData, tournamentsData, courtsData, announcementsData, notificationsData] = await Promise.all([
+        api.getAdminStats().catch(() => ({ totalUsers: 0, totalBookings: 0, activeTournaments: 0, totalCourts: 0, totalTournaments: 0 })),
         api.getAllUsers({ limit: 20 }),
         api.getAllBookings({ limit: 10 }),
         api.getAllTournaments({ limit: 10 }),
         api.getCourts({ limit: 10 }).catch(() => []),
-        api.getMessages(messageFolder, { limit: 20 }).catch(() => []),
-        api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => [])
+        api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => []),
+        api.getNotifications({ limit: 20 }).catch(() => [])
       ]);
       setStats(statsData);
       setUsers(usersData || []);
       setBookings(bookingsData || []);
       setTournaments(tournamentsData || []);
       setCourts(courtsData || []);
-      setMessages(messagesData || []);
       setAnnouncements(announcementsData || []);
+      setNotifications(notificationsData || []);
     } catch (error) {
       console.error('Error fetching staff data:', error);
     }
     setLoading(false);
-  };
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!messageForm.receiver_id || !messageForm.subject || !messageForm.content) {
-      alert('Please fill in all fields');
-      return;
-    }
-    setSendingMessage(true);
-    try {
-      console.log('Sending message:', messageForm);
-      await api.sendMessage(messageForm);
-      setShowMessageModal(false);
-      setMessageForm({ receiver_id: '', subject: '', content: '', message_type: 'general' });
-      alert('Message sent successfully!');
-      fetchData(); // Refresh messages
-    } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message: ' + error.message);
-    }
-    setSendingMessage(false);
-  };
-
-  const openMessageModal = (playerId = '') => {
-    setMessageForm({ ...messageForm, receiver_id: playerId });
-    setShowMessageModal(true);
   };
 
   const handleSelectPlayer = async (player) => {
@@ -444,11 +433,11 @@ function UnifiedStaffPanel() {
   const handlePaymentConfirm = async (e) => {
     e.preventDefault();
     try {
-      await api.confirmBookingPayment(confirmingBooking.id, paymentData.payment_phone, paymentData.payment_reference);
+      await api.confirmBookingPayment(confirmingBooking.id, paymentData.payment_method, paymentData.payment_phone, paymentData.payment_reference);
       alert('Payment confirmed successfully!');
       setShowPaymentConfirm(false);
       setConfirmingBooking(null);
-      setPaymentData({ payment_phone: '', payment_reference: '' });
+      setPaymentData({ payment_method: '', payment_phone: '', payment_reference: '' });
       fetchData();
     } catch (error) {
       alert('Failed to confirm payment: ' + (error.message || 'Unknown error'));
@@ -458,6 +447,7 @@ function UnifiedStaffPanel() {
   const startPaymentConfirm = (booking) => {
     setConfirmingBooking(booking);
     setPaymentData({
+      payment_method: booking.payment_method || '',
       payment_phone: booking.payment_phone || '',
       payment_reference: booking.payment_reference || ''
     });
@@ -713,7 +703,6 @@ function UnifiedStaffPanel() {
             {[
               { id: 'overview', label: 'Overview', icon: '📊' },
               { id: 'players', label: 'Players', icon: '🎾' },
-              { id: 'messages', label: 'Messages', icon: '✉️', badge: messages.filter(m => !m.is_read).length },
               { id: 'announcements', label: 'Announcements', icon: '📢' },
               { id: 'users', label: 'Users', icon: '👥' },
               { id: 'bookings', label: 'Bookings', icon: '📅' },
@@ -757,7 +746,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">👥</span>
                     <span className="text-sm text-blue-600 font-bold">Total</span>
                   </div>
-                  <p className="text-3xl font-bold text-blue-600">{stats?.total_users || 0}</p>
+                  <p className="text-3xl font-bold text-blue-600">{stats?.totalUsers || 0}</p>
                   <p className="text-gray-600">{isAdmin ? 'Users' : 'Players'}</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
@@ -765,7 +754,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">📅</span>
                     <span className="text-sm text-green-600 font-bold">Total</span>
                   </div>
-                  <p className="text-3xl font-bold text-green-600">{stats?.total_bookings || 0}</p>
+                  <p className="text-3xl font-bold text-green-600">{stats?.totalBookings || 0}</p>
                   <p className="text-gray-600">Bookings</p>
                 </div>
                 <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border-2 border-yellow-200">
@@ -773,7 +762,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">🏆</span>
                     <span className="text-sm text-yellow-700 font-bold">Active</span>
                   </div>
-                  <p className="text-3xl font-bold text-yellow-600">{stats?.active_tournaments || 0}</p>
+                  <p className="text-3xl font-bold text-yellow-600">{stats?.activeTournaments || 0}</p>
                   <p className="text-gray-600">Tournaments</p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200">
@@ -869,20 +858,12 @@ function UnifiedStaffPanel() {
                           <span className="text-red-600 font-medium">{player.losses || 0}</span>
                         </td>
                         <td className="py-4">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleSelectPlayer(player)}
-                              className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
-                            >
-                              📊 Stats
-                            </button>
-                            <button
-                              onClick={() => openMessageModal(player.id)}
-                              className="px-3 py-1.5 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
-                            >
-                              ✉️ Message
-                            </button>
-                          </div>
+                        <button
+                          onClick={() => handleSelectPlayer(player)}
+                          className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+                        >
+                          📊 Stats
+                        </button>
                         </td>
                       </tr>
                     ))}
@@ -900,76 +881,7 @@ function UnifiedStaffPanel() {
             </div>
           )}
 
-          {activeTab === 'messages' && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Messages</h2>
-                <button
-                  onClick={() => openMessageModal()}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium shadow-md"
-                >
-                  + Compose
-                </button>
-              </div>
-              <div className="mb-4 flex space-x-2">
-                <button
-                  onClick={() => { setMessageFolder('inbox'); fetchData(); }}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    messageFolder === 'inbox' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  Inbox
-                </button>
-                <button
-                  onClick={() => { setMessageFolder('sent'); fetchData(); }}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    messageFolder === 'sent' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  Sent
-                </button>
-              </div>
-              <div className="space-y-3">
-                {messages.length > 0 ? messages.map((message) => (
-                  <div 
-                    key={message.id}
-                    onClick={async () => {
-                      if (!message.is_read && messageFolder === 'inbox') {
-                        try {
-                          await api.markMessageAsRead(message.id);
-                          message.is_read = true;
-                          setMessages([...messages]);
-                        } catch (error) {
-                          console.error('Error marking message as read:', error);
-                        }
-                      }
-                    }}
-                    className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!message.is_read && messageFolder === 'inbox' ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-gray-50'}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        {!message.is_read && messageFolder === 'inbox' && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
-                        <div>
-                          <p className="font-medium">{messageFolder === 'inbox' ? message.sender?.username || 'Unknown' : `To: ${message.receiver?.username || 'Unknown'}`}</p>
-                          <p className="text-xs text-gray-500">{messageFolder === 'inbox' ? `To: ${message.receiver?.username}` : `To: ${message.receiver?.username}`}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-400">{message.created_at ? new Date(message.created_at).toLocaleDateString() : ''}</span>
-                    </div>
-                    <h3 className="font-semibold mt-2">{message.subject}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{message.content}</p>
-                  </div>
-                )) : (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl">📭</span>
-                    </div>
-                    <p className="text-gray-500">No messages in inbox</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Messages tab removed to disable in-app staff messaging */}
 
           {activeTab === 'announcements' && (
             <div>
@@ -2224,7 +2136,22 @@ function UnifiedStaffPanel() {
             <form onSubmit={handlePaymentConfirm}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                  <select
+                    value={paymentData.payment_method}
+                    onChange={(e) => setPaymentData({ ...paymentData, payment_method: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    required
+                  >
+                    <option value="">Select payment method...</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="card">Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank">Bank Transfer</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Information</label>
                   <input
                     type="text"
                     required
@@ -2235,7 +2162,7 @@ function UnifiedStaffPanel() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Reference</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Transaction Reference</label>
                   <input
                     type="text"
                     required
@@ -2433,91 +2360,7 @@ function UnifiedStaffPanel() {
         </div>
       )}
 
-      {/* Message Modal */}
-      {showMessageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Send Message</h3>
-              <button
-                onClick={() => setShowMessageModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleSendMessage}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                <select
-                  value={messageForm.receiver_id}
-                  onChange={(e) => setMessageForm({ ...messageForm, receiver_id: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  required
-                >
-                  <option value="">Select a player</option>
-                  {users.filter(u => u.role === 'player').map((player) => (
-                    <option key={player.id} value={player.id}>
-                      {player.username} ({player.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                <input
-                  type="text"
-                  value={messageForm.subject}
-                  onChange={(e) => setMessageForm({ ...messageForm, subject: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="Enter subject"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message Type</label>
-                <select
-                  value={messageForm.message_type}
-                  onChange={(e) => setMessageForm({ ...messageForm, message_type: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="general">General</option>
-                  <option value="training">Training</option>
-                  <option value="tournament">Tournament</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                <textarea
-                  value={messageForm.content}
-                  onChange={(e) => setMessageForm({ ...messageForm, content: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  rows="4"
-                  placeholder="Write your message..."
-                  required
-                />
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowMessageModal(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={sendingMessage}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium disabled:opacity-50"
-                >
-                  {sendingMessage ? 'Sending...' : 'Send Message'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Message modal removed – staff messaging disabled */}
 
       {/* Stats Modal */}
       {showStatsModal && (

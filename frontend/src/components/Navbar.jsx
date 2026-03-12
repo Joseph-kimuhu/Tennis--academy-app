@@ -14,8 +14,8 @@ function Navbar() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchUnreadNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(fetchUnreadNotifications, 30000);
+      // Poll for new notifications every 10 seconds for real-time updates
+      const interval = setInterval(fetchUnreadNotifications, 10000);
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
@@ -41,7 +41,6 @@ function Navbar() {
   const navLinks = [
     { path: '/courts', label: 'Courts' },
     { path: '/tournaments', label: 'Tournaments' },
-    { path: '/leaderboard', label: 'Leaderboard' },
   ];
 
   return (
@@ -76,42 +75,19 @@ function Navbar() {
               </Link>
             ))}
 
-            {isAuthenticated && (
-              <Link
-                to="/dashboard"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/dashboard') 
-                    ? 'bg-[#2E7D32] text-white' 
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
-                }`}
-              >
-                Dashboard
-              </Link>
-            )}
+            {/* Top-level Dashboard link removed; use profile menu instead */}
 
+            
             {isAdmin && (
               <Link
                 to="/staff-panel"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/staff-panel') || isActive('/admin') 
+                  isActive('/staff-panel') 
                     ? 'bg-[#2E7D32] text-white' 
                     : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
                 }`}
               >
-                Admin
-              </Link>
-            )}
-
-            {(isCoach || isAdmin) && (
-              <Link
-                to="/staff-panel"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive('/staff-panel') || isActive('/coach-panel') 
-                    ? 'bg-[#2E7D32] text-white' 
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-[#2E7D32]'
-                }`}
-              >
-                Coach Panel
+                Admin Panel
               </Link>
             )}
 
@@ -122,7 +98,13 @@ function Navbar() {
             {isAuthenticated && (
               <div className="relative">
                 <button
-                  onClick={() => navigate('/dashboard?tab=messages')}
+                  onClick={() => {
+                    if (isAdmin || isCoach) {
+                      navigate('/staff-panel?tab=announcements');
+                    } else {
+                      navigate('/player-dashboard?tab=notifications');
+                    }
+                  }}
                   className="p-2 rounded-xl hover:bg-gray-100 transition-colors relative"
                   title="Notifications"
                 >
@@ -177,7 +159,7 @@ function Navbar() {
                       </span>
                     </div>
                     <Link
-                      to="/dashboard"
+                      to={isAdmin ? "/staff-panel" : "/player-dashboard"}
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       onClick={() => setIsProfileOpen(false)}
                     >
@@ -285,17 +267,6 @@ function Navbar() {
             ))}
             {isAuthenticated && (
               <>
-                <Link
-                  to="/dashboard"
-                  className={`block px-4 py-3 rounded-lg text-sm font-medium ${
-                    isActive('/dashboard') 
-                      ? 'bg-[#2E7D32] text-white' 
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
                 {isAdmin && (
                   <Link
                     to="/staff-panel"
