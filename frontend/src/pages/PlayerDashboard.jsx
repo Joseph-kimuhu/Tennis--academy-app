@@ -47,9 +47,26 @@ function PlayerDashboard() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchData();
+    if (!isAuthenticated || !user) return;
+
+    fetchData();
+
+    const unsubs = [];
+    if (api.subscribeToMyBookings) {
+      unsubs.push(api.subscribeToMyBookings({ limit: 100 }, setMyBookings));
     }
+    if (api.subscribeToAnnouncements) {
+      unsubs.push(api.subscribeToAnnouncements({ active_only: true, limit: 5 }, setAnnouncements));
+    }
+    if (api.subscribeToNotifications) {
+      unsubs.push(api.subscribeToNotifications({ limit: 10 }, setNotifications));
+    }
+
+    return () => {
+      unsubs.forEach((unsub) => {
+        if (typeof unsub === 'function') unsub();
+      });
+    };
   }, [isAuthenticated, user]);
 
   const fetchData = async () => {
@@ -192,10 +209,15 @@ function PlayerDashboard() {
     }
   };
 
-  const markAnnouncementRead = (announcementId) => {
-    setAnnouncements((prev) =>
-      prev.map((a) => (a.id === announcementId ? { ...a, is_read: true } : a))
-    );
+  const markAnnouncementRead = async (announcementId) => {
+    try {
+      await api.markAnnouncementAsRead(announcementId);
+      setAnnouncements((prev) =>
+        prev.map((a) => (a.id === announcementId ? { ...a, is_read: true } : a))
+      );
+    } catch (error) {
+      console.error('Error marking announcement as read:', error);
+    }
   };
 
   const deleteAnnouncement = (announcementId) => {
@@ -203,10 +225,15 @@ function PlayerDashboard() {
     setAnnouncements((prev) => prev.filter((a) => a.id !== announcementId));
   };
 
-  const markBookingRead = (bookingId) => {
-    setMyBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, is_read: true } : b))
-    );
+  const markBookingRead = async (bookingId) => {
+    try {
+      await api.markBookingAsRead(bookingId);
+      setMyBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, is_read: true } : b))
+      );
+    } catch (error) {
+      console.error('Error marking booking as read:', error);
+    }
   };
 
   const deleteBooking = async (bookingId) => {
@@ -325,10 +352,10 @@ function PlayerDashboard() {
           <div className="flex overflow-x-auto">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-              { id: 'bookings', label: 'My Bookings', icon: '📅', badge: myBookings.length },
+              { id: 'bookings', label: 'My Bookings', icon: '📅', badge: myBookings.filter(b => !b.is_read).length },
               { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
               { id: 'training', label: 'Training', icon: '🎾' },
-              { id: 'announcements', label: 'Announcements', icon: '📢', badge: announcements.length },
+              { id: 'announcements', label: 'Announcements', icon: '📢', badge: announcements.filter(a => !a.is_read).length },
               { id: 'notifications', label: 'Notifications', icon: '🔔', badge: notifications.filter(n => !n.is_read).length },
             ].map((tab) => (
               <button

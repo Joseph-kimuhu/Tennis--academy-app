@@ -20,8 +20,24 @@ function Dashboard() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (!user) return;
+
     fetchData();
-  }, []);
+
+    const unsubs = [];
+    if (api.subscribeToMyBookings) {
+      unsubs.push(api.subscribeToMyBookings({ limit: 5 }, setBookings));
+    }
+    if (api.subscribeToNotifications) {
+      unsubs.push(api.subscribeToNotifications({ limit: 10 }, setNotifications));
+    }
+
+    return () => {
+      unsubs.forEach((unsub) => {
+        if (typeof unsub === 'function') unsub();
+      });
+    };
+  }, [user, isAdmin, isCoach]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -70,10 +86,15 @@ function Dashboard() {
     }
   };
 
-  const markBookingRead = (bookingId) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, is_read: true } : b))
-    );
+  const markBookingRead = async (bookingId) => {
+    try {
+      await api.markBookingAsRead(bookingId);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, is_read: true } : b))
+      );
+    } catch (error) {
+      console.error('Error marking booking as read:', error);
+    }
   };
 
   const deleteBooking = async (bookingId) => {

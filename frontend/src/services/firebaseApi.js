@@ -7,6 +7,7 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
+  onSnapshot,
   query, 
   where, 
   orderBy, 
@@ -347,9 +348,11 @@ class FirebaseApiService {
 
   // ==================== BOOKINGS ====================
 
-  async getMyBookings() {
+  async getMyBookings(params = {}) {
     const userId = this.getCurrentUserId();
     if (!userId) return [];
+
+    const { limit: limitCount = 100 } = params;
     
     // Get all bookings for user and sort in JavaScript (avoids index requirement)
     const q = query(collection(db, 'bookings'), where('user_id', '==', userId), limit(100));
@@ -359,6 +362,7 @@ class FirebaseApiService {
     
     for (const docSnap of querySnapshot.docs) {
       const booking = { id: docSnap.id, ...docSnap.data() };
+      if (booking.is_read === undefined) booking.is_read = false;
       if (booking.court_id) {
         const courtDoc = await getDoc(doc(db, 'courts', booking.court_id));
         if (courtDoc.exists()) {
@@ -368,7 +372,34 @@ class FirebaseApiService {
       bookings.push(booking);
     }
     
-    return bookings;
+    return bookings.slice(0, limitCount);
+  }
+
+  subscribeToMyBookings(params = {}, callback) {
+    const userId = this.getCurrentUserId();
+    if (!userId) return () => {};
+
+    const { limit: limitCount = 100 } = params;
+
+    const q = query(collection(db, 'bookings'), where('user_id', '==', userId), limit(100));
+
+    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+      const bookings = [];
+      for (const docSnap of querySnapshot.docs) {
+        const booking = { id: docSnap.id, ...docSnap.data() };
+        if (booking.is_read === undefined) booking.is_read = false;
+        if (booking.court_id) {
+          const courtDoc = await getDoc(doc(db, 'courts', booking.court_id));
+          if (courtDoc.exists()) {
+            booking.court = { id: courtDoc.id, ...courtDoc.data() };
+          }
+        }
+        bookings.push(booking);
+      }
+      callback(bookings.slice(0, limitCount));
+    });
+
+    return unsubscribe;
   }
 
   async getAvailableSlots(courtId, date) {
@@ -405,6 +436,7 @@ class FirebaseApiService {
       payment_method: '',
       payment_phone: '',
       payment_reference: '',
+      is_read: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
@@ -426,6 +458,14 @@ class FirebaseApiService {
     const bookingRef = doc(db, 'bookings', bookingId);
     await updateDoc(bookingRef, {
       status: 'cancelled',
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  async markBookingAsRead(bookingId) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      is_read: true,
       updatedAt: serverTimestamp()
     });
   }
@@ -1161,6 +1201,7 @@ class FirebaseApiService {
 
   async getAnnouncements(params = {}) {
     const { active_only = false, limit: limitCount = 10 } = params;
+    const userId = this.getCurrentUserId();
     
     // Get all announcements and filter in JavaScript (avoids index requirement)
     const q = query(collection(db, 'announcements'), limit(50));
@@ -1175,7 +1216,41 @@ class FirebaseApiService {
     // Sort by created date
     announcements.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
     
-    return announcements.slice(0, limitCount);
+    const enriched = announcements.map((a) => {
+      const readBy = Array.isArray(a.read_by) ? a.read_by : [];
+      return {
+        ...a,
+        is_read: userId ? readBy.includes(userId) : false
+      };
+    });
+    
+    return enriched.slice(0, limitCount);
+  }
+
+  subscribeToAnnouncements(params = {}, callback) {
+    const { active_only = false, limit: limitCount = 10 } = params;
+    const userId = this.getCurrentUserId();
+    if (!userId) return () => {};
+
+    const q = query(collection(db, 'announcements'), limit(50));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      let announcements = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if (active_only) {
+        announcements = announcements.filter(a => a.is_active === true);
+      }
+      announcements.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+      const enriched = announcements.map((a) => {
+        const readBy = Array.isArray(a.read_by) ? a.read_by : [];
+        return {
+          ...a,
+          is_read: readBy.includes(userId)
+        };
+      });
+      callback(enriched.slice(0, limitCount));
+    });
+
+    return unsubscribe;
   }
 
   async createAnnouncement(announcementData) {
@@ -1189,6 +1264,7 @@ class FirebaseApiService {
     const docRef = await addDoc(collection(db, 'announcements'), {
       ...announcementData,
       is_active: true,
+      read_by: [],
       created_at: serverTimestamp(),
       updated_at: serverTimestamp()
     });
@@ -1201,6 +1277,16 @@ class FirebaseApiService {
     );
     
     return { id: docRef.id, ...announcementData };
+  }
+
+  async markAnnouncementAsRead(announcementId) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    const announcementRef = doc(db, 'announcements', announcementId);
+    await updateDoc(announcementRef, {
+      read_by: arrayUnion(userId),
+      updated_at: serverTimestamp()
+    });
   }
 
   // ==================== NOTIFICATIONS ====================
@@ -1237,6 +1323,23 @@ class FirebaseApiService {
     notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
     return notifications.slice(0, limitCount);
+  }
+
+  subscribeToNotifications(params = {}, callback) {
+    const userId = this.getCurrentUserId();
+    if (!userId) return () => {};
+
+    const { limit: limitCount = 10 } = params;
+
+    const q = query(collection(db, 'notifications'), where('user_id', '==', userId), limit(50));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const notifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      callback(notifications.slice(0, limitCount));
+    });
+
+    return unsubscribe;
   }
 
   async getUnreadNotificationsCount() {
