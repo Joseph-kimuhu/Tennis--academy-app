@@ -117,6 +117,54 @@ function PlayerDashboard() {
     }
   };
 
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await api.markNotificationAsRead(notificationId);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    if (!confirm('Delete this notification?')) return;
+    try {
+      await api.deleteNotification(notificationId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const markAnnouncementRead = (announcementId) => {
+    setAnnouncements((prev) =>
+      prev.map((a) => (a.id === announcementId ? { ...a, is_read: true } : a))
+    );
+  };
+
+  const deleteAnnouncement = (announcementId) => {
+    if (!confirm('Delete this announcement from your list?')) return;
+    setAnnouncements((prev) => prev.filter((a) => a.id !== announcementId));
+  };
+
+  const markBookingRead = (bookingId) => {
+    setMyBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, is_read: true } : b))
+    );
+  };
+
+  const deleteBooking = async (bookingId) => {
+    if (!confirm('Delete this booking? This will cancel it.')) return;
+    try {
+      await api.cancelBooking(bookingId);
+      setMyBookings((prev) => prev.filter((b) => b.id !== bookingId));
+    } catch (error) {
+      alert('Failed to delete booking: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -332,7 +380,12 @@ function PlayerDashboard() {
                 </div>
                 <div className="space-y-3">
                   {myBookings.slice(0, 3).map((booking) => (
-                    <div key={booking.id} className="border-2 border-gray-200 rounded-xl p-4 hover:border-green-300 transition-colors">
+                    <div
+                      key={booking.id}
+                      className={`border-2 rounded-xl p-4 hover:border-green-300 transition-colors ${
+                        booking.is_read ? 'border-gray-200 bg-gray-50' : 'border-gray-200'
+                      }`}
+                    >
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-semibold text-lg">{booking.court?.name || 'Court'}</div>
@@ -348,6 +401,22 @@ function PlayerDashboard() {
                         }`}>
                           {booking.status}
                         </span>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        {!booking.is_read && (
+                          <button
+                            onClick={() => markBookingRead(booking.id)}
+                            className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteBooking(booking.id)}
+                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -428,18 +497,7 @@ function PlayerDashboard() {
                   {notifications.slice(0, 3).map((notification) => (
                     <div 
                       key={notification.id} 
-                      onClick={async () => {
-                        if (!notification.is_read) {
-                          try {
-                            await api.markNotificationAsRead(notification.id);
-                            notification.is_read = true;
-                            setNotifications([...notifications]);
-                          } catch (error) {
-                            console.error('Error marking notification as read:', error);
-                          }
-                        }
-                      }}
-                      className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
+                      className={`p-4 rounded-xl cursor-default hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
@@ -448,6 +506,22 @@ function PlayerDashboard() {
                             <p className="font-medium">{notification.title || 'Notification'}</p>
                             <p className="text-xs text-gray-500">{formatDate(notification.created_at)}</p>
                           </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!notification.is_read && (
+                            <button
+                              onClick={() => markNotificationRead(notification.id)}
+                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              Mark as read
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteNotification(notification.id)}
+                            className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                       <p className="text-sm text-gray-600 mt-2">{notification.message || notification.content}</p>
@@ -534,7 +608,12 @@ function PlayerDashboard() {
                 {myBookings.map((booking) => {
                   const paymentStatus = booking.payment_status || 'unpaid';
                   return (
-                    <div key={booking.id} className="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div
+                      key={booking.id}
+                      className={`flex items-center p-4 rounded-xl border ${
+                        booking.is_read ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200'
+                      }`}
+                    >
                       <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mr-3">
                         <span className="text-green-700 text-xl">🎾</span>
                       </div>
@@ -577,6 +656,20 @@ function PlayerDashboard() {
                         >
                           {paymentStatus}
                         </span>
+                        {!booking.is_read && (
+                          <button
+                            onClick={() => markBookingRead(booking.id)}
+                            className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteBooking(booking.id)}
+                          className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
                         {booking.status !== "cancelled" && (paymentStatus === "unpaid" || paymentStatus === "rejected") && (
                           <button
                             onClick={() => startBookingPayment(booking)}
@@ -688,15 +781,35 @@ function PlayerDashboard() {
                 announcements.map((announcement) => (
                   <div
                     key={announcement.id}
-                    className="border-l-4 border-green-500 bg-green-50 p-4 rounded-lg"
+                    className={`border-l-4 p-4 rounded-lg ${
+                      announcement.is_read
+                        ? 'border-gray-300 bg-gray-50'
+                        : 'border-green-500 bg-green-50'
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-bold text-gray-900">
                         {announcement.title}
                       </h3>
-                      <span className="text-sm text-gray-500">
-                        {formatDate(announcement.created_at || announcement.createdAt)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">
+                          {formatDate(announcement.created_at || announcement.createdAt)}
+                        </span>
+                        {!announcement.is_read && (
+                          <button
+                            onClick={() => markAnnouncementRead(announcement.id)}
+                            className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteAnnouncement(announcement.id)}
+                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     <p className="text-gray-700 mb-2">{announcement.content}</p>
                     {announcement.priority && (
@@ -777,18 +890,7 @@ function PlayerDashboard() {
               {notifications.length > 0 ? notifications.map((notification) => (
                 <div 
                   key={notification.id} 
-                  onClick={async () => {
-                    if (!notification.is_read) {
-                      try {
-                        await api.markNotificationAsRead(notification.id);
-                        notification.is_read = true;
-                        setNotifications([...notifications]);
-                      } catch (error) {
-                        console.error('Error marking notification as read:', error);
-                      }
-                    }
-                  }}
-                  className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
+                  className={`p-4 rounded-xl cursor-default hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
@@ -797,6 +899,22 @@ function PlayerDashboard() {
                         <p className="font-medium">{notification.title || 'Notification'}</p>
                         <p className="text-xs text-gray-500">{formatDate(notification.created_at)}</p>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!notification.is_read && (
+                        <button
+                          onClick={() => markNotificationRead(notification.id)}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Mark as read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteNotification(notification.id)}
+                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 mt-2">{notification.message || notification.content}</p>

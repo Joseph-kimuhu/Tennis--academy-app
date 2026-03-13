@@ -49,6 +49,43 @@ function Dashboard() {
     setLoading(false);
   };
 
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await api.markNotificationAsRead(notificationId);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    if (!confirm('Delete this notification?')) return;
+    try {
+      await api.deleteNotification(notificationId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const markBookingRead = (bookingId) => {
+    setBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, is_read: true } : b))
+    );
+  };
+
+  const deleteBooking = async (bookingId) => {
+    if (!confirm('Delete this booking? This will cancel it.')) return;
+    try {
+      await api.cancelBooking(bookingId);
+      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+    } catch (error) {
+      alert('Failed to delete booking: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -124,11 +161,27 @@ function Dashboard() {
                           {new Date(notification.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      {!notification.is_read && (
-                        <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
-                          New
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {!notification.is_read && (
+                          <>
+                            <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
+                              New
+                            </span>
+                            <button
+                              onClick={() => markNotificationRead(notification.id)}
+                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              Mark as read
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => deleteNotification(notification.id)}
+                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -275,7 +328,12 @@ function Dashboard() {
             {bookings.length > 0 ? (
               <div className="space-y-4">
                 {bookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={booking.id}
+                    className={`flex items-center p-3 rounded-lg ${
+                      booking.is_read ? 'bg-gray-50' : 'bg-white border border-gray-200'
+                    }`}
+                  >
                     <div className="w-10 h-10 bg-tennis-green rounded-lg flex items-center justify-center mr-3">
                       <span className="text-white">🎾</span>
                     </div>
@@ -293,6 +351,22 @@ function Dashboard() {
                     }`}>
                       {booking.status}
                     </span>
+                    <div className="ml-3 flex items-center gap-2">
+                      {!booking.is_read && (
+                        <button
+                          onClick={() => markBookingRead(booking.id)}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Mark as read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteBooking(booking.id)}
+                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

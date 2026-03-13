@@ -1259,6 +1259,11 @@ class FirebaseApiService {
     });
   }
 
+  async deleteNotification(notificationId) {
+    const notificationRef = doc(db, 'notifications', notificationId);
+    await deleteDoc(notificationRef);
+  }
+
   // ==================== LEADERBOARD ====================
 
   async getLeaderboard(params = {}) {
