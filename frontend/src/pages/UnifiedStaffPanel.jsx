@@ -2418,7 +2418,7 @@ function UnifiedStaffPanel() {
                   <div key={reg.id} className={`border-2 rounded-xl p-4 ${
                     reg.payment_status === 'paid' ? 'border-green-300 bg-green-50' : 
                     reg.payment_status === 'pending' ? 'border-orange-300 bg-orange-50' : 
-                    'border-red-300 bg-red-50'
+                    'border-blue-300 bg-blue-50'
                   }`}>
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-4">
@@ -2429,7 +2429,7 @@ function UnifiedStaffPanel() {
                           <p className="font-semibold text-lg">{reg.user?.username || 'Unknown Player'}</p>
                           <p className="text-sm text-gray-500">{reg.user?.email || ''}</p>
                           <p className="text-xs text-gray-400">
-                            Registered: {reg.registered_at ? new Date(reg.registered_at).toLocaleDateString() : 'Unknown'}
+                            Registered: {reg.registered_at ? (typeof reg.registered_at === 'object' && reg.registered_at.toDate ? reg.registered_at.toDate().toLocaleDateString() : new Date(reg.registered_at).toLocaleDateString()) : 'Just now'}
                           </p>
                         </div>
                       </div>
@@ -2437,44 +2437,68 @@ function UnifiedStaffPanel() {
                         <span className={`px-4 py-2 text-sm font-bold rounded-full ${
                           reg.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 
                           reg.payment_status === 'pending' ? 'bg-orange-100 text-orange-800' : 
-                          'bg-red-100 text-red-800'
+                          'bg-blue-100 text-blue-800'
                         }`}>
                           {reg.payment_status === 'paid' ? '✅ Approved' : 
                            reg.payment_status === 'pending' ? '⏳ Pending' : 
-                           '❌ Rejected'}
+                           '📝 Not Paid'}
                         </span>
                       </div>
                     </div>
-                    {reg.payment_status === 'pending' && (
+                    {(reg.payment_status === 'pending' || reg.payment_status === 'pending_payment' || !reg.payment_status || reg.payment_status === '') && (
                       <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-500">Payment Method</p>
-                            <p className="font-medium">{reg.payment_method || 'Not specified'}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Phone</p>
-                            <p className="font-medium">{reg.payment_phone || 'Not specified'}</p>
-                          </div>
-                          <div className="col-span-2">
-                            <p className="text-gray-500">Transaction Reference</p>
-                            <p className="font-medium">{reg.payment_reference || 'Not specified'}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-3 mt-4">
-                          <button
-                            onClick={() => handleApproveTournamentPayment(reg.id)}
-                            className="flex-1 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600"
-                          >
-                            ✅ Approve Payment
-                          </button>
-                          <button
-                            onClick={() => handleRejectTournamentPayment(reg.id)}
-                            className="flex-1 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600"
-                          >
-                            ❌ Reject Payment
-                          </button>
-                        </div>
+                        {reg.payment_status === 'pending' || reg.payment_status === 'pending_payment' ? (
+                          <>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-500">Payment Method</p>
+                                <p className="font-medium">{reg.payment_method || 'Not specified'}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500">Phone</p>
+                                <p className="font-medium">{reg.payment_phone || 'Not specified'}</p>
+                              </div>
+                              <div className="col-span-2">
+                                <p className="text-gray-500">Transaction Reference</p>
+                                <p className="font-medium">{reg.payment_reference || 'Not specified'}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-3 mt-4">
+                              <button
+                                onClick={() => handleApproveTournamentPayment(reg.id)}
+                                className="flex-1 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600"
+                              >
+                                ✅ Approve Payment
+                              </button>
+                              <button
+                                onClick={() => handleRejectTournamentPayment(reg.id)}
+                                className="flex-1 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600"
+                              >
+                                ❌ Reject Payment
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-blue-700 mb-3">
+                              📝 Player registered but hasn't submitted payment details yet.
+                            </p>
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => handleApproveTournamentPayment(reg.id)}
+                                className="flex-1 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600"
+                              >
+                                ✅ Approve Anyway
+                              </button>
+                              <button
+                                onClick={() => handleRejectTournamentPayment(reg.id)}
+                                className="flex-1 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600"
+                              >
+                                ❌ Reject
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                     {reg.payment_status === 'paid' && (
@@ -2484,10 +2508,10 @@ function UnifiedStaffPanel() {
                         </p>
                       </div>
                     )}
-                    {reg.payment_status === 'rejected' && (
-                      <div className="mt-4 pt-4 border-t border-red-200">
-                        <p className="text-sm text-red-700">
-                          ✕ Payment was rejected. This player is not eligible to participate.
+                    {!reg.payment_status && (
+                      <div className="mt-4 pt-4 border-t border-blue-200">
+                        <p className="text-sm text-blue-700">
+                          📝 Player has registered but has not submitted payment yet. Ask them to complete payment.
                         </p>
                       </div>
                     )}
@@ -2497,11 +2521,11 @@ function UnifiedStaffPanel() {
             </div>
             {tournamentRegistrations.length > 0 && (
               <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Registrations: <strong>{tournamentRegistrations.length}</strong></span>
-                  <span className="text-green-600">Approved: <strong>{tournamentRegistrations.filter(r => r.payment_status === 'paid').length}</strong></span>
-                  <span className="text-orange-600">Pending: <strong>{tournamentRegistrations.filter(r => r.payment_status === 'pending').length}</strong></span>
-                  <span className="text-red-600">Rejected: <strong>{tournamentRegistrations.filter(r => r.payment_status === 'rejected').length}</strong></span>
+                <div className="flex justify-between text-sm flex-wrap gap-2">
+                  <span className="text-gray-600">Total: <strong>{tournamentRegistrations.length}</strong></span>
+                  <span className="text-green-600">✅ Approved: <strong>{tournamentRegistrations.filter(r => r.payment_status === 'paid').length}</strong></span>
+                  <span className="text-orange-600">⏳ Pending: <strong>{tournamentRegistrations.filter(r => r.payment_status === 'pending').length}</strong></span>
+                  <span className="text-blue-600">📝 Not Paid: <strong>{tournamentRegistrations.filter(r => !r.payment_status || (r.payment_status !== 'paid' && r.payment_status !== 'pending')).length}</strong></span>
                 </div>
               </div>
             )}

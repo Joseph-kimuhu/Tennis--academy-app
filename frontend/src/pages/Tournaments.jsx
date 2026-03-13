@@ -56,17 +56,25 @@ function Tournaments() {
       return;
     }
 
+    // Check if user is already registered
+    const alreadyRegistered = participants.some(p => p.user_id === user?.id);
+    if (alreadyRegistered) {
+      alert('You are already registered for this tournament');
+      return;
+    }
+
+    // Show payment modal FIRST - then do registration in background
+    setShowPaymentModal(true);
+    setPaymentForm({ paymentMethod: 'mpesa', phone: '', reference: '' });
+    
+    // Try to register in background - if it fails, we'll show error after payment
     try {
       await api.joinTournament(tournamentId);
-      
-      // Show payment modal instead of success notification
-      setShowPaymentModal(true);
-      setPaymentForm({ paymentMethod: '', phone: '', reference: '' });
-      
       fetchTournaments();
       handleTournamentSelect(selectedTournament);
     } catch (error) {
-      alert(error.message);
+      console.log('Registration in progress, payment will complete registration');
+      // Don't show error - payment modal is open, user will complete registration with payment
     }
   };
 

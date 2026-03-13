@@ -20,6 +20,9 @@ function PlayerDashboard() {
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [enrollingSession, setEnrollingSession] = useState(null);
   const [myTournaments, setMyTournaments] = useState([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ paymentMethod: 'mpesa', phone: '', reference: '' });
+  const [payingTournament, setPayingTournament] = useState(null);
   const [showBookingPaymentModal, setShowBookingPaymentModal] = useState(false);
   const [payingBooking, setPayingBooking] = useState(null);
   const [bookingPaymentForm, setBookingPaymentForm] = useState({
@@ -86,6 +89,57 @@ function PlayerDashboard() {
     }
 
     setLoading(false);
+  };
+
+  const handleTournamentPayment = async (e) => {
+    e.preventDefault();
+    try {
+      // First register for tournament
+      await api.registerForTournament(payingTournament.id);
+      
+      // Then confirm payment - wait a bit for registration to be created
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const registrations = await api.getMyTournamentRegistrations();
+      if (!registrations || registrations.length === 0) {
+        alert('Registration not found. Please try again.');
+        return;
+      }
+      
+      // Find the registration for this tournament
+      const myReg = registrations.find(r => r.tournament && r.tournament.id === payingTournament.id);
+      
+      if (!myReg) {
+        alert('Registration not found. Please refresh and try again.');
+        return;
+      }
+      
+      await api.confirmTournamentPayment(myReg.id, paymentForm.paymentMethod, paymentForm.phone, paymentForm.reference);
+      
+      setShowPaymentModal(false);
+      setPayingTournament(null);
+      setPaymentForm({ paymentMethod: 'mpesa', phone: '', reference: '' });
+      
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg z-50';
+      notification.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">✅</span>
+          <div>
+            <p class="font-bold">Payment Submitted!</p>
+            <p class="text-sm text-green-100">Admin will review and approve shortly.</p>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 5000);
+      
+      fetchData();
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Error: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const startBookingPayment = (booking) => {
@@ -561,14 +615,10 @@ function PlayerDashboard() {
                       const isRegistered = myTournaments.some(reg => reg.tournament?.id === tournament.id);
                       return (
                         <button
-                          onClick={async () => {
-                            try {
-                              await api.registerForTournament(tournament.id);
-                              alert('Successfully registered for tournament!');
-                              fetchData();
-                            } catch (error) {
-                              alert('Failed to register: ' + error.message);
-                            }
+                          onClick={() => {
+                            setPayingTournament(tournament);
+                            setShowPaymentModal(true);
+                            setPaymentForm({ paymentMethod: 'mpesa', phone: '', reference: '' });
                           }}
                           disabled={isRegistered}
                           className={`w-full px-4 py-2 rounded-lg font-medium ${
@@ -740,14 +790,10 @@ function PlayerDashboard() {
                           <div>💰 {tournament.entry_fee || 0} KES</div>
                         </div>
                         <button
-                          onClick={async () => {
-                            try {
-                              await api.registerForTournament(tournament.id);
-                              alert("Successfully registered for tournament!");
-                              fetchData();
-                            } catch (error) {
-                              alert("Failed to register: " + error.message);
-                            }
+                          onClick={() => {
+                            setPayingTournament(tournament);
+                            setShowPaymentModal(true);
+                            setPaymentForm({ paymentMethod: 'mpesa', phone: '', reference: '' });
                           }}
                           disabled={isRegistered}
                           className={`w-full px-4 py-2 rounded-lg font-medium ${
@@ -1123,6 +1169,60 @@ function PlayerDashboard() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tournament Payment Modal */}
+      {showPaymentModal && payingTournament && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">💳</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">Complete Your Payment</h3>
+              <p className="text-gray-600 mt-2">Tournament: <span className="font-bold">{payingTournament.name}</span></p>
+              <p className="text-gray-600">Entry Fee: <span className="font-bold text-green-600 text-xl">{payingTournament.entry_fee || 0} KES</span></p>
+            </div>
+            
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+              <p className="font-bold text-blue-800 mb-3">📱 Payment Steps for M-Pesa:</p>
+              <ol className="text-sm text-blue-700 space-y-2">
+                <li className="flex items-start gap-2"><span className="font-bold">1.</span> Go to <strong>M-Pesa</strong> on your phone</li>
+                <li className="flex items-start gap-2"><span className="font-bold">2.</span> Select <strong>Pay Bill</strong></li>
+                <li className="flex items-start gap-2"><span className="font-bold">3.</span> Enter Business Number: <strong className="text-blue-900">0738839851</strong></li>
+                <li className="flex items-start gap-2"><span className="font-bold">4.</span> Enter Amount: <strong className="text-blue-900">{payingTournament.entry_fee || 0}</strong> KES</li>
+                <li className="flex items-start gap-2"><span className="font-bold">5.</span> Complete payment and enter reference below</li>
+              </ol>
+            </div>
+            
+            <form onSubmit={handleTournamentPayment}>
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">💰 Select Payment Method</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'mpesa' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'mpesa' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300'}`}>📱 M-Pesa</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'card' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'card' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300'}`}>💳 Card</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'bank' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'bank' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-gray-700 border-gray-300'}`}>🏦 Bank</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'cash' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'cash' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-700 border-gray-300'}`}>💵 Cash</button>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">📱 Phone Number Used</label>
+                <input type="tel" value={paymentForm.phone} onChange={(e) => setPaymentForm({ ...paymentForm, phone: e.target.value })} placeholder="e.g., 254712345678" className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 text-lg" required />
+              </div>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-2">🔢 Transaction Reference</label>
+                <input type="text" value={paymentForm.reference} onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })} placeholder="e.g., MPE123456789" className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 text-lg font-mono" required />
+              </div>
+              
+              <div className="flex gap-3">
+                <button type="button" onClick={() => { setShowPaymentModal(false); setPayingTournament(null); }} className="flex-1 px-6 py-4 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 text-lg">Cancel</button>
+                <button type="submit" disabled={!paymentForm.phone || !paymentForm.reference} className="flex-1 px-6 py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 text-lg disabled:bg-gray-300">✅ Submit Payment</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
