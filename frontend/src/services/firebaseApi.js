@@ -1410,6 +1410,23 @@ class FirebaseApiService {
     });
   }
 
+  async deleteAnnouncement(announcementId) {
+    // Check if user is admin or coach
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userRole = userDoc.exists() ? userDoc.data().role : null;
+    const isCoachOrAdmin = userRole === 'coach' || userRole === 'admin' || userDoc.data()?.email === 'johnmakumi106@gmail.com';
+    
+    if (!isCoachOrAdmin) {
+      throw new Error('Only coaches and admins can delete announcements');
+    }
+    
+    const announcementRef = doc(db, 'announcements', announcementId);
+    await deleteDoc(announcementRef);
+  }
+
   // ==================== NOTIFICATIONS ====================
 
   async notifyAllUsers(title, message, type = 'general') {
@@ -1484,7 +1501,24 @@ class FirebaseApiService {
   }
 
   async deleteNotification(notificationId) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    // First check if the notification belongs to the user
     const notificationRef = doc(db, 'notifications', notificationId);
+    const notificationDoc = await getDoc(notificationRef);
+    
+    if (!notificationDoc.exists()) {
+      throw new Error('Notification not found');
+    }
+    
+    const notificationData = notificationDoc.data();
+    
+    // Check if user owns this notification
+    if (notificationData.user_id !== userId) {
+      throw new Error('You can only delete your own notifications');
+    }
+    
     await deleteDoc(notificationRef);
   }
 

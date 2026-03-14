@@ -206,9 +206,15 @@ function PlayerDashboard() {
     }
   };
 
-  const deleteAnnouncement = (announcementId) => {
-    if (!confirm('Delete this announcement from your list?')) return;
-    setAnnouncements((prev) => prev.filter((a) => a.id !== announcementId));
+  const deleteAnnouncement = async (announcementId) => {
+    if (!confirm('Delete this announcement?')) return;
+    try {
+      await api.deleteAnnouncement(announcementId);
+      setAnnouncements((prev) => prev.filter((a) => a.id !== announcementId));
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      alert('Error: ' + (error.message || 'Could not delete announcement'));
+    }
   };
 
   const markBookingRead = async (bookingId) => {

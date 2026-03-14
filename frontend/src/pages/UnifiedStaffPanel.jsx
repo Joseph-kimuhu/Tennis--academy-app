@@ -241,6 +241,18 @@ function UnifiedStaffPanel() {
     setSendingAnnouncement(false);
   };
 
+  const handleDeleteAnnouncement = async (announcementId) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      await api.deleteAnnouncement(announcementId);
+      setAnnouncements((prev) => prev.filter((a) => a.id !== announcementId));
+      alert('Announcement deleted successfully');
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      alert('Failed to delete announcement: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   const setActiveUserFilter = (filter) => {
     setUserFilter(filter);
   };
@@ -962,13 +974,21 @@ function UnifiedStaffPanel() {
                   <div key={announcement.id} className="border border-gray-200 rounded-xl p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-bold text-lg">{announcement.title}</h3>
-                      <span className={`px-3 py-1 text-xs rounded-full ${
-                        announcement.priority === 'urgent' ? 'bg-red-100 text-red-800' : 
-                        announcement.priority === 'high' ? 'bg-orange-100 text-orange-800' : 
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {announcement.priority || 'normal'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDeleteAnnouncement(announcement.id)}
+                          className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                        <span className={`px-3 py-1 text-xs rounded-full ${
+                          announcement.priority === 'urgent' ? 'bg-red-100 text-red-800' : 
+                          announcement.priority === 'high' ? 'bg-orange-100 text-orange-800' : 
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {announcement.priority || 'normal'}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-gray-600 mb-2">{announcement.content}</p>
                     <p className="text-xs text-gray-400">
