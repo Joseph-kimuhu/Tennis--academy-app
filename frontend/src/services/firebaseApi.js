@@ -1144,6 +1144,26 @@ class FirebaseApiService {
 
   // ==================== MATCHES ====================
 
+  async getMatches(params = {}) {
+    const { tournament_id } = params;
+    
+    // Get all matches (avoid index requirement)
+    const q = query(collection(db, 'matches'), limit(200));
+    
+    const querySnapshot = await getDocs(q);
+    let matches = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter by tournament_id if provided
+    if (tournament_id) {
+      matches = matches.filter(m => m.tournament_id === tournament_id);
+    }
+    
+    // Sort by date
+    matches.sort((a, b) => new Date(b.created_at || b.scheduled_time) - new Date(a.created_at || a.scheduled_time));
+    
+    return matches;
+  }
+
   async getMyMatches() {
     const userId = this.getCurrentUserId();
     if (!userId) return [];
