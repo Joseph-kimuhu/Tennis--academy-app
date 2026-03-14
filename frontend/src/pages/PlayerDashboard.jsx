@@ -111,27 +111,13 @@ function PlayerDashboard() {
   const handleTournamentPayment = async (e) => {
     e.preventDefault();
     try {
-      // First register for tournament
-      await api.registerForTournament(payingTournament.id);
-      
-      // Then confirm payment - wait a bit for registration to be created
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const registrations = await api.getMyTournamentRegistrations();
-      if (!registrations || registrations.length === 0) {
-        alert('Registration not found. Please try again.');
-        return;
-      }
-      
-      // Find the registration for this tournament
-      const myReg = registrations.find(r => r.tournament && r.tournament.id === payingTournament.id);
-      
-      if (!myReg) {
-        alert('Registration not found. Please refresh and try again.');
-        return;
-      }
-      
-      await api.confirmTournamentPayment(myReg.id, paymentForm.paymentMethod, paymentForm.phone, paymentForm.reference);
+      // Submit payment details - registration will be created after admin approves
+      await api.submitTournamentPaymentIntent(
+        payingTournament.id,
+        paymentForm.paymentMethod,
+        paymentForm.phone,
+        paymentForm.reference
+      );
       
       setShowPaymentModal(false);
       setPayingTournament(null);
@@ -145,7 +131,7 @@ function PlayerDashboard() {
           <span class="text-2xl">✅</span>
           <div>
             <p class="font-bold">Payment Submitted!</p>
-            <p class="text-sm text-green-100">Admin will review and approve shortly.</p>
+            <p class="text-sm text-green-100">Admin will review and approve your registration shortly.</p>
           </div>
         </div>
       `;
