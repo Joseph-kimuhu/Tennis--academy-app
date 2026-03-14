@@ -33,6 +33,13 @@ function UnifiedStaffPanel() {
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', priority: 'normal' });
   const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [systemSettings, setSystemSettings] = useState({
+    max_booking_duration: 2,
+    advance_booking_days: 7,
+    max_participants: 32,
+    auto_approve: true
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Utility functions
   const formatDate = (dateString) => {
@@ -156,10 +163,39 @@ function UnifiedStaffPanel() {
       setCourts(courtsData || []);
       setAnnouncements(announcementsData || []);
       setNotifications(notificationsData || []);
+      
+      // Load system settings
+      try {
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        const settingsSnap = await getDoc(doc(db, 'system_settings', 'config'));
+        if (settingsSnap.exists()) {
+          setSystemSettings(settingsSnap.data());
+        }
+      } catch (e) {
+        console.log('No system settings found, using defaults');
+      }
     } catch (error) {
       console.error('Error fetching staff data:', error);
     }
     setLoading(false);
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      // Save system settings to Firestore
+      const { doc, setDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
+      
+      await setDoc(doc(db, 'system_settings', 'config'), systemSettings, { merge: true });
+      
+      alert('Settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings: ' + error.message);
+    }
+    setSavingSettings(false);
   };
 
   const handleSelectPlayer = async (player) => {
@@ -1555,15 +1591,24 @@ function UnifiedStaffPanel() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Max booking duration</span>
-                        <select className="px-3 py-1 border border-gray-300 rounded text-sm">
-                          <option>2 hours</option>
-                          <option>3 hours</option>
-                          <option>4 hours</option>
+                        <select 
+                          className="px-3 py-1 border border-gray-300 rounded text-sm"
+                          value={systemSettings.max_booking_duration}
+                          onChange={(e) => setSystemSettings({...systemSettings, max_booking_duration: parseInt(e.target.value) })}
+                        >
+                          <option value={2}>2 hours</option>
+                          <option value={3}>3 hours</option>
+                          <option value={4}>4 hours</option>
                         </select>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Advance booking days</span>
-                        <input type="number" className="px-3 py-1 border border-gray-300 rounded text-sm w-20" defaultValue="7" />
+                        <input 
+                          type="number" 
+                          className="px-3 py-1 border border-gray-300 rounded text-sm w-20" 
+                          value={systemSettings.advance_booking_days}
+                          onChange={(e) => setSystemSettings({...systemSettings, advance_booking_days: parseInt(e.target.value) })}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1572,18 +1617,32 @@ function UnifiedStaffPanel() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Max participants</span>
-                        <input type="number" className="px-3 py-1 border border-gray-300 rounded text-sm w-20" defaultValue="32" />
+                        <input 
+                          type="number" 
+                          className="px-3 py-1 border border-gray-300 rounded text-sm w-20" 
+                          value={systemSettings.max_participants}
+                          onChange={(e) => setSystemSettings({...systemSettings, max_participants: parseInt(e.target.value) })}
+                        />
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Auto-approve</span>
-                        <input type="checkbox" className="w-4 h-4" defaultChecked />
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4"
+                          checked={systemSettings.auto_approve}
+                          onChange={(e) => setSystemSettings({...systemSettings, auto_approve: e.target.checked })}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="mt-6">
-                  <button className="px-6 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600">
-                    Save Settings
+                  <button 
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                    className="px-6 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 disabled:opacity-50"
+                  >
+                    {savingSettings ? 'Saving...' : 'Save Settings'}
                   </button>
                 </div>
               </div>
