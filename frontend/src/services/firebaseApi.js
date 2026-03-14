@@ -29,6 +29,39 @@ class FirebaseApiService {
     return auth.currentUser?.uid;
   }
 
+  // Helper to convert Firestore Timestamp to ISO string
+  convertTimestamp(timestamp) {
+    if (!timestamp) return null;
+    if (timestamp.toDate) {
+      return timestamp.toDate().toISOString();
+    }
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString();
+    }
+    return timestamp;
+  }
+
+  // Helper to sanitize data - convert any timestamps to strings
+  sanitizeData(data) {
+    if (!data) return data;
+    if (typeof data !== 'object') return data;
+    
+    const sanitized = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value && typeof value === 'object' && value.toDate) {
+        // It's a Firestore Timestamp
+        sanitized[key] = this.convertTimestamp(value);
+      } else if (Array.isArray(value)) {
+        sanitized[key] = value.map(item => this.sanitizeData(item));
+      } else if (typeof value === 'object') {
+        sanitized[key] = this.sanitizeData(value);
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
+  }
+
   // ==================== USERS ====================
   
     
@@ -829,16 +862,18 @@ class FirebaseApiService {
     for (const reg of registrations) {
       const userDoc = await getDoc(doc(db, 'users', reg.user_id));
       if (userDoc.exists()) {
+        // Sanitize the data to convert timestamps to strings
+        const sanitizedReg = this.sanitizeData(reg);
         participants.push({
-          id: reg.id,
-          user_id: reg.user_id,
+          id: sanitizedReg.id,
+          user_id: sanitizedReg.user_id,
           username: userDoc.data().username,
           email: userDoc.data().email,
-          status: reg.status,
-          payment_status: reg.payment_status,
-          payment_phone: reg.payment_phone,
-          payment_reference: reg.payment_reference,
-          registered_at: reg.registered_at
+          status: sanitizedReg.status,
+          payment_status: sanitizedReg.payment_status,
+          payment_phone: sanitizedReg.payment_phone,
+          payment_reference: sanitizedReg.payment_reference,
+          registered_at: sanitizedReg.registered_at
         });
       }
     }
@@ -857,6 +892,73 @@ class FirebaseApiService {
       status: 'pending_payment'
     });
     return true;
+  }
+
+  // Submit payment intent - creates a pending registration that will be approved by admin
+  async submitTournamentPaymentIntent(tournamentId, paymentMethod, paymentPhone, paymentReference) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const tournamentDoc = await getDoc(tournamentRef);
+    
+    if (!tournamentDoc.exists()) throw new Error('Tournament not found');
+    
+    const tournamentData = tournamentDoc.data();
+    
+    // Check if user already has a pending payment for this tournament
+    const existingQuery = query(
+      collection(db, 'tournament_registrations'),
+      where('tournament_id', '==', tournamentId),
+      where('user_id', '==', userId)
+    );
+    const existingSnapshot = await getDocs(existingQuery);
+    
+    if (!existingSnapshot.empty) {
+      const existingReg = existingSnapshot.docs[0].data();
+      // If already approved, user is already registered
+      if (existingReg.status === 'approved') {
+        throw new Error('You are already registered for this tournament');
+      }
+      // If pending payment, update the payment details
+      const existingRegId = existingSnapshot.docs[0].id;
+      await updateDoc(doc(db, 'tournament_registrations', existingRegId), {
+        payment_method: paymentMethod,
+        payment_phone: paymentPhone,
+        payment_reference: paymentReference,
+        payment_status: 'pending',
+        payment_submitted_at: serverTimestamp(),
+        status: 'pending_payment'
+      });
+      return existingRegId;
+    }
+    
+    // Get user info for notification
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const playerName = userDoc.exists() ? userDoc.data().username : 'A player';
+    
+    // Create registration with payment details - status is pending_payment
+    // Admin will approve this to complete registration
+    const registrationRef = await addDoc(collection(db, 'tournament_registrations'), {
+      tournament_id: tournamentId,
+      user_id: userId,
+      status: 'pending_payment',
+      payment_status: 'pending',
+      payment_method: paymentMethod,
+      payment_phone: paymentPhone,
+      payment_reference: paymentReference,
+      payment_submitted_at: serverTimestamp(),
+      registered_at: serverTimestamp()
+    });
+    
+    // Notify coaches about new payment submission
+    try {
+      await this.notifyCoachesOfRegistration(playerName, tournamentData.name, registrationRef.id);
+    } catch (e) {
+      console.warn('Could not notify coaches:', e);
+    }
+    
+    return registrationRef.id;
   }
 
   // Alias for registerForTournament for compatibility
@@ -973,15 +1075,18 @@ class FirebaseApiService {
     for (const reg of registrations) {
       const tournamentDoc = await getDoc(doc(db, 'tournaments', reg.tournament_id));
       if (tournamentDoc.exists()) {
+        // Sanitize the data to convert timestamps to strings
+        const sanitizedReg = this.sanitizeData(reg);
+        const sanitizedTournament = this.sanitizeData(tournamentDoc.data());
         myTournaments.push({
-          registration_id: reg.id,
-          tournament_id: reg.tournament_id,
-          status: reg.status,
-          payment_status: reg.payment_status,
-          payment_phone: reg.payment_phone,
-          payment_reference: reg.payment_reference,
-          registered_at: reg.registered_at,
-          tournament: { id: tournamentDoc.id, ...tournamentDoc.data() }
+          registration_id: sanitizedReg.id,
+          tournament_id: sanitizedReg.tournament_id,
+          status: sanitizedReg.status,
+          payment_status: sanitizedReg.payment_status,
+          payment_phone: sanitizedReg.payment_phone,
+          payment_reference: sanitizedReg.payment_reference,
+          registered_at: sanitizedReg.registered_at,
+          tournament: { id: tournamentDoc.id, ...sanitizedTournament }
         });
       }
     }

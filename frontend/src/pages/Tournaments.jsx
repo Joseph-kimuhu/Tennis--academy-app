@@ -63,33 +63,22 @@ function Tournaments() {
       return;
     }
 
-    // Show payment modal FIRST - then do registration in background
+    // Show payment modal FIRST - user submits payment details
+    // Registration will be created after admin approves payment
     setShowPaymentModal(true);
     setPaymentForm({ paymentMethod: 'mpesa', phone: '', reference: '' });
-    
-    // Try to register in background - if it fails, we'll show error after payment
-    try {
-      await api.joinTournament(tournamentId);
-      fetchTournaments();
-      handleTournamentSelect(selectedTournament);
-    } catch (error) {
-      console.log('Registration in progress, payment will complete registration');
-      // Don't show error - payment modal is open, user will complete registration with payment
-    }
   };
 
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Find the user's registration
-      const myRegistrations = participants.filter(p => p.user_id === user?.id);
-      if (myRegistrations.length === 0) {
-        alert('Registration not found');
-        return;
-      }
-      
-      const registrationId = myRegistrations[0].id;
-      await api.confirmTournamentPayment(registrationId, paymentForm.paymentMethod, paymentForm.phone, paymentForm.reference);
+      // Submit payment details - registration will be created after admin approves
+      await api.submitTournamentPaymentIntent(
+        selectedTournament.id,
+        paymentForm.paymentMethod,
+        paymentForm.phone,
+        paymentForm.reference
+      );
       
       setShowPaymentModal(false);
       
