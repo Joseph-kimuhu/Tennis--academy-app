@@ -829,7 +829,7 @@ function UnifiedStaffPanel() {
                 onClick={fetchData}
                 className="px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl font-semibold hover:bg-white/30 transition-colors"
               >
-                🔄 Refresh
+                Refresh
               </button>
             </div>
           </div>
@@ -839,15 +839,15 @@ function UnifiedStaffPanel() {
         <div className="bg-white rounded-xl shadow-md mb-8 overflow-hidden">
           <div className="flex overflow-x-auto">
             {[
-              { id: 'overview', label: 'Overview', icon: '📊' },
-              { id: 'players', label: 'Players', icon: '🎾' },
-              { id: 'announcements', label: 'Announcements', icon: '📢' },
-              { id: 'users', label: 'Users', icon: '👥' },
-              { id: 'bookings', label: 'Bookings', icon: '📅' },
-              { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
-              { id: 'courts', label: 'Courts', icon: '🏟️' },
-              { id: 'coaching', label: 'Coaching', icon: '🎓' },
-              { id: 'system', label: 'System', icon: '⚙️' }
+              { id: 'overview', label: 'Overview' },
+              { id: 'players', label: 'Players' },
+              { id: 'announcements', label: 'Announcements' },
+              { id: 'users', label: 'Users' },
+              { id: 'bookings', label: 'Bookings' },
+              { id: 'tournaments', label: 'Tournaments' },
+              { id: 'courts', label: 'Courts' },
+              { id: 'coaching', label: 'Coaching' },
+              { id: 'system', label: 'System' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -897,7 +897,7 @@ function UnifiedStaffPanel() {
                 </div>
                 <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border-2 border-yellow-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-3xl">🏆</span>
+                    <span className="text-3xl"></span>
                     <span className="text-sm text-yellow-700 font-bold">Active</span>
                   </div>
                   <p className="text-3xl font-bold text-yellow-600">{stats?.active_tournaments || 0}</p>
@@ -1000,7 +1000,7 @@ function UnifiedStaffPanel() {
                           onClick={() => handleSelectPlayer(player)}
                           className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
                         >
-                          📊 Stats
+                          Stats
                         </button>
                         </td>
                       </tr>
@@ -1061,7 +1061,7 @@ function UnifiedStaffPanel() {
                 )) : (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl">📢</span>
+                      <span className="text-3xl"></span>
                     </div>
                     <p className="text-gray-500">No announcements yet</p>
                   </div>
@@ -1564,19 +1564,19 @@ function UnifiedStaffPanel() {
                       onClick={() => alert('Report generation coming soon!')}
                       className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
-                      📊 Generate Report
+                      Generate Report
                     </button>
                     <button 
                       onClick={() => alert('Database backup coming soon!')}
                       className="w-full px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                     >
-                      💾 Backup Database
+                      Backup Database
                     </button>
                     <button 
                       onClick={() => alert('Data sync coming soon!')}
                       className="w-full px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
                     >
-                      🔄 Sync Data
+                      Sync Data
                     </button>
                   </div>
                 </div>
@@ -2504,7 +2504,7 @@ function UnifiedStaffPanel() {
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full max-h-screen overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                📋 Registrations - {selectedTournament.name}
+                Registrations - {selectedTournament.name}
               </h2>
               <button
                 onClick={() => setShowTournamentRegistrations(false)}

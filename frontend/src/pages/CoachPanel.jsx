@@ -248,13 +248,13 @@ function CoachPanel() {
                 onClick={() => openMessageModal()}
                 className="px-6 py-3 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-colors shadow-md flex items-center"
               >
-                <span className="mr-2">✉️</span> Send Message
+                <span className="mr-2"></span> Send Message
               </button>
               <button
                 onClick={() => setActiveTab('players')}
                 className="px-6 py-3 bg-blue-700/50 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center"
               >
-                <span className="mr-2">👥</span> Players
+                <span className="mr-2"></span> Players
               </button>
             </div>
           </div>
@@ -269,7 +269,7 @@ function CoachPanel() {
                 <p className="text-3xl font-bold text-gray-900">{dashboard?.total_players || players.length}</p>
               </div>
               <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">👥</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -283,7 +283,7 @@ function CoachPanel() {
                 <p className="text-3xl font-bold text-gray-900">{dashboard?.upcoming_sessions || 0}</p>
               </div>
               <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">📅</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -293,12 +293,12 @@ function CoachPanel() {
         <div className="bg-white rounded-xl shadow-md mb-8 overflow-hidden">
           <div className="flex overflow-x-auto">
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-              { id: 'players', label: 'Players', icon: '👥' },
-              { id: 'training', label: 'Training', icon: '🎾' },
-              { id: 'announcements', label: 'Announcements', icon: '📢' },
-              { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
-              { id: 'courts', label: 'Courts', icon: '🎱' },
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'players', label: 'Players' },
+              { id: 'training', label: 'Training' },
+              { id: 'announcements', label: 'Announcements' },
+              { id: 'tournaments', label: 'Tournaments' },
+              { id: 'courts', label: 'Courts' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -399,13 +399,13 @@ function CoachPanel() {
                             onClick={() => handleSelectPlayer(player)}
                             className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
                           >
-                            📊 Stats
+                            Stats
                           </button>
                           <button
                             onClick={() => openMessageModal(player.id)}
                             className="px-3 py-1.5 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
                           >
-                            ✉️ Message
+                            Message
                           </button>
                         </div>
                       </td>
@@ -416,7 +416,7 @@ function CoachPanel() {
               {players.length === 0 && (
                 <div className="p-12 text-center">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl">👥</span>
+                    <span className="text-3xl"></span>
                   </div>
                   <p className="text-gray-500">No players found</p>
                 </div>
@@ -469,7 +469,7 @@ function CoachPanel() {
               ) : (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-3xl">🎾</span>
+                    <span className="text-3xl"></span>
                   </div>
                   <p className="text-gray-500">No training sessions scheduled</p>
                   <button
@@ -527,7 +527,7 @@ function CoachPanel() {
               ) : (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-3xl">📢</span>
+                    <span className="text-3xl"></span>
                   </div>
                   <p className="text-gray-500">No announcements yet</p>
                   <button
@@ -615,7 +615,7 @@ function CoachPanel() {
             ) : (
               <div className="text-center py-12 bg-white rounded-xl shadow-md">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-3xl">🏆</span>
+                  <span className="text-3xl"></span>
                 </div>
                 <p className="text-gray-500">No tournaments yet</p>
                 <button
@@ -666,7 +666,7 @@ function CoachPanel() {
             ) : (
               <div className="text-center py-12 bg-white rounded-xl shadow-md">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-3xl">🎱</span>
+                  <span className="text-3xl"></span>
                 </div>
                 <p className="text-gray-500">No courts yet</p>
                 <button
@@ -688,7 +688,7 @@ function CoachPanel() {
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold flex items-center">
-                  <span className="mr-2">🏆</span>
+                  <span className="mr-2"></span>
                   Create Tournament
                 </h2>
                 <button onClick={() => setShowTournamentModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">
@@ -783,7 +783,7 @@ function CoachPanel() {
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold flex items-center">
-                  <span className="mr-2">🎱</span>
+                  <span className="mr-2"></span>
                   Add Court
                 </h2>
                 <button onClick={() => setShowCourtModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">
@@ -872,7 +872,7 @@ function CoachPanel() {
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold flex items-center">
-                  <span className="mr-2">📊</span>
+                  <span className="mr-2"></span>
                   Statistics - {selectedPlayer?.username}
                 </h2>
                 <button onClick={() => setShowStatsModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">
@@ -954,7 +954,7 @@ function CoachPanel() {
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold flex items-center">
-                  <span className="mr-2">🎾</span>
+                  <span className="mr-2"></span>
                   Schedule Training Session
                 </h2>
                 <button onClick={() => setShowSessionModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">
@@ -1067,7 +1067,7 @@ function CoachPanel() {
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold flex items-center">
-                  <span className="mr-2">📢</span>
+                  <span className="mr-2"></span>
                   Create Announcement
                 </h2>
                 <button onClick={() => setShowAnnouncementModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">
