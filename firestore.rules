@@ -77,6 +77,12 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
     }
     
+    // System settings collection
+    match /system_settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoachOrAdmin();
+    }
+    
     // Training sessions
     match /training_sessions/{sessionId} {
       allow read: if isAuthenticated();
