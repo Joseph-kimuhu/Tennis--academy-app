@@ -99,15 +99,15 @@ function Courts() {
             </div>
             <div className="mt-6 flex flex-wrap gap-6 text-sm">
               <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
-                <span className="text-lg">📧</span>
+                <span className="text-lg"></span>
                 <span className="font-medium">{clubs[0].email}</span>
               </div>
               <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
-                <span className="text-lg">📞</span>
+                <span className="text-lg"></span>
                 <span className="font-medium">{clubs[0].phone}</span>
               </div>
               <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
-                <span className="text-lg">🎯</span>
+                <span className="text-lg"></span>
                 <span className="font-medium capitalize">For {clubs[0].skill_level}</span>
               </div>
             </div>
@@ -132,10 +132,10 @@ function Courts() {
               className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-tennis-green focus:border-tennis-green transition-all bg-white"
             >
               <option value="">All Court Types</option>
-              <option value="hard">🏟️ Hard Court</option>
-              <option value="clay">🧱 Clay Court</option>
-              <option value="grass">🌱 Grass Court</option>
-              <option value="synthetic">⚡ Synthetic Court</option>
+              <option value="hard">Hard Court</option>
+              <option value="clay">Clay Court</option>
+              <option value="grass">Grass Court</option>
+              <option value="synthetic">Synthetic Court</option>
             </select>
 
             <select
@@ -144,8 +144,8 @@ function Courts() {
               className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-tennis-green focus:border-tennis-green transition-all bg-white"
             >
               <option value="">All Locations</option>
-              <option value="false">☀️ Outdoor</option>
-              <option value="true">🏠 Indoor</option>
+              <option value="false">Outdoor</option>
+              <option value="true">Indoor</option>
             </select>
           </div>
         </div>
@@ -159,7 +159,7 @@ function Courts() {
         ) : courts.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">🏟️</span>
+              <span className="text-4xl"></span>
             </div>
             <p className="text-xl text-gray-600 font-medium">No courts found</p>
             <p className="text-gray-500 mt-2">Try adjusting your filters</p>
@@ -187,13 +187,13 @@ function Courts() {
                       {court.court_type}
                     </span>
                     <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg">
-                      {court.is_indoor ? '🏠 Indoor' : '☀️ Outdoor'}
+                      {court.is_indoor ? 'Indoor' : 'Outdoor'}
                     </span>
                   </div>
                   
                   {court.location && (
                     <div className="flex items-center text-gray-600 mb-3">
-                      <span className="mr-2">📍</span>
+                      <span className="mr-2"></span>
                       <span className="text-sm">{court.location}</span>
                     </div>
                   )}
@@ -262,7 +262,7 @@ function Courts() {
                         ))
                       ) : (
                         <div className="text-center py-8">
-                          <span className="text-4xl mb-2 block">😔</span>
+                          <span className="text-4xl mb-2 block"></span>
                           <span className="text-gray-500 font-medium">No available slots</span>
                         </div>
                       )}

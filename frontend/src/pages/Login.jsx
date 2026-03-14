@@ -30,7 +30,7 @@ function Login() {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center justify-center space-x-2">
             <div className="w-12 h-12 bg-tennis-green rounded-full flex items-center justify-center">
-              <span className="text-white text-2xl">🎾</span>
+              <span className="text-white text-2xl">T</span>
             </div>
           </Link>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">Sign in to your account</h2>

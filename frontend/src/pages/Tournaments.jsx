@@ -125,10 +125,10 @@ function Tournaments() {
 
   const getTournamentIcon = (type) => {
     switch (type) {
-      case 'knockout': return '🏆';
-      case 'round_robin': return '🔄';
-      case 'league': return '📊';
-      default: return '🎾';
+      case 'knockout': return '';
+      case 'round_robin': return '';
+      case 'league': return '';
+      default: return '';
     }
   };
 
@@ -138,7 +138,7 @@ function Tournaments() {
       <div className="bg-gradient-to-r from-tennis-green to-tennis-green-light text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl font-bold mb-4 tracking-tight">🎾 Tournaments</h1>
+            <h1 className="text-5xl font-bold mb-4 tracking-tight">Tournaments</h1>
             <p className="text-xl text-black font-medium max-w-2xl mx-auto">
               Compete with the best players and showcase your skills on the court
             </p>
@@ -172,9 +172,9 @@ function Tournaments() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-tennis-green focus:border-transparent transition-all"
               >
                 <option value="">All Formats</option>
-                <option value="knockout">🏆 Knockout</option>
-                <option value="round_robin">🔄 Round Robin</option>
-                <option value="league">📊 League</option>
+                <option value="knockout">Knockout</option>
+                <option value="round_robin">Round Robin</option>
+                <option value="league">League</option>
               </select>
             </div>
           </div>
@@ -207,7 +207,7 @@ function Tournaments() {
                       {tournament.status.toUpperCase()}
                     </span>
                     <span className="text-sm text-gray-500 font-medium">
-                      👥 {tournament.participant_count || 0} players
+                      {tournament.participant_count || 0} players
                     </span>
                   </div>
                   
@@ -222,13 +222,13 @@ function Tournaments() {
                   
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">📅 Start Date</span>
+                      <span className="text-gray-500">Start Date</span>
                       <span className="font-medium text-gray-900">
                         {new Date(tournament.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">🎯 Format</span>
+                      <span className="text-gray-500">Format</span>
                       <span className="font-medium text-gray-900 capitalize">
                         {tournament.tournament_type.replace('_', ' ')}
                       </span>
@@ -285,7 +285,7 @@ function Tournaments() {
                   onClick={() => setShowBracket(!showBracket)}
                   className="w-full py-4 px-6 bg-gradient-to-r from-tennis-green to-tennis-green-light text-white rounded-xl font-semibold hover:shadow-tennis-lg transition-all transform hover:scale-[1.02] shadow-md"
                 >
-                  {showBracket ? '📋 Hide Tournament Bracket' : '🏆 View Tournament Bracket'}
+                  {showBracket ? 'Hide Tournament Bracket' : 'View Tournament Bracket'}
                 </button>
 
                 {/* Bracket Display */}
@@ -299,7 +299,7 @@ function Tournaments() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-700 font-semibold text-sm">📊 Status</span>
+                      <span className="text-gray-700 font-semibold text-sm">Status</span>
                       <span className={`px-4 py-1.5 text-xs font-bold rounded-full ${getStatusColor(selectedTournament.status)}`}>
                         {selectedTournament.status.toUpperCase()}
                       </span>
@@ -308,7 +308,7 @@ function Tournaments() {
                   
                   <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-700 font-semibold text-sm">🎯 Format</span>
+                      <span className="text-gray-700 font-semibold text-sm">Format</span>
                       <span className="font-bold text-gray-900 capitalize text-sm">
                         {selectedTournament.tournament_type.replace('_', ' ')}
                       </span>
@@ -317,7 +317,7 @@ function Tournaments() {
 
                   <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 border border-green-200 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-700 font-semibold text-sm">📅 Start Date</span>
+                      <span className="text-gray-700 font-semibold text-sm">Start Date</span>
                       <span className="font-bold text-gray-900 text-sm">
                         {new Date(selectedTournament.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
@@ -326,7 +326,7 @@ function Tournaments() {
 
                   <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-5 border border-orange-200 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-700 font-semibold text-sm">🏁 End Date</span>
+                      <span className="text-gray-700 font-semibold text-sm">End Date</span>
                       <span className="font-bold text-gray-900 text-sm">
                         {new Date(selectedTournament.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
@@ -335,7 +335,7 @@ function Tournaments() {
 
                   <div className="bg-gradient-to-br from-tennis-green/20 to-tennis-green-light/20 rounded-xl p-5 border-2 border-tennis-green/30 shadow-md">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-800 font-semibold text-sm">💰 Entry Fee</span>
+                      <span className="text-gray-800 font-semibold text-sm">Entry Fee</span>
                       <span className="font-bold text-tennis-green text-2xl">{selectedTournament.entry_fee} KES</span>
                     </div>
                   </div>
@@ -343,7 +343,7 @@ function Tournaments() {
                   {selectedTournament.prize_money > 0 && (
                     <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl p-5 border-2 border-yellow-300 shadow-md">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-800 font-semibold text-sm">🏆 Prize Pool</span>
+                        <span className="text-gray-800 font-semibold text-sm">Prize Pool</span>
                         <span className="font-bold text-orange-600 text-2xl">{selectedTournament.prize_money} KES</span>
                       </div>
                     </div>
@@ -354,7 +354,7 @@ function Tournaments() {
                 {selectedTournament.description && (
                   <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 shadow-sm">
                     <h4 className="font-bold text-gray-900 mb-3 text-lg flex items-center gap-2">
-                      <span className="text-2xl">📝</span>
+                      <span className="text-2xl"></span>
                       About This Tournament
                     </h4>
                     <p className="text-gray-700 leading-relaxed">{selectedTournament.description}</p>
@@ -408,7 +408,7 @@ function Tournaments() {
                           : 'bg-gradient-to-r from-tennis-green to-tennis-green-light text-white hover:shadow-tennis-lg transform hover:scale-[1.02] hover:shadow-xl'
                       }`}
                     >
-                      {isParticipant() ? '✅ Already Registered' : '🎾 Register for Tournament'}
+                      {isParticipant() ? 'Already Registered' : 'Register for Tournament'}
                     </button>
                   )}
                   {!isAuthenticated && (selectedTournament.status === 'upcoming' || selectedTournament.status === 'draft') && (
@@ -416,7 +416,7 @@ function Tournaments() {
                       onClick={() => alert('Please login to register for tournaments')}
                       className="flex-1 py-4 px-6 bg-gradient-to-r from-tennis-green to-tennis-green-light text-white rounded-xl font-bold text-lg hover:shadow-tennis-lg transition-all transform hover:scale-[1.02] shadow-md"
                     >
-                      🎾 Login to Register
+                      Login to Register
                     </button>
                   )}
                   {isAuthenticated && user?.role !== 'player' && (selectedTournament.status === 'upcoming' || selectedTournament.status === 'draft') && (
@@ -476,7 +476,7 @@ function Tournaments() {
             <form onSubmit={handlePaymentSubmit}>
               <div className="mb-4">
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  💰 Select Payment Method
+                  Select Payment Method
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -569,7 +569,7 @@ function Tournaments() {
                   disabled={!paymentForm.paymentMethod || !paymentForm.phone || !paymentForm.reference}
                   className="flex-1 px-6 py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-all text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  ✅ Submit Payment
+                  Submit Payment
                 </button>
               </div>
             </form>

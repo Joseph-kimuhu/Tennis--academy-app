@@ -71,7 +71,7 @@ function Register() {
         {/* Header */}
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-600 to-green-500 rounded-full mb-6">
-            <span className="text-2xl font-bold text-white">🎾</span>
+            <span className="text-2xl font-bold text-white"></span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
           <p className="text-gray-600">Join our tennis community and start playing today</p>
@@ -168,9 +168,9 @@ function Register() {
                 onChange={handleChange}
                 className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
               >
-                <option value="beginner">🌱 Beginner</option>
-                <option value="intermediate">⭐ Intermediate</option>
-                <option value="advanced">🏆 Advanced</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
               </select>
             </div>
 

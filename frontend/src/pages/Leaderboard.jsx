@@ -34,9 +34,9 @@ function Leaderboard() {
   };
 
   const getRankBadge = (rank) => {
-    if (rank === 1) return { bg: 'bg-gradient-to-br from-yellow-400 to-amber-500', icon: '👑', text: 'text-white' };
-    if (rank === 2) return { bg: 'bg-gradient-to-br from-slate-300 to-slate-400', icon: '🥈', text: 'text-slate-800' };
-    if (rank === 3) return { bg: 'bg-gradient-to-br from-amber-600 to-amber-700', icon: '🥉', text: 'text-white' };
+    if (rank === 1) return { bg: 'bg-gradient-to-br from-yellow-400 to-amber-500', icon: '#1', text: 'text-white' };
+    if (rank === 2) return { bg: 'bg-gradient-to-br from-slate-300 to-slate-400', icon: '#2', text: 'text-slate-800' };
+    if (rank === 3) return { bg: 'bg-gradient-to-br from-amber-600 to-amber-700', icon: '#3', text: 'text-white' };
     return { bg: 'bg-gradient-to-br from-tennis-green/10 to-tennis-green/20', icon: rank, text: 'text-tennis-green' };
   };
 
@@ -46,7 +46,7 @@ function Leaderboard() {
       <div className="bg-gradient-to-r from-tennis-green via-tennis-green to-tennis-green-light text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl font-bold mb-4 tracking-tight drop-shadow-lg">🏆 Leaderboard</h1>
+            <h1 className="text-5xl font-bold mb-4 tracking-tight drop-shadow-lg">Leaderboard</h1>
             <p className="text-xl text-white/95 font-medium max-w-2xl mx-auto drop-shadow">
               Top tennis players ranked by performance and points
             </p>
@@ -111,7 +111,7 @@ function Leaderboard() {
                           )}
                         </div>
                         <div className="absolute -top-2 -right-2 w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-full flex items-center justify-center shadow-xl animate-pulse border-2 border-white">
-                          <span className="text-2xl">👑</span>
+                          <span className="text-2xl"></span>
                         </div>
                       </div>
                       <div className="bg-gradient-to-br from-yellow-400/40 to-amber-500/40 backdrop-blur-sm rounded-xl p-4 border-2 border-yellow-400/60 shadow-xl">
@@ -157,7 +157,7 @@ function Leaderboard() {
             {/* Rankings List */}
             <div className="bg-white rounded-2xl shadow-tennis overflow-hidden mb-8">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900">🎯 All Rankings</h2>
+                <h2 className="text-xl font-bold text-gray-900">All Rankings</h2>
               </div>
               <div className="divide-y divide-gray-100">
                 {players.slice(players.length >= 3 ? 3 : 0).map((player, index) => {

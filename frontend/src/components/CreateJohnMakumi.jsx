@@ -113,10 +113,10 @@ function CreateJohnMakumi() {
         borderRadius: '5px',
         marginBottom: '20px'
       }}>
-        <h4>📋 Purpose:</h4>
+        <h4>Purpose:</h4>
         <p>John Makumi can login to the app but doesn't appear in user lists. This tool ensures he exists in both Firebase Auth AND Firestore with admin role.</p>
         
-        <h4>🔍 What This Does:</h4>
+        <h4>What This Does:</h4>
         <ul>
           <li>✅ Checks if John exists in Firebase Auth</li>
           <li>✅ Creates him in Auth if missing</li>
@@ -125,7 +125,7 @@ function CreateJohnMakumi() {
           <li>✅ Ensures he appears in message dropdown</li>
         </ul>
         
-        <h4>👤 Account Details:</h4>
+        <h4>Account Details:</h4>
         <ul>
           <li><strong>Email:</strong> johnmakumi106@gmail.com</li>
           <li><strong>Username:</strong> johnmakumi</li>
@@ -183,7 +183,7 @@ function CreateJohnMakumi() {
       )}
 
       <div style={{ marginTop: '30px', padding: '15px', backgroundColor: '#e8f5e8', borderRadius: '5px' }}>
-        <h4>🎯 After Creation:</h4>
+        <h4>After Creation:</h4>
         <ol>
           <li>John Makumi will exist in Firebase Auth</li>
           <li>John Makumi will exist in Firestore users collection</li>

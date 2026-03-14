@@ -174,7 +174,7 @@ function Navbar() {
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       onClick={() => setIsProfileOpen(false)}
                     >
-                      <span className="mr-2">📊</span>
+                      <span className="mr-2"></span>
                       Dashboard
                     </Link>
                     {isAdmin && (
@@ -183,7 +183,6 @@ function Navbar() {
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsProfileOpen(false)}
                       >
-                        <span className="mr-2">⚙️</span>
                         Admin
                       </Link>
                     )}
@@ -193,7 +192,6 @@ function Navbar() {
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsProfileOpen(false)}
                       >
-                        <span className="mr-2">🏅</span>
                         Coach Panel
                       </Link>
                     )}
@@ -203,14 +201,12 @@ function Navbar() {
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsProfileOpen(false)}
                       >
-                        <span className="mr-2">👤</span>
                         Profile
                       </Link>
                       <button
                         onClick={handleLogout}
                         className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       >
-                        <span className="mr-2">🚪</span>
                         Logout
                       </button>
                     </div>

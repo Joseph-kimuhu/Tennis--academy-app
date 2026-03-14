@@ -128,7 +128,7 @@ function PlayerDashboard() {
       notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg z-50';
       notification.innerHTML = `
         <div class="flex items-center gap-3">
-          <span class="text-2xl">✅</span>
+          <span class="text-2xl"></span>
           <div>
             <p class="font-bold">Payment Submitted!</p>
             <p class="text-sm text-green-100">Admin will review and approve your registration shortly.</p>
@@ -266,7 +266,7 @@ function PlayerDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {user?.username}! 🎾</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {user?.username}!</h1>
                 <p className="text-green-100">Ready to dominate the court today?</p>
               </div>
               <div className="mt-4 md:mt-0 flex space-x-3">
@@ -274,13 +274,13 @@ function PlayerDashboard() {
                   onClick={() => setShowStatsModal(true)}
                   className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-colors shadow-md flex items-center"
                 >
-                  <span className="mr-2">📊</span> My Stats
+                  <span className="mr-2"></span> My Stats
                 </button>
                 <Link
                   to="/courts"
                   className="px-6 py-3 bg-green-700/50 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center"
                 >
-                  <span className="mr-2">🏟️</span> Book Court
+                  <span className="mr-2"></span> Book Court
                 </Link>
               </div>
             </div>
@@ -297,7 +297,7 @@ function PlayerDashboard() {
                 <p className="text-3xl font-bold text-gray-900">{detailedStats?.total_matches || myStats?.total_matches || 0}</p>
               </div>
               <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🎾</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -309,7 +309,7 @@ function PlayerDashboard() {
                 <p className="text-3xl font-bold text-green-600">{detailedStats?.wins || myStats?.wins || user?.wins || 0}</p>
               </div>
               <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🏆</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -321,7 +321,7 @@ function PlayerDashboard() {
                 <p className="text-3xl font-bold text-red-600">{detailedStats?.losses || myStats?.losses || user?.losses || 0}</p>
               </div>
               <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">📉</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -333,7 +333,7 @@ function PlayerDashboard() {
                 <p className="text-3xl font-bold text-blue-600">{detailedStats?.ranking_points || user?.ranking_points || 0}</p>
               </div>
               <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">📊</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -345,7 +345,7 @@ function PlayerDashboard() {
                 <p className="text-2xl font-bold text-orange-600 capitalize">{detailedStats?.skill_level || user?.skill_level || 'Beginner'}</p>
               </div>
               <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🎯</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -355,12 +355,12 @@ function PlayerDashboard() {
         <div className="bg-white rounded-xl shadow-md mb-8 overflow-hidden">
           <div className="flex overflow-x-auto">
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-              { id: 'bookings', label: 'My Bookings', icon: '📅', badge: myBookings.filter(b => !b.is_read).length },
-              { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
-              { id: 'training', label: 'Training', icon: '🎾' },
-              { id: 'announcements', label: 'Announcements', icon: '📢', badge: announcements.filter(a => !a.is_read).length },
-              { id: 'notifications', label: 'Notifications', icon: '🔔', badge: notifications.filter(n => !n.is_read).length },
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'bookings', label: 'My Bookings', badge: myBookings.filter(b => !b.is_read).length },
+              { id: 'tournaments', label: 'Tournaments' },
+              { id: 'training', label: 'Training' },
+              { id: 'announcements', label: 'Announcements', badge: announcements.filter(a => !a.is_read).length },
+              { id: 'notifications', label: 'Notifications', badge: notifications.filter(n => !n.is_read).length },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -407,26 +407,26 @@ function PlayerDashboard() {
                           reg.payment_status === 'rejected' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {reg.payment_status === 'paid' ? '✅ Paid' :
-                           reg.payment_status === 'pending' ? '⏳ Payment Submitted' :
-                           reg.payment_status === 'rejected' ? '❌ Payment Rejected' :
-                           '💳 Payment Not Submitted'}
+                          {reg.payment_status === 'paid' ? 'Paid' :
+                           reg.payment_status === 'pending' ? 'Payment Submitted' :
+                           reg.payment_status === 'rejected' ? 'Payment Rejected' :
+                           'Payment Not Submitted'}
                         </span>
                         <span className={`px-3 py-1 text-xs rounded-full font-medium ${
                           reg.status === 'approved' ? 'bg-green-100 text-green-800' :
                           reg.status === 'rejected' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {reg.status === 'approved' ? '✅ Approved' : 
-                           reg.status === 'rejected' ? '❌ Rejected' : 
-                           reg.status === 'pending_payment' ? '⏳ Pending Payment' : '⏳ Pending'}
+                          {reg.status === 'approved' ? 'Approved' : 
+                           reg.status === 'rejected' ? 'Rejected' : 
+                           reg.status === 'pending_payment' ? 'Pending Payment' : 'Pending'}
                         </span>
                       </div>
                       <div className="text-sm text-gray-600">
-                        📅 {reg.tournament?.start_date ? new Date(reg.tournament.start_date).toLocaleDateString() : 'TBD'}
+                        {reg.tournament?.start_date ? new Date(reg.tournament.start_date).toLocaleDateString() : 'TBD'}
                       </div>
                       <div className="text-sm text-gray-600">
-                        💰 Entry: {reg.tournament?.entry_fee || 0} KES
+                        Entry: {reg.tournament?.entry_fee || 0} KES
                       </div>
                     </div>
                   ))}
@@ -439,17 +439,17 @@ function PlayerDashboard() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Link to="/courts" className="bg-green-50 border-2 border-green-200 rounded-xl p-6 hover:bg-green-100 transition-all hover:scale-105">
-                  <div className="text-3xl mb-3">🏟️</div>
+                  <div className="text-3xl mb-3"></div>
                   <div className="font-bold text-green-800 text-lg">Book a Court</div>
                   <div className="text-sm text-green-600 mt-1">Reserve your perfect court</div>
                 </Link>
                 <Link to="/tournaments" className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 hover:bg-blue-100 transition-all hover:scale-105">
-                  <div className="text-3xl mb-3">🏆</div>
+                  <div className="text-3xl mb-3"></div>
                   <div className="font-bold text-blue-800 text-lg">Join Tournament</div>
                   <div className="text-sm text-blue-600 mt-1">Compete and win prizes</div>
                 </Link>
                 <Link to="/profile" className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 hover:bg-purple-100 transition-all hover:scale-105">
-                  <div className="text-3xl mb-3">👤</div>
+                  <div className="text-3xl mb-3"></div>
                   <div className="font-bold text-purple-800 text-lg">Update Profile</div>
                   <div className="text-sm text-purple-600 mt-1">Manage your account</div>
                 </Link>
@@ -542,7 +542,7 @@ function PlayerDashboard() {
                         className="w-full h-32 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center"
                         style={{ display: court.image_url ? 'none' : 'flex' }}
                       >
-                        <span className="text-white text-4xl">🏟️</span>
+                        <span className="text-white text-4xl"></span>
                       </div>
                       
                       {/* Court Info */}
@@ -557,7 +557,7 @@ function PlayerDashboard() {
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {court.is_available ? '✅ Available' : '❌ Occupied'}
+                            {court.is_available ? 'Available' : 'Occupied'}
                           </div>
                         </div>
                       </div>
@@ -565,7 +565,7 @@ function PlayerDashboard() {
                   ))}
                   {courts.length === 0 && (
                     <div className="col-span-2 text-center py-8">
-                      <div className="text-5xl mb-3">🏟️</div>
+                      <div className="text-5xl mb-3"></div>
                       <div className="text-gray-500 mb-2">No courts available</div>
                     </div>
                   )}
@@ -1210,7 +1210,7 @@ function PlayerDashboard() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">💳</span>
+                <span className="text-3xl"></span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900">Complete Your Payment</h3>
               <p className="text-gray-600 mt-2">Tournament: <span className="font-bold">{payingTournament.name}</span></p>
@@ -1232,9 +1232,9 @@ function PlayerDashboard() {
               <div className="mb-4">
                 <label className="block text-sm font-bold text-gray-700 mb-2">💰 Select Payment Method</label>
                 <div className="grid grid-cols-2 gap-3">
-                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'mpesa' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'mpesa' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300'}`}>📱 M-Pesa</button>
-                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'card' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'card' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300'}`}>💳 Card</button>
-                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'bank' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'bank' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-gray-700 border-gray-300'}`}>🏦 Bank</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'mpesa' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'mpesa' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300'}`}>M-Pesa</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'card' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'card' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300'}`}>Card</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'bank' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'bank' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-gray-700 border-gray-300'}`}>Bank</button>
                   <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'cash' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'cash' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-700 border-gray-300'}`}>💵 Cash</button>
                 </div>
               </div>
@@ -1251,7 +1251,7 @@ function PlayerDashboard() {
               
               <div className="flex gap-3">
                 <button type="button" onClick={() => { setShowPaymentModal(false); setPayingTournament(null); }} className="flex-1 px-6 py-4 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 text-lg">Cancel</button>
-                <button type="submit" disabled={!paymentForm.phone || !paymentForm.reference} className="flex-1 px-6 py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 text-lg disabled:bg-gray-300">✅ Submit Payment</button>
+                <button type="submit" disabled={!paymentForm.phone || !paymentForm.reference} className="flex-1 px-6 py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 text-lg disabled:bg-gray-300">Submit Payment</button>
               </div>
             </form>
           </div>

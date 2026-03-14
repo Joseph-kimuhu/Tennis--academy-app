@@ -121,7 +121,7 @@ function Dashboard() {
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-tennis-green to-tennis-green-dark rounded-xl p-6 mb-8 text-white">
           <h1 className="text-3xl font-bold">
-            Welcome back, {user?.username}! 🎾
+            Welcome back, {user?.username}!
           </h1>
           <p className="mt-2 text-green-100">
             {user?.role === 'admin' && 'Manage your tennis court platform'}
@@ -151,7 +151,7 @@ function Dashboard() {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              📢 Messages & Announcements
+              Messages & Announcements
             </button>
           </div>
         </div>
@@ -159,7 +159,7 @@ function Dashboard() {
         {/* Tab Content */}
         {activeTab === 'messages' ? (
           <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold mb-4">📢 Messages & Announcements</h2>
+            <h2 className="text-xl font-bold mb-4">Messages & Announcements</h2>
             {notifications.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No messages or announcements yet.</p>
             ) : (
@@ -221,7 +221,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-tennis-green">{stats?.totalUsers || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-tennis-green rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">👥</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -233,7 +233,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-blue-600">{stats?.totalCourts || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">🏟️</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -257,7 +257,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-orange-600">{stats?.totalBookings || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">📅</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -284,7 +284,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-gray-900">{stats?.total_matches || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">🎾</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -296,7 +296,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-green-600">{stats?.wins || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">✓</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -324,7 +324,7 @@ function Dashboard() {
             className="bg-white rounded-xl shadow-md p-6 card-hover flex items-center space-x-4"
           >
             <div className="w-12 h-12 bg-tennis-green rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🏟️</span>
+              <span className="text-2xl"></span>
             </div>
             <div>
               <h3 className="font-semibold text-lg">Book a Court</h3>
@@ -356,7 +356,7 @@ function Dashboard() {
                     }`}
                   >
                     <div className="w-10 h-10 bg-tennis-green rounded-lg flex items-center justify-center mr-3">
-                      <span className="text-white">🎾</span>
+                      <span className="text-white"></span>
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{booking.court?.name || 'Court'}</p>

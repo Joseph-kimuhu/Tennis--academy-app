@@ -40,9 +40,9 @@ function TournamentBracket({ tournamentId }) {
   };
 
   const getRoundName = (roundNum, totalRounds) => {
-    if (roundNum == totalRounds) return '🏆 Final';
-    if (roundNum == totalRounds - 1) return '🥇 Semi-Finals';
-    if (roundNum == totalRounds - 2) return '🥈 Quarter-Finals';
+    if (roundNum == totalRounds) return 'Final';
+    if (roundNum == totalRounds - 1) return 'Semi-Finals';
+    if (roundNum == totalRounds - 2) return 'Quarter-Finals';
     return `Round ${roundNum}`;
   };
 

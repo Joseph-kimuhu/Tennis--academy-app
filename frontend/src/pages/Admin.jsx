@@ -114,7 +114,7 @@ function Admin() {
                     <p className="text-3xl font-bold text-gray-900">{dashboard?.total_users || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">👥</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -126,7 +126,7 @@ function Admin() {
                     <p className="text-3xl font-bold text-gray-900">{dashboard?.total_courts || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-tennis-green rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">🏟️</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -138,7 +138,7 @@ function Admin() {
                     <p className="text-3xl font-bold text-gray-900">{dashboard?.total_bookings || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">📅</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -150,7 +150,7 @@ function Admin() {
                     <p className="text-3xl font-bold text-gray-900">{dashboard?.active_tournaments || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">🏆</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
