@@ -125,8 +125,32 @@ function UnifiedStaffPanel() {
         api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => []),
         api.getNotifications({ limit: 20 }).catch(() => [])
       ]);
+      
+      // Fetch player statistics for all players and merge with user data
+      const playersWithStats = await Promise.all(
+        (usersData || []).map(async (user) => {
+          if (user.role === 'player') {
+            try {
+              const playerStats = await api.getPlayerStatistics(user.id);
+              if (playerStats) {
+                return {
+                  ...user,
+                  ranking_points: playerStats.ranking_points || user.ranking_points || 0,
+                  wins: playerStats.wins || user.wins || 0,
+                  losses: playerStats.losses || user.losses || 0,
+                  skill_level: playerStats.skill_level || user.skill_level || 'beginner'
+                };
+              }
+            } catch (e) {
+              console.log('No stats for player:', user.id);
+            }
+          }
+          return user;
+        })
+      );
+      
       setStats(statsData);
-      setUsers(usersData || []);
+      setUsers(playersWithStats || []);
       setBookings(bookingsData || []);
       setTournaments(tournamentsData || []);
       setCourts(courtsData || []);
