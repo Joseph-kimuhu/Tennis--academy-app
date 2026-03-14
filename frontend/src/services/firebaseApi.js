@@ -629,13 +629,32 @@ class FirebaseApiService {
     const q = query(collection(db, 'tournaments'), limit(50));
     const querySnapshot = await getDocs(q);
     const now = new Date();
-    const tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get participant counts for each tournament in parallel (only approved registrations)
+    const countPromises = tournaments.map(t => this.getApprovedParticipantCount(t.id));
+    const counts = await Promise.all(countPromises);
+    
+    tournaments = tournaments.map((tournament, index) => ({
+      ...tournament,
+      participant_count: counts[index]
+    }));
     
     // Filter active tournaments (status = 'active' or 'draft' and start_date >= now)
     return tournaments.filter(t => 
       (t.status === 'active' || t.status === 'draft') && 
       new Date(t.start_date) >= now
     ).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+  }
+
+  async getApprovedParticipantCount(tournamentId) {
+    const q = query(
+      collection(db, 'tournament_registrations'),
+      where('tournament_id', '==', tournamentId),
+      where('status', '==', 'approved')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.size;
   }
 
   async getTournaments(params = {}) {
