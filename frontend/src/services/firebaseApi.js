@@ -903,17 +903,20 @@ class FirebaseApiService {
       const reg = registrations[i];
       const userDoc = userDocs[i];
       if (userDoc && userDoc.exists()) {
+        const userData = userDoc.data();
         const sanitizedReg = this.sanitizeData(reg);
         participants.push({
           id: sanitizedReg.id,
           user_id: sanitizedReg.user_id,
-          username: userDoc.data().username,
-          email: userDoc.data().email,
+          username: userData.username,
+          email: userData.email,
+          full_name: userData.full_name || userData.username,
           status: sanitizedReg.status,
           payment_status: sanitizedReg.payment_status,
           payment_phone: sanitizedReg.payment_phone,
           payment_reference: sanitizedReg.payment_reference,
-          registered_at: sanitizedReg.registered_at
+          registered_at: sanitizedReg.registered_at,
+          user: { id: userDoc.id, ...userData }
         });
       }
     }
@@ -1157,6 +1160,29 @@ class FirebaseApiService {
     if (tournament_id) {
       matches = matches.filter(m => m.tournament_id === tournament_id);
     }
+    
+    // Get unique player IDs
+    const playerIds = new Set();
+    matches.forEach(m => {
+      if (m.player1_id) playerIds.add(m.player1_id);
+      if (m.player2_id) playerIds.add(m.player2_id);
+    });
+    
+    // Fetch player details
+    const playerDocs = {};
+    for (const playerId of playerIds) {
+      const playerDoc = await getDoc(doc(db, 'users', playerId));
+      if (playerDoc.exists()) {
+        playerDocs[playerId] = { id: playerDoc.id, ...playerDoc.data() };
+      }
+    }
+    
+    // Add player details to matches
+    matches = matches.map(m => ({
+      ...m,
+      player1: m.player1_id ? playerDocs[m.player1_id] : null,
+      player2: m.player2_id ? playerDocs[m.player2_id] : null
+    }));
     
     // Sort by date
     matches.sort((a, b) => new Date(b.created_at || b.scheduled_time) - new Date(a.created_at || a.scheduled_time));
