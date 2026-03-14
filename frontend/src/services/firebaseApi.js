@@ -857,12 +857,20 @@ class FirebaseApiService {
     const snapshot = await getDocs(q);
     const registrations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Get user details for each participant
+    if (registrations.length === 0) return [];
+    
+    // Fetch all user details in parallel
+    const userPromises = registrations.map(reg => 
+      getDoc(doc(db, 'users', reg.user_id))
+    );
+    const userDocs = await Promise.all(userPromises);
+    
+    // Build the result array
     const participants = [];
-    for (const reg of registrations) {
-      const userDoc = await getDoc(doc(db, 'users', reg.user_id));
-      if (userDoc.exists()) {
-        // Sanitize the data to convert timestamps to strings
+    for (let i = 0; i < registrations.length; i++) {
+      const reg = registrations[i];
+      const userDoc = userDocs[i];
+      if (userDoc && userDoc.exists()) {
         const sanitizedReg = this.sanitizeData(reg);
         participants.push({
           id: sanitizedReg.id,
@@ -1070,12 +1078,20 @@ class FirebaseApiService {
     const snapshot = await getDocs(q);
     const registrations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Get tournament details for each registration
+    if (registrations.length === 0) return [];
+    
+    // Fetch all tournament details in parallel
+    const tournamentPromises = registrations.map(reg => 
+      getDoc(doc(db, 'tournaments', reg.tournament_id))
+    );
+    const tournamentDocs = await Promise.all(tournamentPromises);
+    
+    // Build the result array
     const myTournaments = [];
-    for (const reg of registrations) {
-      const tournamentDoc = await getDoc(doc(db, 'tournaments', reg.tournament_id));
-      if (tournamentDoc.exists()) {
-        // Sanitize the data to convert timestamps to strings
+    for (let i = 0; i < registrations.length; i++) {
+      const reg = registrations[i];
+      const tournamentDoc = tournamentDocs[i];
+      if (tournamentDoc && tournamentDoc.exists()) {
         const sanitizedReg = this.sanitizeData(reg);
         const sanitizedTournament = this.sanitizeData(tournamentDoc.data());
         myTournaments.push({
