@@ -289,12 +289,12 @@ function PlayerDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Matches Played</p>
-                <p className="text-3xl font-bold text-gray-900">{myStats?.total_matches || 0}</p>
+                <p className="text-3xl font-bold text-gray-900">{detailedStats?.total_matches || myStats?.total_matches || 0}</p>
               </div>
               <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
                 <span className="text-2xl">🎾</span>
@@ -306,7 +306,7 @@ function PlayerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Wins</p>
-                <p className="text-3xl font-bold text-green-600">{myStats?.wins || user?.wins || 0}</p>
+                <p className="text-3xl font-bold text-green-600">{detailedStats?.wins || myStats?.wins || user?.wins || 0}</p>
               </div>
               <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
                 <span className="text-2xl">🏆</span>
@@ -317,8 +317,20 @@ function PlayerDashboard() {
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm text-gray-500">Losses</p>
+                <p className="text-3xl font-bold text-red-600">{detailedStats?.losses || myStats?.losses || user?.losses || 0}</p>
+              </div>
+              <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center">
+                <span className="text-2xl">📉</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm text-gray-500">Ranking Points</p>
-                <p className="text-3xl font-bold text-blue-600">{user?.ranking_points || 0}</p>
+                <p className="text-3xl font-bold text-blue-600">{detailedStats?.ranking_points || user?.ranking_points || 0}</p>
               </div>
               <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
                 <span className="text-2xl">📊</span>
@@ -330,7 +342,7 @@ function PlayerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Skill Level</p>
-                <p className="text-2xl font-bold text-orange-600 capitalize">{user?.skill_level || 'Beginner'}</p>
+                <p className="text-2xl font-bold text-orange-600 capitalize">{detailedStats?.skill_level || user?.skill_level || 'Beginner'}</p>
               </div>
               <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center">
                 <span className="text-2xl">🎯</span>
