@@ -614,7 +614,16 @@ class FirebaseApiService {
     // Get all tournaments and sort in JavaScript (avoids index requirement)
     const q = query(collection(db, 'tournaments'), limit(limitCount));
     const querySnapshot = await getDocs(q);
-    const tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get participant counts for each tournament in parallel (only approved registrations)
+    const countPromises = tournaments.map(t => this.getApprovedParticipantCount(t.id));
+    const counts = await Promise.all(countPromises);
+    
+    tournaments = tournaments.map((tournament, index) => ({
+      ...tournament,
+      participant_count: counts[index]
+    }));
     
     // Sort by start date
     tournaments.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
@@ -648,13 +657,17 @@ class FirebaseApiService {
   }
 
   async getApprovedParticipantCount(tournamentId) {
-    const q = query(
-      collection(db, 'tournament_registrations'),
-      where('tournament_id', '==', tournamentId),
-      where('status', '==', 'approved')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.size;
+    try {
+      // Use a simple query without compound where clauses to avoid index requirement
+      const q = query(collection(db, 'tournament_registrations'), limit(500));
+      const snapshot = await getDocs(q);
+      const registrations = snapshot.docs.map(doc => doc.data());
+      // Filter in JavaScript - only count approved registrations for this tournament
+      return registrations.filter(r => r.tournament_id === tournamentId && r.status === 'approved').length;
+    } catch (error) {
+      console.error('Error getting participant count:', error);
+      return 0;
+    }
   }
 
   async getTournaments(params = {}) {

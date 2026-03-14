@@ -56,6 +56,7 @@ function UnifiedStaffPanel() {
   const [tournamentRegistrations, setTournamentRegistrations] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [tournamentMatches, setTournamentMatches] = useState([]);
+  const [tournamentParticipants, setTournamentParticipants] = useState([]);
   const [newMatch, setNewMatch] = useState({
     player1_id: '',
     player2_id: '',
@@ -599,7 +600,8 @@ function UnifiedStaffPanel() {
     // First check if there are players registered for this tournament
     try {
       const participants = await api.getTournamentParticipants(tournament.id);
-      const approvedPlayers = participants.filter(p => p.payment_status === 'paid');
+      // Filter for approved players (payment has been approved by admin)
+      const approvedPlayers = participants.filter(p => p.status === 'approved');
       
       if (approvedPlayers.length < 2) {
         alert('You need at least 2 players with approved payments to create a match.\n\nCurrent approved players: ' + approvedPlayers.length + '\n\nPlayers must first register and have their payment approved before matches can be created.');
@@ -607,6 +609,7 @@ function UnifiedStaffPanel() {
       }
       
       setSelectedTournament(tournament);
+      setTournamentParticipants(approvedPlayers);
       setNewMatch({
         player1_id: '',
         player2_id: '',
@@ -2255,8 +2258,8 @@ function UnifiedStaffPanel() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="">Select Player 1</option>
-                    {users.filter(u => u.role === 'player').map(player => (
-                      <option key={player.id} value={player.id}>{player.username}</option>
+                    {tournamentParticipants.map(player => (
+                      <option key={player.user_id} value={player.user_id}>{player.username}</option>
                     ))}
                   </select>
                 </div>
@@ -2269,8 +2272,8 @@ function UnifiedStaffPanel() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="">Select Player 2</option>
-                    {users.filter(u => u.role === 'player').map(player => (
-                      <option key={player.id} value={player.id}>{player.username}</option>
+                    {tournamentParticipants.map(player => (
+                      <option key={player.user_id} value={player.user_id}>{player.username}</option>
                     ))}
                   </select>
                 </div>
