@@ -1728,16 +1728,16 @@ class FirebaseApiService {
       const admins = users.filter(u => u.role === 'admin').length;
 
       return {
-        totalUsers,
-        totalCourts,
-        totalTournaments,
-        totalBookings,
-        totalMatches,
-        activeCourts,
-        activeTournaments,
-        completedTournaments,
-        confirmedBookings,
-        completedMatches,
+        total_users: totalUsers,
+        total_courts: totalCourts,
+        total_tournaments: totalTournaments,
+        total_bookings: totalBookings,
+        total_matches: totalMatches,
+        active_courts: activeCourts,
+        active_tournaments: activeTournaments,
+        completed_tournaments: completedTournaments,
+        confirmed_bookings: confirmedBookings,
+        completed_matches: completedMatches,
         players,
         coaches,
         admins
