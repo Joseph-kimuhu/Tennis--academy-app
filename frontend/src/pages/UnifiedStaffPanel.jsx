@@ -848,7 +848,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">👥</span>
                     <span className="text-sm text-blue-600 font-bold">Total</span>
                   </div>
-                  <p className="text-3xl font-bold text-blue-600">{stats?.totalUsers || 0}</p>
+                  <p className="text-3xl font-bold text-blue-600">{stats?.total_users || 0}</p>
                   <p className="text-gray-600">{isAdmin ? 'Users' : 'Players'}</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
@@ -856,7 +856,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">📅</span>
                     <span className="text-sm text-green-600 font-bold">Total</span>
                   </div>
-                  <p className="text-3xl font-bold text-green-600">{stats?.totalBookings || 0}</p>
+                  <p className="text-3xl font-bold text-green-600">{stats?.total_bookings || 0}</p>
                   <p className="text-gray-600">Bookings</p>
                 </div>
                 <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border-2 border-yellow-200">
@@ -864,7 +864,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">🏆</span>
                     <span className="text-sm text-yellow-700 font-bold">Active</span>
                   </div>
-                  <p className="text-3xl font-bold text-yellow-600">{stats?.activeTournaments || 0}</p>
+                  <p className="text-3xl font-bold text-yellow-600">{stats?.active_tournaments || 0}</p>
                   <p className="text-gray-600">Tournaments</p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200">

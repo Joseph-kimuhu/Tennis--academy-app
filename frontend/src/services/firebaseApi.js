@@ -1711,6 +1711,8 @@ class FirebaseApiService {
       const bookings = bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const matches = matchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+      console.log('Admin stats - Users:', users.length, 'Courts:', courts.length, 'Tournaments:', tournaments.length, 'Bookings:', bookings.length);
+
       // Calculate stats
       const totalUsers = users.length;
       const totalCourts = courts.length;
@@ -1745,7 +1747,22 @@ class FirebaseApiService {
       };
     } catch (error) {
       console.error('Error getting admin stats:', error);
-      return null;
+      // Return default stats on error instead of null
+      return {
+        total_users: 0,
+        total_courts: 0,
+        total_tournaments: 0,
+        total_bookings: 0,
+        total_matches: 0,
+        active_courts: 0,
+        active_tournaments: 0,
+        completed_tournaments: 0,
+        confirmed_bookings: 0,
+        completed_matches: 0,
+        players: 0,
+        coaches: 0,
+        admins: 0
+      };
     }
   }
 
