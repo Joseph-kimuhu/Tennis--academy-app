@@ -132,13 +132,14 @@ export function AuthProvider({ children }) {
 
       // Create user document in Firestore
       const newUserData = {
-        email: userData.email,
-        username: userData.username || userData.email.split('@')[0],
+        email: userData.email.toLowerCase(),
+        username: (userData.username || userData.email.split('@')[0]).toLowerCase(),
         role: userData.role || 'player',
         skill_level: userData.skill_level || 'beginner',
         ranking_points: 0,
         wins: 0,
         losses: 0,
+        is_active: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };

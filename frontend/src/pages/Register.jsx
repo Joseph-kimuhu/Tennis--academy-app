@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -13,16 +15,60 @@ function Register() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const { register, login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    
+    // Clear username error when user starts typing
+    if (name === 'username') {
+      setUsernameError('');
+    }
+    // Clear email error when user starts typing
+    if (name === 'email') {
+      setEmailError('');
+    }
+  };
+
+  // Check if username is available
+  const checkUsernameAvailability = async (username) => {
+    if (!username || username.length < 3) return true;
+    
+    setCheckingUsername(true);
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', username.toLowerCase()));
+      const snapshot = await getDocs(q);
+      setCheckingUsername(false);
+      return snapshot.empty;
+    } catch (err) {
+      setCheckingUsername(false);
+      return true; // Allow submission if check fails
+    }
+  };
+
+  // Check if email is available
+  const checkEmailAvailability = async (email) => {
+    if (!email) return true;
+    
+    try {
+      const q = query(collection(db, 'users'), where('email', '==', email.toLowerCase()));
+      const snapshot = await getDocs(q);
+      return snapshot.empty;
+    } catch (err) {
+      return true; // Allow submission if check fails
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setEmailError('');
+    setUsernameError('');
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -31,6 +77,20 @@ function Register() {
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
+      return;
+    }
+
+    // Check if username is available
+    const usernameAvailable = await checkUsernameAvailability(formData.username);
+    if (!usernameAvailable) {
+      setUsernameError('This username is already taken. Please choose another one.');
+      return;
+    }
+
+    // Check if email is available
+    const emailAvailable = await checkEmailAvailability(formData.email);
+    if (!emailAvailable) {
+      setEmailError('This email is already registered. Please use a different email or login.');
       return;
     }
 
@@ -51,7 +111,7 @@ function Register() {
         // Auto-login after registration
         const loginSuccess = await login(formData.email, formData.password);
         if (loginSuccess) {
-      navigate('/player-dashboard');
+          navigate('/player-dashboard');
         } else {
           navigate('/login');
         }
@@ -118,9 +178,12 @@ function Register() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                className={`mt-1 block w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all ${emailError ? 'border-red-300' : 'border-gray-300'}`}
                 placeholder="you@example.com"
               />
+              {emailError && (
+                <p className="mt-1 text-sm text-red-600">{emailError}</p>
+              )}
             </div>
 
             {/* Username Field */}
@@ -128,16 +191,27 @@ function Register() {
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
                 Username *
               </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={formData.username}
-                onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                placeholder="tennis_player"
-              />
+              <div className="relative">
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={formData.username}
+                  onChange={handleChange}
+                  className={`mt-1 block w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all ${usernameError ? 'border-red-300' : 'border-gray-300'}`}
+                  placeholder="tennis_player"
+                />
+                {checkingUsername && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+              </div>
+              {usernameError && (
+                <p className="mt-1 text-sm text-red-600">{usernameError}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">Username must be at least 3 characters</p>
             </div>
 
             {/* Full Name Field */}
