@@ -89,7 +89,6 @@ service cloud.firestore {
       allow write: if isCoachOrAdmin();
       allow update: if isAuthenticated() &&
         request.resource.data.diff(resource.data).changedKeys().hasOnly(['read_by', 'updated_at']) &&
-        request.resource.data.read_by is list &&
         (resource.data.read_by == null || request.resource.data.read_by.hasAll(resource.data.read_by)) &&
         request.resource.data.read_by.hasAny([request.auth.uid]);
     }
