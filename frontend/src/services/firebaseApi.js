@@ -274,7 +274,8 @@ class FirebaseApiService {
     }
     const stats = { id: statsDoc.id, ...statsDoc.data() };
     console.log('Stats retrieved:', stats);
-    return stats;
+    // Sanitize to convert any timestamps to strings
+    return this.sanitizeData(stats);
   }
 
   async createPlayerStatistics(playerId, statsData) {
