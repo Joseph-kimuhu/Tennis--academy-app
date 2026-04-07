@@ -96,8 +96,8 @@ The application will be available at:
 - Password: password123
 
 **Coach Account:**
-- Email: coach@example.com
-- Password: password123
+- Email: johnmakumi106@gmail.com
+- Password: john1234
 
 ## Project Structure
 

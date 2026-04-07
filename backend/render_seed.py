@@ -25,7 +25,7 @@ def seed_users():
     
     try:
         # Check if coach already exists
-        coach_email = "coach@tennis.com"
+        coach_email = "johnmakumi106@gmail.com"
         existing_coach = db.query(User).filter(User.email == coach_email).first()
         
         if existing_coach:
@@ -36,9 +36,9 @@ def seed_users():
             # Create default coach
             coach = User(
                 email=coach_email,
-                username="Coach",
-                full_name="Tennis Coach",
-                hashed_password=get_password_hash("coach123"),
+                username="JohnMakumi",
+                full_name="John Makumi",
+                hashed_password=get_password_hash("john1234"),
                 role=UserRole.COACH,
                 is_active=True,
                 is_verified=True
@@ -48,8 +48,8 @@ def seed_users():
             db.refresh(coach)
             print(f"✅ Coach account created successfully!")
             print(f"   Email: {coach_email}")
-            print(f"   Password: coach123")
-            print(f"   Username: Coach")
+            print(f"   Password: john1234")
+            print(f"   Username: JohnMakumi")
 
         # Also create an admin account
         admin_email = "admin@tennis.com"
@@ -77,8 +77,8 @@ def seed_users():
 
         print("\n🎾 === LOGIN DETAILS === 🎾")
         print("🏆 COACH LOGIN:")
-        print("   Email: coach@tennis.com")
-        print("   Password: coach123")
+        print("   Email: johnmakumi106@gmail.com")
+        print("   Password: john1234")
         print("\n⚙️ ADMIN LOGIN:")
         print("   Email: admin@tennis.com")
         print("   Password: admin123")

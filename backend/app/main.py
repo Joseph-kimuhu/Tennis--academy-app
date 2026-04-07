@@ -141,16 +141,16 @@ def seed_default_users():
         logger.info("==> 🔄 Checking default users...")
         
         # Check if coach already exists
-        coach_email = "coach@tennis.com"
+        coach_email = "johnmakumi106@gmail.com"
         existing_coach = db.query(User).filter(User.email == coach_email).first()
         
         if not existing_coach:
             logger.info("==> ➕ Creating new coach account...")
             coach = User(
                 email=coach_email,
-                username="Coach",
-                full_name="Tennis Coach",
-                hashed_password=get_password_hash("coach123"),
+                username="JohnMakumi",
+                full_name="John Makumi",
+                hashed_password=get_password_hash("john1234"),
                 role=UserRole.COACH,
                 is_active=True,
                 is_verified=True
@@ -203,7 +203,7 @@ def seed_default_users():
         
         logger.info("==> 🎾 Default users seeding completed!")
         logger.info(f"==> 📊 Database stats: {total_users} total users, {admin_count} admins, {coach_count} coaches")
-        logger.info("==> 🏆 Coach: coach@tennis.com / coach123")
+        logger.info("==> 🏆 Coach: johnmakumi106@gmail.com / john1234")
         logger.info("==> ⚙️ Admin: admin@tennis.com / admin123")
         logger.info("==> 🛡️  User data is protected and will persist across restarts")
         
