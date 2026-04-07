@@ -3,7 +3,7 @@
 
 set -e  # Exit on error
 
-echo "Starting Tennis Academy Backend..."
+echo "Starting EPIC TENNIS ACADEMY Backend..."
 
 # Run database migrations/setup if needed
 echo "Setting up database..."

@@ -275,7 +275,7 @@ function Tournaments() {
                     <div>
                       <h2 className="text-3xl font-bold">{selectedTournament.name}</h2>
                       <p className="text-green-100 text-sm mt-1">
-                        {selectedTournament.location || 'Tennis Academy Courts'}
+                        {selectedTournament.location || 'EPIC TENNIS ACADEMY Courts'}
                       </p>
                     </div>
                   </div>

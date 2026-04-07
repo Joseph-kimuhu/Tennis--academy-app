@@ -92,5 +92,5 @@ def seed_users():
         db.close()
 
 if __name__ == "__main__":
-    print("🌱 Starting user seeding for Tennis Academy...")
+    print("🌱 Starting user seeding for EPIC TENNIS ACADEMY...")
     seed_users()

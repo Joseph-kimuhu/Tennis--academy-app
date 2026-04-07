@@ -1,4 +1,4 @@
-# Deployment Guide for Tennis Academy App
+# Deployment Guide for EPIC TENNIS ACADEMY App
 
 ## Render Deployment
 

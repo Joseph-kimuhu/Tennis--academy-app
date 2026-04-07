@@ -87,28 +87,33 @@ function Home() {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 relative z-10">
           <div className="text-center animate-fadeIn">
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-white/20 rounded-full mb-8 backdrop-blur-sm border-2 border-white/30">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-6 border border-white/30">
+              <span className="w-2 h-2 bg-[#CCFF00] rounded-full animate-pulse"></span>
+              <span className="text-white/90 font-medium text-sm">#1 Tennis Academy in Kenya</span>
+            </div>
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-white/20 rounded-full mb-8 backdrop-blur-sm border-2 border-white/30 shadow-2xl">
               <span className="text-5xl">🎾</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 tracking-tight drop-shadow-lg">
               {clubs.length > 0 ? clubs[0].name : 'Play Tennis Like a Pro'}
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto drop-shadow-md">
-              Book courts, join tournaments, track your progress, and compete with players worldwide
+            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto drop-shadow-md leading-relaxed">
+              Book courts, join tournaments, train with professional coaches, and compete with players worldwide
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 to="/courts"
-                className="inline-flex items-center bg-white text-[#2E7D32] hover:bg-gray-100 text-lg px-8 py-4 shadow-xl rounded-xl font-semibold transition-all hover:scale-105 backdrop-blur-sm"
+                className="inline-flex items-center bg-white text-[#2E7D32] hover:bg-[#CCFF00] hover:text-[#1B5E20] text-lg px-8 py-4 shadow-xl rounded-xl font-semibold transition-all hover:scale-105 backdrop-blur-sm group"
               >
-                Book a Court
-                <span className="ml-2">→</span>
+                <span>Book a Court</span>
+                <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
               </Link>
               <Link
                 to="/tournaments"
-                className="inline-flex items-center bg-[#2E7D32] text-white border-2 border-white/30 hover:bg-[#1B5E20] text-lg px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 backdrop-blur-sm"
+                className="inline-flex items-center bg-[#2E7D32] text-white border-2 border-white/30 hover:bg-[#1B5E20] hover:border-white text-lg px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 backdrop-blur-sm shadow-lg"
               >
-                Join Tournament
+                <span>Join Tournament</span>
               </Link>
             </div>
           </div>
@@ -123,11 +128,15 @@ function Home() {
       </div>
 
       {/* Features Section */}
-      <div className="py-24 bg-gray-50">
+      <div className="py-24 bg-gradient-to-br from-gray-50 via-white to-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need to Play
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#2E7D32]/10 rounded-full mb-4">
+              <span className="w-2 h-2 bg-[#2E7D32] rounded-full animate-pulse"></span>
+              <span className="text-[#2E7D32] font-medium text-sm">Why Choose Us</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Everything You Need to <span className="text-[#2E7D32]">Play</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               From booking courts to tracking your progress, we've got you covered
@@ -138,13 +147,13 @@ function Home() {
             {features.map((feature, index) => (
               <div 
                 key={index}
-                className="card p-8 group hover:border-[#2E7D32] border-2 border-transparent"
+                className="card p-8 group hover:border-[#2E7D32] border-2 border-transparent bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="w-16 h-16 bg-[#2E7D32] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#2E7D32] to-[#4CAF50] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
                   <span className="text-3xl">{feature.icon}</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#2E7D32] transition-colors">{feature.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
@@ -152,15 +161,110 @@ function Home() {
         </div>
       </div>
 
+      {/* Videos Section */}
+      <div className="py-24 bg-gradient-to-br from-gray-50 via-white to-green-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#2E7D32]/10 rounded-full mb-4">
+              <span className="w-2 h-2 bg-[#2E7D32] rounded-full animate-pulse"></span>
+              <span className="text-[#2E7D32] font-medium text-sm">Featured Content</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              See Us In <span className="text-[#2E7D32]">Action</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Watch highlights and moments from our EPIC TENNIS ACADEMY
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="group relative rounded-2xl overflow-hidden shadow-2xl aspect-video bg-gray-900 cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-3xl">
+              <video 
+                className="w-full h-full object-cover"
+                controls
+                preload="metadata"
+                poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'%3E%3Crect fill='%232E7D32' width='16' height='9'/%3E%3C/svg%3E"
+              >
+                <source src="/videos/WhatsApp Video 2026-03-15 at 08.22.57.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <span className="text-white font-semibold flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg>
+                  Training Session Highlights
+                </span>
+              </div>
+            </div>
+            <div className="group relative rounded-2xl overflow-hidden shadow-2xl aspect-video bg-gray-900 cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-3xl">
+              <video 
+                className="w-full h-full object-cover"
+                controls
+                preload="metadata"
+              >
+                <source src="/videos/WhatsApp Video 2026-03-15 at 08.22.58 (1).mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <span className="text-white font-semibold flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg>
+                  Player Performance
+                </span>
+              </div>
+            </div>
+            <div className="group relative rounded-2xl overflow-hidden shadow-2xl aspect-video bg-gray-900 cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-3xl">
+              <video 
+                className="w-full h-full object-cover"
+                controls
+                preload="metadata"
+              >
+                <source src="/videos/WhatsApp Video 2026-03-15 at 08.23.00.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <span className="text-white font-semibold flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg>
+                  Academy Facilities
+                </span>
+              </div>
+            </div>
+            <div className="group relative rounded-2xl overflow-hidden shadow-2xl aspect-video bg-gray-900 cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-3xl">
+              <video 
+                className="w-full h-full object-cover"
+                controls
+                preload="metadata"
+              >
+                <source src="/videos/WhatsApp Video 2026-03-15 at 08.23.01.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <span className="text-white font-semibold flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg>
+                  Match Highlights
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Courts Preview */}
       {courts.length > 0 && (
-        <div className="py-24 bg-white">
+        <div className="py-24 bg-gradient-to-br from-white via-gray-50 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row justify-between items-center mb-12">
-              <div>
-                <h2 className="text-4xl font-bold text-gray-900 mb-2">Available Courts</h2>
-                <p className="text-gray-600">Find your perfect court</p>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#2E7D32]/10 rounded-full mb-4">
+                <span className="w-2 h-2 bg-[#2E7D32] rounded-full animate-pulse"></span>
+                <span className="text-[#2E7D32] font-medium text-sm">Available Now</span>
               </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                Available <span className="text-[#2E7D32]">Courts</span>
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Find your perfect court and book it instantly
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <Link 
                 to="/courts" 
                 className="btn btn-outline mt-4 md:mt-0"
@@ -171,8 +275,8 @@ function Home() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {courts.map((court) => (
-                <div key={court.id} className="card group">
+              {courts.slice(0, 3).map((court) => (
+                <div key={court.id} className="card group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
                   <div className="h-48 bg-gradient-to-br from-[#2E7D32] to-[#4CAF50] flex items-center justify-center relative overflow-hidden">
                     <div className="absolute inset-0 court-pattern opacity-30"></div>
                     <span className="text-6xl relative z-10 group-hover:scale-110 transition-transform">🎾</span>
@@ -185,7 +289,7 @@ function Home() {
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-3">
                       <h3 className="text-xl font-bold text-gray-900">{court.name}</h3>
-                      <span className={`badge ${court.is_available ? 'badge-success' : 'badge-error'}`}>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${court.is_available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {court.is_available ? 'Available' : 'Booked'}
                       </span>
                     </div>
@@ -208,7 +312,7 @@ function Home() {
                       </span>
                       <Link
                         to="/courts"
-                        className="btn btn-primary py-2 px-4 text-sm"
+                        className="px-4 py-2 bg-[#2E7D32] text-white rounded-lg font-medium hover:bg-[#1B5E20] transition-colors"
                       >
                         Book Now
                       </Link>
@@ -217,33 +321,42 @@ function Home() {
                 </div>
               ))}
             </div>
+            
+            <div className="text-center mt-12">
+              <Link 
+                to="/courts" 
+                className="inline-flex items-center bg-[#2E7D32] text-white hover:bg-[#1B5E20] text-lg px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 shadow-lg group"
+              >
+                <span>View All Courts</span>
+                <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}
 
       {/* Tournaments Preview */}
       {activeTournaments.length > 0 && (
-        <div className="py-24 bg-gray-50">
+        <div className="py-24 bg-gradient-to-br from-gray-50 via-white to-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row justify-between items-center mb-12">
-              <div>
-                <h2 className="text-4xl font-bold text-gray-900 mb-2">Active Tournaments</h2>
-                <p className="text-gray-600">Compete and win prizes</p>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#2E7D32]/10 rounded-full mb-4">
+                <span className="w-2 h-2 bg-[#2E7D32] rounded-full animate-pulse"></span>
+                <span className="text-[#2E7D32] font-medium text-sm">Live Now</span>
               </div>
-              <Link 
-                to="/tournaments" 
-                className="btn btn-outline mt-4 md:mt-0"
-              >
-                View All Tournaments
-                <span className="ml-2">→</span>
-              </Link>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                Active <span className="text-[#2E7D32]">Tournaments</span>
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Compete and win amazing prizes
+              </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {activeTournaments.map((tournament) => (
-                <div key={tournament.id} className="card p-6 border-l-4 border-l-[#2E7D32]">
+              {activeTournaments.slice(0, 3).map((tournament) => (
+                <div key={tournament.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 p-6 border-l-4 border-[#2E7D32]">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="badge badge-success">{tournament.status}</span>
+                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">{tournament.status}</span>
                     <span className="text-sm text-gray-500">
                       {tournament.participant_count || 0} players
                     </span>
@@ -266,36 +379,54 @@ function Home() {
                   </div>
                   <Link
                     to="/tournaments"
-                    className="mt-4 btn btn-primary w-full"
+                    className="mt-4 w-full block text-center py-3 bg-[#2E7D32] text-white rounded-lg font-medium hover:bg-[#1B5E20] transition-colors"
                   >
                     Join Now
                   </Link>
                 </div>
               ))}
             </div>
+            
+            <div className="text-center mt-12">
+              <Link 
+                to="/tournaments" 
+                className="inline-flex items-center bg-[#2E7D32] text-white hover:bg-[#1B5E20] text-lg px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 shadow-lg group"
+              >
+                <span>View All Tournaments</span>
+                <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}
 
       {/* Stats Section */}
-      <div className="py-24 bg-tennis-gradient">
+      <div className="py-24 bg-gradient-to-br from-[#2E7D32] via-[#1B5E20] to-[#004D2A]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Why <span className="text-[#CCFF00]">EPIC</span>?
+            </h2>
+            <p className="text-xl text-green-100 max-w-2xl mx-auto">
+              Join the leading tennis academy in Kenya
+            </p>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="text-white">
-              <div className="text-5xl font-bold mb-2">500+</div>
-              <div className="text-green-200">Active Players</div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all transform hover:scale-105">
+              <div className="text-5xl font-extrabold text-white mb-2">500+</div>
+              <div className="text-green-200 font-medium">Active Players</div>
             </div>
-            <div className="text-white">
-              <div className="text-5xl font-bold mb-2">50+</div>
-              <div className="text-green-200">Tennis Courts</div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all transform hover:scale-105">
+              <div className="text-5xl font-extrabold text-white mb-2">50+</div>
+              <div className="text-green-200 font-medium">Tennis Courts</div>
             </div>
-            <div className="text-white">
-              <div className="text-5xl font-bold mb-2">100+</div>
-              <div className="text-green-200">Monthly Tournaments</div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all transform hover:scale-105">
+              <div className="text-5xl font-extrabold text-white mb-2">100+</div>
+              <div className="text-green-200 font-medium">Monthly Tournaments</div>
             </div>
-            <div className="text-white">
-              <div className="text-5xl font-bold mb-2">10K+</div>
-              <div className="text-green-200">Matches Played</div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all transform hover:scale-105">
+              <div className="text-5xl font-extrabold text-white mb-2">10K+</div>
+              <div className="text-green-200 font-medium">Matches Played</div>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-// Firebase API Service for Lawn Tennis Academy
+// Firebase API Service for EPIC TENNIS ACADEMY
 import { 
   collection, 
   doc, 

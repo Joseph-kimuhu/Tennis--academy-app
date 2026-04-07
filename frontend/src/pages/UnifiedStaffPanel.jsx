@@ -2026,7 +2026,7 @@ function UnifiedStaffPanel() {
                     value={editingTournament.location}
                     onChange={(e) => setEditingTournament({ ...editingTournament, location: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="e.g., John Tennis Academy"
+                    placeholder="e.g., EPIC TENNIS ACADEMY"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">

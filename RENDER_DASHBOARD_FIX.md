@@ -94,7 +94,7 @@ Make sure these are set in the "Environment" section:
 After successful deployment, test these:
 
 1. **Root**: https://your-app.onrender.com/
-   - Should return: `{"message": "Welcome to Lawn Tennis Application API"}`
+   - Should return: `{"message": "Welcome to EPIC TENNIS ACADEMY API"}`
 
 2. **Health**: https://your-app.onrender.com/health
    - Should return: `{"status": "healthy"}`

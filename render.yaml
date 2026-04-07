@@ -8,7 +8,7 @@ services:
       pip install -r requirements.txt
       echo "==> Build complete"
     startCommand: |
-      echo "==> Starting Tennis Academy Backend..."
+      echo "==> Starting EPIC TENNIS ACADEMY Backend..."
       python3 -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level info
     envVars:
       - key: PYTHON_VERSION

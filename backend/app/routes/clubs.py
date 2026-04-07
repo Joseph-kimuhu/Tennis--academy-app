@@ -38,9 +38,9 @@ def seed_clubs(db: Session = Depends(get_db)):
     if existing:
         return {"message": "Clubs already exist", "clubs": db.query(Club).all()}
     
-    # Create John Tennis Academy
+    # Create EPIC TENNIS ACADEMY
     club = Club(
-        name="John Tennis Academy",
+        name="EPIC TENNIS ACADEMY",
         description="Professional tennis training for beginners and advanced players",
         location="Nairobi, Kenya",
         email="johnmakumi106@gmail.com",
@@ -56,7 +56,7 @@ def seed_clubs(db: Session = Depends(get_db)):
     court1 = Court(
         name="Court 1 - Hard Court",
         court_type=CourtType.HARD,
-        location="John Tennis Academy",
+        location="EPIC TENNIS ACADEMY",
         description="Professional hard court for training",
         price_per_hour=1500.0,
         club_id=club.id
@@ -64,7 +64,7 @@ def seed_clubs(db: Session = Depends(get_db)):
     court2 = Court(
         name="Court 2 - Clay Court",
         court_type=CourtType.CLAY,
-        location="John Tennis Academy",
+        location="EPIC TENNIS ACADEMY",
         description="Clay court for advanced training",
         price_per_hour=2000.0,
         club_id=club.id
@@ -74,7 +74,7 @@ def seed_clubs(db: Session = Depends(get_db)):
     db.commit()
     
     return {
-        "message": "John Tennis Academy created successfully",
+        "message": "EPIC TENNIS ACADEMY created successfully",
         "club": club,
         "courts": [court1, court2]
     }

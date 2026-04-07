@@ -22,7 +22,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-logger.info("==> Starting Tennis Academy Application...")
+logger.info("==> Starting EPIC TENNIS ACADEMY Application...")
 # Check for .python-version file and log it exactly like Render does
 python_version_file = os.path.join(os.path.dirname(__file__), '..', '.python-version')
 if os.path.exists(python_version_file):
@@ -45,7 +45,7 @@ except Exception as e:
 
 logger.info("==> Initializing FastAPI application...")
 app = FastAPI(
-    title="Lawn Tennis Application API",
+    title="EPIC TENNIS ACADEMY API",
     description="API for managing tennis courts, bookings, tournaments, and players",
     version="1.0.0",
     docs_url="/docs",
@@ -219,7 +219,7 @@ def seed_default_users():
 @app.on_event("startup")
 async def startup_event():
     """Initialize application startup"""
-    logger.info("==> 🎾 Starting Tennis Academy Application...")
+        logger.info("==> 🎾 Starting EPIC TENNIS ACADEMY Application...")
     
     # Database tables already created at module level
     # Seeding disabled - admins and coaches will create their own accounts
@@ -231,7 +231,7 @@ async def startup_event():
 @app.get("/")
 def root():
     return {
-        "message": "Welcome to Lawn Tennis Application API",
+        "message": "Welcome to EPIC TENNIS ACADEMY API",
         "version": "1.0.0",
         "docs": "/docs"
     }

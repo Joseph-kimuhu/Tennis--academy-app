@@ -52,10 +52,10 @@ function Navbar() {
             <Link to="/" className="flex items-center space-x-3">
               <img 
                 src="/jta-logo.svg" 
-                alt="John Tennis Academy Logo" 
+                alt="EPIC TENNIS ACADEMY Logo" 
                 className="w-10 h-10 rounded-xl"
               />
-              <span className="font-bold text-xl text-gray-900 hidden sm:block">JOHN TENNIS ACADEMY</span>
+              <span className="font-bold text-xl text-gray-900 hidden sm:block">EPIC TENNIS ACADEMY</span>
             </Link>
           </div>
 

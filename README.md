@@ -1,4 +1,4 @@
-# 🎾 John Tennis Academy
+# 🎾 EPIC TENNIS ACADEMY
 
 A comprehensive tennis academy management system built with React and FastAPI, featuring court bookings, tournaments, coaching sessions, and player rankings.
 
@@ -172,7 +172,7 @@ This project is licensed under the MIT License.
 
 ## Support
 
-For support, email support@johntennisacademy.com or open an issue in the repository.
+For support, email support@epictennisacademy.com or open an issue in the repository.
 
 ## Deployment
 

@@ -745,7 +745,7 @@ function CoachPanel() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                 <input type="text" value={tournamentForm.location} onChange={(e) => setTournamentForm({...tournamentForm, location: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Tennis Academy Location" />
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="EPIC TENNIS ACADEMY Location" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

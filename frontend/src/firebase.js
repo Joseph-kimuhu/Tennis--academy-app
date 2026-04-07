@@ -1,4 +1,4 @@
-// Firebase configuration for Lawn Tennis Academy
+// Firebase configuration for EPIC TENNIS ACADEMY
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
