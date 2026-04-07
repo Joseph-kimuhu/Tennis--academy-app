@@ -7,7 +7,7 @@ function Home() {
   const { isAuthenticated } = useAuth();
   const [activeTournaments, setActiveTournaments] = useState([]);
   const [courts, setCourts] = useState([]);
-  const [clubs, setClubs] = useState([]);
+  const [clubs, setClubs] = useState([{ name: 'EPIC TENNIS ACADEMY', description: 'Professional tennis training for beginners and advanced players', location: 'Nairobi, Kenya', email: 'johnmakumi106@gmail.com' }]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,11 +21,17 @@ function Home() {
         api.getCourts({ limit: 6 }),
         api.getClubs(),
       ]);
-      setActiveTournaments(tournamentsData || []);
-      setCourts(courtsData || []);
-      setClubs(clubsData || []);
+      if (tournamentsData && tournamentsData.length > 0) {
+        setActiveTournaments(tournamentsData);
+      }
+      if (courtsData && courtsData.length > 0) {
+        setCourts(courtsData);
+      }
+      if (clubsData && clubsData.length > 0) {
+        setClubs(clubsData);
+      }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      // Silently handle errors - use default content
     }
     setLoading(false);
   };

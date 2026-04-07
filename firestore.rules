@@ -35,7 +35,7 @@ service cloud.firestore {
     
     // Tournament registrations
     match /tournament_registrations/{registrationId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read for participant count
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && 
         (resource.data.user_id == request.auth.uid || isCoachOrAdmin());
