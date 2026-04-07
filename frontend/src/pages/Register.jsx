@@ -111,7 +111,15 @@ function Register() {
         // Auto-login after registration
         const loginSuccess = await login(formData.email, formData.password);
         if (loginSuccess) {
-          navigate('/player-dashboard');
+          // Redirect based on user role
+          setTimeout(() => {
+            const userRole = user?.role;
+            if (userRole === 'coach' || userRole === 'admin') {
+              navigate('/staff-panel');
+            } else {
+              navigate('/player-dashboard');
+            }
+          }, 100);
         } else {
           navigate('/login');
         }

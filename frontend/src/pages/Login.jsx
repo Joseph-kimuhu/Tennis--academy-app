@@ -7,7 +7,7 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, isDisabled, disabledMessage } = useAuth();
+  const { login, isDisabled, disabledMessage, user } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,7 +17,15 @@ function Login() {
 
     const success = await login(email, password);
     if (success) {
-      navigate('/player-dashboard');
+      // Redirect based on user role
+      setTimeout(() => {
+        const userRole = user?.role;
+        if (userRole === 'coach' || userRole === 'admin') {
+          navigate('/staff-panel');
+        } else {
+          navigate('/player-dashboard');
+        }
+      }, 100);
     } else {
       setError('Invalid email or password');
     }
