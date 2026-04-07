@@ -88,8 +88,8 @@ service cloud.firestore {
     
     // Player statistics
     match /player_statistics/{playerId} {
-      allow read: if true;  // Public read for leaderboard
-      allow write: if isCoachOrAdmin();
+      allow read: if isAuthenticated();  // Authenticated users can read their stats
+      allow write: if isAuthenticated() && (request.auth.uid == playerId || isCoachOrAdmin());
     }
     
     // Clubs
