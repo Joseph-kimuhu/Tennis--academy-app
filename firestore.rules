@@ -23,23 +23,13 @@ service cloud.firestore {
     
     // Courts collection
     match /courts/{courtId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read for landing page
       allow write: if isCoachOrAdmin();
-    }
-    
-    // Bookings collection
-    match /bookings/{bookingId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && 
-        (resource.data.user_id == request.auth.uid || isCoachOrAdmin());
-      allow delete: if isAuthenticated() && 
-        (resource.data.user_id == request.auth.uid || isCoachOrAdmin());
     }
     
     // Tournaments collection
     match /tournaments/{tournamentId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read for landing page
       allow write: if isCoachOrAdmin();
     }
     
@@ -54,7 +44,7 @@ service cloud.firestore {
     
     // Matches collection
     match /matches/{matchId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read for leaderboard
       allow write: if isCoachOrAdmin();
     }
     
@@ -79,32 +69,32 @@ service cloud.firestore {
     
     // System settings collection
     match /system_settings/{settingId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read
       allow write: if isCoachOrAdmin();
     }
     
     // Training sessions
     match /training_sessions/{sessionId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read for landing page
       allow write: if isCoachOrAdmin();
     }
     
     // Announcements
     match /announcements/{announcementId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read for landing page
       allow write: if isCoachOrAdmin();
       allow update: if isAuthenticated();
     }
     
     // Player statistics
     match /player_statistics/{playerId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read for leaderboard
       allow write: if isCoachOrAdmin();
     }
     
     // Clubs
     match /clubs/{clubId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public read for landing page
       allow write: if isCoachOrAdmin();
     }
   }
