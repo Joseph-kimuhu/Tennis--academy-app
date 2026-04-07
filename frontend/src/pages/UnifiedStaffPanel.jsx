@@ -33,6 +33,13 @@ function UnifiedStaffPanel() {
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', priority: 'normal' });
   const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [systemSettings, setSystemSettings] = useState({
+    max_booking_duration: 2,
+    advance_booking_days: 7,
+    max_participants: 32,
+    auto_approve: true
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Utility functions
   const formatDate = (dateString) => {
@@ -56,6 +63,7 @@ function UnifiedStaffPanel() {
   const [tournamentRegistrations, setTournamentRegistrations] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [tournamentMatches, setTournamentMatches] = useState([]);
+  const [tournamentParticipants, setTournamentParticipants] = useState([]);
   const [newMatch, setNewMatch] = useState({
     player1_id: '',
     player2_id: '',
@@ -124,17 +132,70 @@ function UnifiedStaffPanel() {
         api.getAnnouncements({ active_only: true, limit: 20 }).catch(() => []),
         api.getNotifications({ limit: 20 }).catch(() => [])
       ]);
+      
+      // Fetch player statistics for all players and merge with user data
+      const playersWithStats = await Promise.all(
+        (usersData || []).map(async (user) => {
+          if (user.role === 'player') {
+            try {
+              const playerStats = await api.getPlayerStatistics(user.id);
+              if (playerStats) {
+                return {
+                  ...user,
+                  ranking_points: playerStats.ranking_points || user.ranking_points || 0,
+                  wins: playerStats.wins || user.wins || 0,
+                  losses: playerStats.losses || user.losses || 0,
+                  skill_level: playerStats.skill_level || user.skill_level || 'beginner'
+                };
+              }
+            } catch (e) {
+              console.log('No stats for player:', user.id);
+            }
+          }
+          return user;
+        })
+      );
+      
       setStats(statsData);
-      setUsers(usersData || []);
+      setUsers(playersWithStats || []);
       setBookings(bookingsData || []);
       setTournaments(tournamentsData || []);
       setCourts(courtsData || []);
       setAnnouncements(announcementsData || []);
       setNotifications(notificationsData || []);
+      
+      // Load system settings
+      try {
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        const settingsSnap = await getDoc(doc(db, 'system_settings', 'config'));
+        if (settingsSnap.exists()) {
+          setSystemSettings(settingsSnap.data());
+        }
+      } catch (e) {
+        console.log('No system settings found, using defaults');
+      }
     } catch (error) {
       console.error('Error fetching staff data:', error);
     }
     setLoading(false);
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      // Save system settings to Firestore
+      const { doc, setDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
+      
+      await setDoc(doc(db, 'system_settings', 'config'), systemSettings, { merge: true });
+      
+      alert('Settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings: ' + error.message);
+    }
+    setSavingSettings(false);
   };
 
   const handleSelectPlayer = async (player) => {
@@ -239,6 +300,18 @@ function UnifiedStaffPanel() {
       alert('Failed to create announcement: ' + error.message);
     }
     setSendingAnnouncement(false);
+  };
+
+  const handleDeleteAnnouncement = async (announcementId) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      await api.deleteAnnouncement(announcementId);
+      setAnnouncements((prev) => prev.filter((a) => a.id !== announcementId));
+      alert('Announcement deleted successfully');
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      alert('Failed to delete announcement: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const setActiveUserFilter = (filter) => {
@@ -587,7 +660,8 @@ function UnifiedStaffPanel() {
     // First check if there are players registered for this tournament
     try {
       const participants = await api.getTournamentParticipants(tournament.id);
-      const approvedPlayers = participants.filter(p => p.payment_status === 'paid');
+      // Filter for approved players (payment has been approved by admin)
+      const approvedPlayers = participants.filter(p => p.status === 'approved');
       
       if (approvedPlayers.length < 2) {
         alert('You need at least 2 players with approved payments to create a match.\n\nCurrent approved players: ' + approvedPlayers.length + '\n\nPlayers must first register and have their payment approved before matches can be created.');
@@ -595,6 +669,7 @@ function UnifiedStaffPanel() {
       }
       
       setSelectedTournament(tournament);
+      setTournamentParticipants(approvedPlayers);
       setNewMatch({
         player1_id: '',
         player2_id: '',
@@ -715,7 +790,7 @@ function UnifiedStaffPanel() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">🚫</span>
+            <span className="text-4xl"></span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
           <p className="text-gray-600">This panel is for staff members only.</p>
@@ -754,7 +829,7 @@ function UnifiedStaffPanel() {
                 onClick={fetchData}
                 className="px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl font-semibold hover:bg-white/30 transition-colors"
               >
-                🔄 Refresh
+                Refresh
               </button>
             </div>
           </div>
@@ -764,15 +839,15 @@ function UnifiedStaffPanel() {
         <div className="bg-white rounded-xl shadow-md mb-8 overflow-hidden">
           <div className="flex overflow-x-auto">
             {[
-              { id: 'overview', label: 'Overview', icon: '📊' },
-              { id: 'players', label: 'Players', icon: '🎾' },
-              { id: 'announcements', label: 'Announcements', icon: '📢' },
-              { id: 'users', label: 'Users', icon: '👥' },
-              { id: 'bookings', label: 'Bookings', icon: '📅' },
-              { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
-              { id: 'courts', label: 'Courts', icon: '🏟️' },
-              { id: 'coaching', label: 'Coaching', icon: '🎓' },
-              { id: 'system', label: 'System', icon: '⚙️' }
+              { id: 'overview', label: 'Overview' },
+              { id: 'players', label: 'Players' },
+              { id: 'announcements', label: 'Announcements' },
+              { id: 'users', label: 'Users' },
+              { id: 'bookings', label: 'Bookings' },
+              { id: 'tournaments', label: 'Tournaments' },
+              { id: 'courts', label: 'Courts' },
+              { id: 'coaching', label: 'Coaching' },
+              { id: 'system', label: 'System' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -809,7 +884,7 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">👥</span>
                     <span className="text-sm text-blue-600 font-bold">Total</span>
                   </div>
-                  <p className="text-3xl font-bold text-blue-600">{stats?.totalUsers || 0}</p>
+                  <p className="text-3xl font-bold text-blue-600">{stats?.total_users || 0}</p>
                   <p className="text-gray-600">{isAdmin ? 'Users' : 'Players'}</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
@@ -817,15 +892,15 @@ function UnifiedStaffPanel() {
                     <span className="text-3xl">📅</span>
                     <span className="text-sm text-green-600 font-bold">Total</span>
                   </div>
-                  <p className="text-3xl font-bold text-green-600">{stats?.totalBookings || 0}</p>
+                  <p className="text-3xl font-bold text-green-600">{stats?.total_bookings || 0}</p>
                   <p className="text-gray-600">Bookings</p>
                 </div>
                 <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border-2 border-yellow-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-3xl">🏆</span>
+                    <span className="text-3xl"></span>
                     <span className="text-sm text-yellow-700 font-bold">Active</span>
                   </div>
-                  <p className="text-3xl font-bold text-yellow-600">{stats?.activeTournaments || 0}</p>
+                  <p className="text-3xl font-bold text-yellow-600">{stats?.active_tournaments || 0}</p>
                   <p className="text-gray-600">Tournaments</p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200">
@@ -925,7 +1000,7 @@ function UnifiedStaffPanel() {
                           onClick={() => handleSelectPlayer(player)}
                           className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
                         >
-                          📊 Stats
+                          Stats
                         </button>
                         </td>
                       </tr>
@@ -962,13 +1037,21 @@ function UnifiedStaffPanel() {
                   <div key={announcement.id} className="border border-gray-200 rounded-xl p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-bold text-lg">{announcement.title}</h3>
-                      <span className={`px-3 py-1 text-xs rounded-full ${
-                        announcement.priority === 'urgent' ? 'bg-red-100 text-red-800' : 
-                        announcement.priority === 'high' ? 'bg-orange-100 text-orange-800' : 
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {announcement.priority || 'normal'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDeleteAnnouncement(announcement.id)}
+                          className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                        <span className={`px-3 py-1 text-xs rounded-full ${
+                          announcement.priority === 'urgent' ? 'bg-red-100 text-red-800' : 
+                          announcement.priority === 'high' ? 'bg-orange-100 text-orange-800' : 
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {announcement.priority || 'normal'}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-gray-600 mb-2">{announcement.content}</p>
                     <p className="text-xs text-gray-400">
@@ -978,7 +1061,7 @@ function UnifiedStaffPanel() {
                 )) : (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl">📢</span>
+                      <span className="text-3xl"></span>
                     </div>
                     <p className="text-gray-500">No announcements yet</p>
                   </div>
@@ -1477,17 +1560,23 @@ function UnifiedStaffPanel() {
                 <div className="border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
                   <div className="space-y-3">
-                    <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                      📊 Generate Report
+                    <button 
+                      onClick={() => alert('Report generation coming soon!')}
+                      className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      Generate Report
                     </button>
-                    <button className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-                      📧 Send Notifications
+                    <button 
+                      onClick={() => alert('Database backup coming soon!')}
+                      className="w-full px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                    >
+                      Backup Database
                     </button>
-                    <button className="w-full px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-                      💾 Backup Database
-                    </button>
-                    <button className="w-full px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
-                      🔄 Sync Data
+                    <button 
+                      onClick={() => alert('Data sync coming soon!')}
+                      className="w-full px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                    >
+                      Sync Data
                     </button>
                   </div>
                 </div>
@@ -1502,15 +1591,24 @@ function UnifiedStaffPanel() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Max booking duration</span>
-                        <select className="px-3 py-1 border border-gray-300 rounded text-sm">
-                          <option>2 hours</option>
-                          <option>3 hours</option>
-                          <option>4 hours</option>
+                        <select 
+                          className="px-3 py-1 border border-gray-300 rounded text-sm"
+                          value={systemSettings.max_booking_duration}
+                          onChange={(e) => setSystemSettings({...systemSettings, max_booking_duration: parseInt(e.target.value) })}
+                        >
+                          <option value={2}>2 hours</option>
+                          <option value={3}>3 hours</option>
+                          <option value={4}>4 hours</option>
                         </select>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Advance booking days</span>
-                        <input type="number" className="px-3 py-1 border border-gray-300 rounded text-sm w-20" defaultValue="7" />
+                        <input 
+                          type="number" 
+                          className="px-3 py-1 border border-gray-300 rounded text-sm w-20" 
+                          value={systemSettings.advance_booking_days}
+                          onChange={(e) => setSystemSettings({...systemSettings, advance_booking_days: parseInt(e.target.value) })}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1519,18 +1617,32 @@ function UnifiedStaffPanel() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Max participants</span>
-                        <input type="number" className="px-3 py-1 border border-gray-300 rounded text-sm w-20" defaultValue="32" />
+                        <input 
+                          type="number" 
+                          className="px-3 py-1 border border-gray-300 rounded text-sm w-20" 
+                          value={systemSettings.max_participants}
+                          onChange={(e) => setSystemSettings({...systemSettings, max_participants: parseInt(e.target.value) })}
+                        />
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Auto-approve</span>
-                        <input type="checkbox" className="w-4 h-4" defaultChecked />
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4"
+                          checked={systemSettings.auto_approve}
+                          onChange={(e) => setSystemSettings({...systemSettings, auto_approve: e.target.checked })}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="mt-6">
-                  <button className="px-6 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600">
-                    Save Settings
+                  <button 
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                    className="px-6 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 disabled:opacity-50"
+                  >
+                    {savingSettings ? 'Saving...' : 'Save Settings'}
                   </button>
                 </div>
               </div>
@@ -2235,8 +2347,8 @@ function UnifiedStaffPanel() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="">Select Player 1</option>
-                    {users.filter(u => u.role === 'player').map(player => (
-                      <option key={player.id} value={player.id}>{player.username}</option>
+                    {tournamentParticipants.map(player => (
+                      <option key={player.user_id} value={player.user_id}>{player.username}</option>
                     ))}
                   </select>
                 </div>
@@ -2249,8 +2361,8 @@ function UnifiedStaffPanel() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="">Select Player 2</option>
-                    {users.filter(u => u.role === 'player').map(player => (
-                      <option key={player.id} value={player.id}>{player.username}</option>
+                    {tournamentParticipants.map(player => (
+                      <option key={player.user_id} value={player.user_id}>{player.username}</option>
                     ))}
                   </select>
                 </div>
@@ -2392,7 +2504,7 @@ function UnifiedStaffPanel() {
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full max-h-screen overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                📋 Registrations - {selectedTournament.name}
+                Registrations - {selectedTournament.name}
               </h2>
               <button
                 onClick={() => setShowTournamentRegistrations(false)}

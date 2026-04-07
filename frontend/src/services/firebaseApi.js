@@ -7,6 +7,7 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
+  onSnapshot,
   query, 
   where, 
   orderBy, 
@@ -26,6 +27,39 @@ class FirebaseApiService {
   // Helper to get current user ID
   getCurrentUserId() {
     return auth.currentUser?.uid;
+  }
+
+  // Helper to convert Firestore Timestamp to ISO string
+  convertTimestamp(timestamp) {
+    if (!timestamp) return null;
+    if (timestamp.toDate) {
+      return timestamp.toDate().toISOString();
+    }
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString();
+    }
+    return timestamp;
+  }
+
+  // Helper to sanitize data - convert any timestamps to strings
+  sanitizeData(data) {
+    if (!data) return data;
+    if (typeof data !== 'object') return data;
+    
+    const sanitized = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value && typeof value === 'object' && value.toDate) {
+        // It's a Firestore Timestamp
+        sanitized[key] = this.convertTimestamp(value);
+      } else if (Array.isArray(value)) {
+        sanitized[key] = value.map(item => this.sanitizeData(item));
+      } else if (typeof value === 'object') {
+        sanitized[key] = this.sanitizeData(value);
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
   }
 
   // ==================== USERS ====================
@@ -240,7 +274,8 @@ class FirebaseApiService {
     }
     const stats = { id: statsDoc.id, ...statsDoc.data() };
     console.log('Stats retrieved:', stats);
-    return stats;
+    // Sanitize to convert any timestamps to strings
+    return this.sanitizeData(stats);
   }
 
   async createPlayerStatistics(playerId, statsData) {
@@ -347,9 +382,11 @@ class FirebaseApiService {
 
   // ==================== BOOKINGS ====================
 
-  async getMyBookings() {
+  async getMyBookings(params = {}) {
     const userId = this.getCurrentUserId();
     if (!userId) return [];
+
+    const { limit: limitCount = 100 } = params;
     
     // Get all bookings for user and sort in JavaScript (avoids index requirement)
     const q = query(collection(db, 'bookings'), where('user_id', '==', userId), limit(100));
@@ -359,6 +396,7 @@ class FirebaseApiService {
     
     for (const docSnap of querySnapshot.docs) {
       const booking = { id: docSnap.id, ...docSnap.data() };
+      if (booking.is_read === undefined) booking.is_read = false;
       if (booking.court_id) {
         const courtDoc = await getDoc(doc(db, 'courts', booking.court_id));
         if (courtDoc.exists()) {
@@ -368,7 +406,34 @@ class FirebaseApiService {
       bookings.push(booking);
     }
     
-    return bookings;
+    return bookings.slice(0, limitCount);
+  }
+
+  subscribeToMyBookings(params = {}, callback) {
+    const userId = this.getCurrentUserId();
+    if (!userId) return () => {};
+
+    const { limit: limitCount = 100 } = params;
+
+    const q = query(collection(db, 'bookings'), where('user_id', '==', userId), limit(100));
+
+    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+      const bookings = [];
+      for (const docSnap of querySnapshot.docs) {
+        const booking = { id: docSnap.id, ...docSnap.data() };
+        if (booking.is_read === undefined) booking.is_read = false;
+        if (booking.court_id) {
+          const courtDoc = await getDoc(doc(db, 'courts', booking.court_id));
+          if (courtDoc.exists()) {
+            booking.court = { id: courtDoc.id, ...courtDoc.data() };
+          }
+        }
+        bookings.push(booking);
+      }
+      callback(bookings.slice(0, limitCount));
+    });
+
+    return unsubscribe;
   }
 
   async getAvailableSlots(courtId, date) {
@@ -405,6 +470,7 @@ class FirebaseApiService {
       payment_method: '',
       payment_phone: '',
       payment_reference: '',
+      is_read: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
@@ -426,6 +492,14 @@ class FirebaseApiService {
     const bookingRef = doc(db, 'bookings', bookingId);
     await updateDoc(bookingRef, {
       status: 'cancelled',
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  async markBookingAsRead(bookingId) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      is_read: true,
       updatedAt: serverTimestamp()
     });
   }
@@ -541,7 +615,16 @@ class FirebaseApiService {
     // Get all tournaments and sort in JavaScript (avoids index requirement)
     const q = query(collection(db, 'tournaments'), limit(limitCount));
     const querySnapshot = await getDocs(q);
-    const tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get participant counts for each tournament in parallel (only approved registrations)
+    const countPromises = tournaments.map(t => this.getApprovedParticipantCount(t.id));
+    const counts = await Promise.all(countPromises);
+    
+    tournaments = tournaments.map((tournament, index) => ({
+      ...tournament,
+      participant_count: counts[index]
+    }));
     
     // Sort by start date
     tournaments.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
@@ -556,13 +639,36 @@ class FirebaseApiService {
     const q = query(collection(db, 'tournaments'), limit(50));
     const querySnapshot = await getDocs(q);
     const now = new Date();
-    const tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let tournaments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Get participant counts for each tournament in parallel (only approved registrations)
+    const countPromises = tournaments.map(t => this.getApprovedParticipantCount(t.id));
+    const counts = await Promise.all(countPromises);
+    
+    tournaments = tournaments.map((tournament, index) => ({
+      ...tournament,
+      participant_count: counts[index]
+    }));
     
     // Filter active tournaments (status = 'active' or 'draft' and start_date >= now)
     return tournaments.filter(t => 
       (t.status === 'active' || t.status === 'draft') && 
       new Date(t.start_date) >= now
     ).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+  }
+
+  async getApprovedParticipantCount(tournamentId) {
+    try {
+      // Use a simple query without compound where clauses to avoid index requirement
+      const q = query(collection(db, 'tournament_registrations'), limit(500));
+      const snapshot = await getDocs(q);
+      const registrations = snapshot.docs.map(doc => doc.data());
+      // Filter in JavaScript - only count approved registrations for this tournament
+      return registrations.filter(r => r.tournament_id === tournamentId && r.status === 'approved').length;
+    } catch (error) {
+      console.error('Error getting participant count:', error);
+      return 0;
+    }
   }
 
   async getTournaments(params = {}) {
@@ -784,21 +890,34 @@ class FirebaseApiService {
     const snapshot = await getDocs(q);
     const registrations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Get user details for each participant
+    if (registrations.length === 0) return [];
+    
+    // Fetch all user details in parallel
+    const userPromises = registrations.map(reg => 
+      getDoc(doc(db, 'users', reg.user_id))
+    );
+    const userDocs = await Promise.all(userPromises);
+    
+    // Build the result array
     const participants = [];
-    for (const reg of registrations) {
-      const userDoc = await getDoc(doc(db, 'users', reg.user_id));
-      if (userDoc.exists()) {
+    for (let i = 0; i < registrations.length; i++) {
+      const reg = registrations[i];
+      const userDoc = userDocs[i];
+      if (userDoc && userDoc.exists()) {
+        const userData = userDoc.data();
+        const sanitizedReg = this.sanitizeData(reg);
         participants.push({
-          id: reg.id,
-          user_id: reg.user_id,
-          username: userDoc.data().username,
-          email: userDoc.data().email,
-          status: reg.status,
-          payment_status: reg.payment_status,
-          payment_phone: reg.payment_phone,
-          payment_reference: reg.payment_reference,
-          registered_at: reg.registered_at
+          id: sanitizedReg.id,
+          user_id: sanitizedReg.user_id,
+          username: userData.username,
+          email: userData.email,
+          full_name: userData.full_name || userData.username,
+          status: sanitizedReg.status,
+          payment_status: sanitizedReg.payment_status,
+          payment_phone: sanitizedReg.payment_phone,
+          payment_reference: sanitizedReg.payment_reference,
+          registered_at: sanitizedReg.registered_at,
+          user: { id: userDoc.id, ...userData }
         });
       }
     }
@@ -817,6 +936,73 @@ class FirebaseApiService {
       status: 'pending_payment'
     });
     return true;
+  }
+
+  // Submit payment intent - creates a pending registration that will be approved by admin
+  async submitTournamentPaymentIntent(tournamentId, paymentMethod, paymentPhone, paymentReference) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const tournamentDoc = await getDoc(tournamentRef);
+    
+    if (!tournamentDoc.exists()) throw new Error('Tournament not found');
+    
+    const tournamentData = tournamentDoc.data();
+    
+    // Check if user already has a pending payment for this tournament
+    const existingQuery = query(
+      collection(db, 'tournament_registrations'),
+      where('tournament_id', '==', tournamentId),
+      where('user_id', '==', userId)
+    );
+    const existingSnapshot = await getDocs(existingQuery);
+    
+    if (!existingSnapshot.empty) {
+      const existingReg = existingSnapshot.docs[0].data();
+      // If already approved, user is already registered
+      if (existingReg.status === 'approved') {
+        throw new Error('You are already registered for this tournament');
+      }
+      // If pending payment, update the payment details
+      const existingRegId = existingSnapshot.docs[0].id;
+      await updateDoc(doc(db, 'tournament_registrations', existingRegId), {
+        payment_method: paymentMethod,
+        payment_phone: paymentPhone,
+        payment_reference: paymentReference,
+        payment_status: 'pending',
+        payment_submitted_at: serverTimestamp(),
+        status: 'pending_payment'
+      });
+      return existingRegId;
+    }
+    
+    // Get user info for notification
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const playerName = userDoc.exists() ? userDoc.data().username : 'A player';
+    
+    // Create registration with payment details - status is pending_payment
+    // Admin will approve this to complete registration
+    const registrationRef = await addDoc(collection(db, 'tournament_registrations'), {
+      tournament_id: tournamentId,
+      user_id: userId,
+      status: 'pending_payment',
+      payment_status: 'pending',
+      payment_method: paymentMethod,
+      payment_phone: paymentPhone,
+      payment_reference: paymentReference,
+      payment_submitted_at: serverTimestamp(),
+      registered_at: serverTimestamp()
+    });
+    
+    // Notify coaches about new payment submission
+    try {
+      await this.notifyCoachesOfRegistration(playerName, tournamentData.name, registrationRef.id);
+    } catch (e) {
+      console.warn('Could not notify coaches:', e);
+    }
+    
+    return registrationRef.id;
   }
 
   // Alias for registerForTournament for compatibility
@@ -928,20 +1114,31 @@ class FirebaseApiService {
     const snapshot = await getDocs(q);
     const registrations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Get tournament details for each registration
+    if (registrations.length === 0) return [];
+    
+    // Fetch all tournament details in parallel
+    const tournamentPromises = registrations.map(reg => 
+      getDoc(doc(db, 'tournaments', reg.tournament_id))
+    );
+    const tournamentDocs = await Promise.all(tournamentPromises);
+    
+    // Build the result array
     const myTournaments = [];
-    for (const reg of registrations) {
-      const tournamentDoc = await getDoc(doc(db, 'tournaments', reg.tournament_id));
-      if (tournamentDoc.exists()) {
+    for (let i = 0; i < registrations.length; i++) {
+      const reg = registrations[i];
+      const tournamentDoc = tournamentDocs[i];
+      if (tournamentDoc && tournamentDoc.exists()) {
+        const sanitizedReg = this.sanitizeData(reg);
+        const sanitizedTournament = this.sanitizeData(tournamentDoc.data());
         myTournaments.push({
-          registration_id: reg.id,
-          tournament_id: reg.tournament_id,
-          status: reg.status,
-          payment_status: reg.payment_status,
-          payment_phone: reg.payment_phone,
-          payment_reference: reg.payment_reference,
-          registered_at: reg.registered_at,
-          tournament: { id: tournamentDoc.id, ...tournamentDoc.data() }
+          registration_id: sanitizedReg.id,
+          tournament_id: sanitizedReg.tournament_id,
+          status: sanitizedReg.status,
+          payment_status: sanitizedReg.payment_status,
+          payment_phone: sanitizedReg.payment_phone,
+          payment_reference: sanitizedReg.payment_reference,
+          registered_at: sanitizedReg.registered_at,
+          tournament: { id: tournamentDoc.id, ...sanitizedTournament }
         });
       }
     }
@@ -950,6 +1147,49 @@ class FirebaseApiService {
   }
 
   // ==================== MATCHES ====================
+
+  async getMatches(params = {}) {
+    const { tournament_id } = params;
+    
+    // Get all matches (avoid index requirement)
+    const q = query(collection(db, 'matches'), limit(200));
+    
+    const querySnapshot = await getDocs(q);
+    let matches = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter by tournament_id if provided
+    if (tournament_id) {
+      matches = matches.filter(m => m.tournament_id === tournament_id);
+    }
+    
+    // Get unique player IDs
+    const playerIds = new Set();
+    matches.forEach(m => {
+      if (m.player1_id) playerIds.add(m.player1_id);
+      if (m.player2_id) playerIds.add(m.player2_id);
+    });
+    
+    // Fetch player details
+    const playerDocs = {};
+    for (const playerId of playerIds) {
+      const playerDoc = await getDoc(doc(db, 'users', playerId));
+      if (playerDoc.exists()) {
+        playerDocs[playerId] = { id: playerDoc.id, ...playerDoc.data() };
+      }
+    }
+    
+    // Add player details to matches
+    matches = matches.map(m => ({
+      ...m,
+      player1: m.player1_id ? playerDocs[m.player1_id] : null,
+      player2: m.player2_id ? playerDocs[m.player2_id] : null
+    }));
+    
+    // Sort by date
+    matches.sort((a, b) => new Date(b.created_at || b.scheduled_time) - new Date(a.created_at || a.scheduled_time));
+    
+    return matches;
+  }
 
   async getMyMatches() {
     const userId = this.getCurrentUserId();
@@ -1161,6 +1401,7 @@ class FirebaseApiService {
 
   async getAnnouncements(params = {}) {
     const { active_only = false, limit: limitCount = 10 } = params;
+    const userId = this.getCurrentUserId();
     
     // Get all announcements and filter in JavaScript (avoids index requirement)
     const q = query(collection(db, 'announcements'), limit(50));
@@ -1175,7 +1416,41 @@ class FirebaseApiService {
     // Sort by created date
     announcements.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
     
-    return announcements.slice(0, limitCount);
+    const enriched = announcements.map((a) => {
+      const readBy = Array.isArray(a.read_by) ? a.read_by : [];
+      return {
+        ...a,
+        is_read: userId ? readBy.includes(userId) : false
+      };
+    });
+    
+    return enriched.slice(0, limitCount);
+  }
+
+  subscribeToAnnouncements(params = {}, callback) {
+    const { active_only = false, limit: limitCount = 10 } = params;
+    const userId = this.getCurrentUserId();
+    if (!userId) return () => {};
+
+    const q = query(collection(db, 'announcements'), limit(50));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      let announcements = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if (active_only) {
+        announcements = announcements.filter(a => a.is_active === true);
+      }
+      announcements.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+      const enriched = announcements.map((a) => {
+        const readBy = Array.isArray(a.read_by) ? a.read_by : [];
+        return {
+          ...a,
+          is_read: readBy.includes(userId)
+        };
+      });
+      callback(enriched.slice(0, limitCount));
+    });
+
+    return unsubscribe;
   }
 
   async createAnnouncement(announcementData) {
@@ -1189,6 +1464,7 @@ class FirebaseApiService {
     const docRef = await addDoc(collection(db, 'announcements'), {
       ...announcementData,
       is_active: true,
+      read_by: [],
       created_at: serverTimestamp(),
       updated_at: serverTimestamp()
     });
@@ -1201,6 +1477,33 @@ class FirebaseApiService {
     );
     
     return { id: docRef.id, ...announcementData };
+  }
+
+  async markAnnouncementAsRead(announcementId) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    const announcementRef = doc(db, 'announcements', announcementId);
+    await updateDoc(announcementRef, {
+      read_by: arrayUnion(userId),
+      updated_at: serverTimestamp()
+    });
+  }
+
+  async deleteAnnouncement(announcementId) {
+    // Check if user is admin or coach
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userRole = userDoc.exists() ? userDoc.data().role : null;
+    const isCoachOrAdmin = userRole === 'coach' || userRole === 'admin' || userDoc.data()?.email === 'johnmakumi106@gmail.com';
+    
+    if (!isCoachOrAdmin) {
+      throw new Error('Only coaches and admins can delete announcements');
+    }
+    
+    const announcementRef = doc(db, 'announcements', announcementId);
+    await deleteDoc(announcementRef);
   }
 
   // ==================== NOTIFICATIONS ====================
@@ -1239,6 +1542,23 @@ class FirebaseApiService {
     return notifications.slice(0, limitCount);
   }
 
+  subscribeToNotifications(params = {}, callback) {
+    const userId = this.getCurrentUserId();
+    if (!userId) return () => {};
+
+    const { limit: limitCount = 10 } = params;
+
+    const q = query(collection(db, 'notifications'), where('user_id', '==', userId), limit(50));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const notifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      callback(notifications.slice(0, limitCount));
+    });
+
+    return unsubscribe;
+  }
+
   async getUnreadNotificationsCount() {
     const userId = this.getCurrentUserId();
     if (!userId) return 0;
@@ -1257,6 +1577,28 @@ class FirebaseApiService {
     await updateDoc(notificationRef, {
       is_read: true
     });
+  }
+
+  async deleteNotification(notificationId) {
+    const userId = this.getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+    
+    // First check if the notification belongs to the user
+    const notificationRef = doc(db, 'notifications', notificationId);
+    const notificationDoc = await getDoc(notificationRef);
+    
+    if (!notificationDoc.exists()) {
+      throw new Error('Notification not found');
+    }
+    
+    const notificationData = notificationDoc.data();
+    
+    // Check if user owns this notification
+    if (notificationData.user_id !== userId) {
+      throw new Error('You can only delete your own notifications');
+    }
+    
+    await deleteDoc(notificationRef);
   }
 
   // ==================== LEADERBOARD ====================
@@ -1369,6 +1711,8 @@ class FirebaseApiService {
       const bookings = bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const matches = matchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+      console.log('Admin stats - Users:', users.length, 'Courts:', courts.length, 'Tournaments:', tournaments.length, 'Bookings:', bookings.length);
+
       // Calculate stats
       const totalUsers = users.length;
       const totalCourts = courts.length;
@@ -1387,23 +1731,38 @@ class FirebaseApiService {
       const admins = users.filter(u => u.role === 'admin').length;
 
       return {
-        totalUsers,
-        totalCourts,
-        totalTournaments,
-        totalBookings,
-        totalMatches,
-        activeCourts,
-        activeTournaments,
-        completedTournaments,
-        confirmedBookings,
-        completedMatches,
+        total_users: totalUsers,
+        total_courts: totalCourts,
+        total_tournaments: totalTournaments,
+        total_bookings: totalBookings,
+        total_matches: totalMatches,
+        active_courts: activeCourts,
+        active_tournaments: activeTournaments,
+        completed_tournaments: completedTournaments,
+        confirmed_bookings: confirmedBookings,
+        completed_matches: completedMatches,
         players,
         coaches,
         admins
       };
     } catch (error) {
       console.error('Error getting admin stats:', error);
-      return null;
+      // Return default stats on error instead of null
+      return {
+        total_users: 0,
+        total_courts: 0,
+        total_tournaments: 0,
+        total_bookings: 0,
+        total_matches: 0,
+        active_courts: 0,
+        active_tournaments: 0,
+        completed_tournaments: 0,
+        confirmed_bookings: 0,
+        completed_matches: 0,
+        players: 0,
+        coaches: 0,
+        admins: 0
+      };
     }
   }
 

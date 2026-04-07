@@ -20,8 +20,24 @@ function Dashboard() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (!user) return;
+
     fetchData();
-  }, []);
+
+    const unsubs = [];
+    if (api.subscribeToMyBookings) {
+      unsubs.push(api.subscribeToMyBookings({ limit: 5 }, setBookings));
+    }
+    if (api.subscribeToNotifications) {
+      unsubs.push(api.subscribeToNotifications({ limit: 10 }, setNotifications));
+    }
+
+    return () => {
+      unsubs.forEach((unsub) => {
+        if (typeof unsub === 'function') unsub();
+      });
+    };
+  }, [user, isAdmin, isCoach]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -49,6 +65,48 @@ function Dashboard() {
     setLoading(false);
   };
 
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await api.markNotificationAsRead(notificationId);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    if (!confirm('Delete this notification?')) return;
+    try {
+      await api.deleteNotification(notificationId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const markBookingRead = async (bookingId) => {
+    try {
+      await api.markBookingAsRead(bookingId);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, is_read: true } : b))
+      );
+    } catch (error) {
+      console.error('Error marking booking as read:', error);
+    }
+  };
+
+  const deleteBooking = async (bookingId) => {
+    if (!confirm('Delete this booking? This will cancel it.')) return;
+    try {
+      await api.cancelBooking(bookingId);
+      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+    } catch (error) {
+      alert('Failed to delete booking: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -63,7 +121,7 @@ function Dashboard() {
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-tennis-green to-tennis-green-dark rounded-xl p-6 mb-8 text-white">
           <h1 className="text-3xl font-bold">
-            Welcome back, {user?.username}! 🎾
+            Welcome back, {user?.username}!
           </h1>
           <p className="mt-2 text-green-100">
             {user?.role === 'admin' && 'Manage your tennis court platform'}
@@ -93,7 +151,7 @@ function Dashboard() {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              📢 Messages & Announcements
+              Messages & Announcements
             </button>
           </div>
         </div>
@@ -101,7 +159,7 @@ function Dashboard() {
         {/* Tab Content */}
         {activeTab === 'messages' ? (
           <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold mb-4">📢 Messages & Announcements</h2>
+            <h2 className="text-xl font-bold mb-4">Messages & Announcements</h2>
             {notifications.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No messages or announcements yet.</p>
             ) : (
@@ -124,11 +182,27 @@ function Dashboard() {
                           {new Date(notification.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      {!notification.is_read && (
-                        <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
-                          New
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {!notification.is_read && (
+                          <>
+                            <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
+                              New
+                            </span>
+                            <button
+                              onClick={() => markNotificationRead(notification.id)}
+                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              Mark as read
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => deleteNotification(notification.id)}
+                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -147,7 +221,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-tennis-green">{stats?.totalUsers || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-tennis-green rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">👥</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -159,7 +233,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-blue-600">{stats?.totalCourts || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">🏟️</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -183,7 +257,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-orange-600">{stats?.totalBookings || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">📅</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -210,7 +284,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-gray-900">{stats?.total_matches || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">🎾</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -222,7 +296,7 @@ function Dashboard() {
                     <p className="text-3xl font-bold text-green-600">{stats?.wins || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl">✓</span>
+                    <span className="text-white text-xl"></span>
                   </div>
                 </div>
               </div>
@@ -250,7 +324,7 @@ function Dashboard() {
             className="bg-white rounded-xl shadow-md p-6 card-hover flex items-center space-x-4"
           >
             <div className="w-12 h-12 bg-tennis-green rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🏟️</span>
+              <span className="text-2xl"></span>
             </div>
             <div>
               <h3 className="font-semibold text-lg">Book a Court</h3>
@@ -275,9 +349,14 @@ function Dashboard() {
             {bookings.length > 0 ? (
               <div className="space-y-4">
                 {bookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={booking.id}
+                    className={`flex items-center p-3 rounded-lg ${
+                      booking.is_read ? 'bg-gray-50' : 'bg-white border border-gray-200'
+                    }`}
+                  >
                     <div className="w-10 h-10 bg-tennis-green rounded-lg flex items-center justify-center mr-3">
-                      <span className="text-white">🎾</span>
+                      <span className="text-white"></span>
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{booking.court?.name || 'Court'}</p>
@@ -293,6 +372,22 @@ function Dashboard() {
                     }`}>
                       {booking.status}
                     </span>
+                    <div className="ml-3 flex items-center gap-2">
+                      {!booking.is_read && (
+                        <button
+                          onClick={() => markBookingRead(booking.id)}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Mark as read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteBooking(booking.id)}
+                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

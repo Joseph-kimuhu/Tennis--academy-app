@@ -74,6 +74,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
     }
 
     // TRAINING SESSIONS
@@ -86,6 +87,11 @@ service cloud.firestore {
     match /announcements/{announcementId} {
       allow read: if isAuthenticated();
       allow write: if isCoachOrAdmin();
+      allow update: if isAuthenticated() &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['read_by', 'updated_at']) &&
+        request.resource.data.read_by is list &&
+        (resource.data.read_by == null || request.resource.data.read_by.hasAll(resource.data.read_by)) &&
+        request.resource.data.read_by.hasAny([request.auth.uid]);
     }
 
     // PLAYER STATISTICS

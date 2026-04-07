@@ -7,7 +7,7 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isDisabled, disabledMessage } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -30,7 +30,7 @@ function Login() {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center justify-center space-x-2">
             <div className="w-12 h-12 bg-tennis-green rounded-full flex items-center justify-center">
-              <span className="text-white text-2xl">🎾</span>
+              <span className="text-white text-2xl">T</span>
             </div>
           </Link>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">Sign in to your account</h2>
@@ -44,8 +44,8 @@ function Login() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-              {error}
+            <div className={`border px-4 py-3 rounded-lg ${isDisabled ? 'bg-orange-50 border-orange-200 text-orange-600' : 'bg-red-50 border-red-200 text-red-600'}`}>
+              {isDisabled ? disabledMessage : error}
             </div>
           )}
 

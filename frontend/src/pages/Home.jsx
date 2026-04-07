@@ -32,32 +32,26 @@ function Home() {
 
   const features = [
     {
-      icon: '🏟️',
       title: 'Book Courts',
       description: 'Find and book available tennis courts near you. Choose from clay, grass, or hard courts.'
     },
     {
-      icon: '🏆',
       title: 'Tournaments',
-      description: 'Compete in tournaments, climb the leaderboard, and prove you\'re the best.'
+      description: "Compete in tournaments, climb the leaderboard, and prove you're the best."
     },
     {
-      icon: '📊',
       title: 'Track Progress',
       description: 'Monitor your wins, losses, and ranking points. Improve your game over time.'
     },
     {
-      icon: '🎓',
       title: 'Coaching',
       description: 'Book sessions with professional coaches to improve your skills.'
     },
     {
-      icon: '👥',
       title: 'Community',
       description: 'Connect with other tennis enthusiasts and find playing partners.'
     },
     {
-      icon: '🎯',
       title: 'Rankings',
       description: 'Compete for the top spot in our global player rankings.'
     }
@@ -282,7 +276,7 @@ function Home() {
                     <span className="text-6xl relative z-10 group-hover:scale-110 transition-transform">🎾</span>
                     <div className="absolute top-4 right-4">
                       <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-[#2E7D32]">
-                        {court.is_indoor ? '🏠 Indoor' : '☀️ Outdoor'}
+                        {court.is_indoor ? 'Indoor' : 'Outdoor'}
                       </span>
                     </div>
                   </div>
@@ -300,7 +294,6 @@ function Home() {
                       </span>
                       {court.location && (
                         <span className="flex items-center">
-                          <span className="mr-1">📍</span>
                           {court.location}
                         </span>
                       )}
@@ -440,7 +433,6 @@ function Home() {
               {/* Left Side - Training Info */}
               <div className="p-8 md:p-10">
                 <div className="inline-flex items-center gap-2 bg-[#CCFF00] text-[#1B5E20] px-4 py-2 rounded-full text-sm font-bold mb-4">
-                  <span>🎯</span>
                   <span>Professional Training</span>
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
@@ -454,7 +446,6 @@ function Home() {
                   <span className="text-gray-500">/hour</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <span>📍</span>
                   <span>Nairobi, Kenya</span>
                 </div>
               </div>
@@ -468,7 +459,7 @@ function Home() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-4 bg-[#25D366] text-white rounded-xl hover:bg-[#20BD5A] transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    <span className="text-2xl">💬</span>
+                    <span className="text-2xl"></span>
                     <div>
                       <div className="font-bold">WhatsApp</div>
                       <div className="text-sm opacity-90">0724565388</div>
@@ -478,14 +469,14 @@ function Home() {
                     href="mailto:johnmakumi106@gmail.com"
                     className="flex items-center gap-3 p-4 bg-white border-2 border-gray-200 text-gray-900 rounded-xl hover:border-[#2E7D32] hover:text-[#2E7D32] transition-all"
                   >
-                    <span className="text-2xl">📧</span>
+                    <span className="text-2xl"></span>
                     <div>
                       <div className="font-bold">Email</div>
                       <div className="text-sm text-gray-500">johnmakumi106@gmail.com</div>
                     </div>
                   </a>
                   <div className="flex items-center gap-3 p-4 bg-[#2E7D32] text-white rounded-xl">
-                    <span className="text-2xl">👤</span>
+                    <span className="text-2xl"></span>
                     <div>
                       <div className="font-bold">Instructor</div>
                       <div className="text-sm opacity-90">John Makumi</div>
@@ -514,7 +505,6 @@ function Home() {
                 className="btn btn-primary text-lg px-10 py-4"
               >
                 Create Free Account
-                <span className="ml-2">🎾</span>
               </Link>
               <Link
                 to="/courts"
@@ -533,7 +523,6 @@ function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <span className="text-3xl">🎾</span>
                 <span className="text-xl font-bold">{clubs.length > 0 ? clubs[0].name : 'Tennis Court'}</span>
               </div>
               <p className="text-black">
@@ -558,7 +547,7 @@ function Home() {
             <div>
               <h4 className="font-bold mb-4">Contact</h4>
               <ul className="space-y-2 text-black">
-                <li>📧 {clubs.length > 0 ? clubs[0].email : 'support@tenniscourt.com'}</li>
+                <li>{clubs.length > 0 ? clubs[0].email : 'support@tenniscourt.com'}</li>
                 <li>
                   <a 
                     href="https://wa.me/254738839851?text=Hi" 
@@ -566,11 +555,11 @@ function Home() {
                     rel="noopener noreferrer"
                     className="hover:text-green-600 flex items-center gap-2 transition-colors"
                   >
-                    <span>💬</span>
+                    <span></span>
                     <span>0738839851</span>
                   </a>
                 </li>
-                <li>📍 {clubs.length > 0 ? clubs[0].location : '123 Tennis Street'}</li>
+                <li>{clubs.length > 0 ? clubs[0].location : '123 Tennis Street'}</li>
               </ul>
             </div>
           </div>

@@ -47,9 +47,26 @@ function PlayerDashboard() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchData();
+    if (!isAuthenticated || !user) return;
+
+    fetchData();
+
+    const unsubs = [];
+    if (api.subscribeToMyBookings) {
+      unsubs.push(api.subscribeToMyBookings({ limit: 100 }, setMyBookings));
     }
+    if (api.subscribeToAnnouncements) {
+      unsubs.push(api.subscribeToAnnouncements({ active_only: true, limit: 5 }, setAnnouncements));
+    }
+    if (api.subscribeToNotifications) {
+      unsubs.push(api.subscribeToNotifications({ limit: 10 }, setNotifications));
+    }
+
+    return () => {
+      unsubs.forEach((unsub) => {
+        if (typeof unsub === 'function') unsub();
+      });
+    };
   }, [isAuthenticated, user]);
 
   const fetchData = async () => {
@@ -94,27 +111,13 @@ function PlayerDashboard() {
   const handleTournamentPayment = async (e) => {
     e.preventDefault();
     try {
-      // First register for tournament
-      await api.registerForTournament(payingTournament.id);
-      
-      // Then confirm payment - wait a bit for registration to be created
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const registrations = await api.getMyTournamentRegistrations();
-      if (!registrations || registrations.length === 0) {
-        alert('Registration not found. Please try again.');
-        return;
-      }
-      
-      // Find the registration for this tournament
-      const myReg = registrations.find(r => r.tournament && r.tournament.id === payingTournament.id);
-      
-      if (!myReg) {
-        alert('Registration not found. Please refresh and try again.');
-        return;
-      }
-      
-      await api.confirmTournamentPayment(myReg.id, paymentForm.paymentMethod, paymentForm.phone, paymentForm.reference);
+      // Submit payment details - registration will be created after admin approves
+      await api.submitTournamentPaymentIntent(
+        payingTournament.id,
+        paymentForm.paymentMethod,
+        paymentForm.phone,
+        paymentForm.reference
+      );
       
       setShowPaymentModal(false);
       setPayingTournament(null);
@@ -125,10 +128,10 @@ function PlayerDashboard() {
       notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg z-50';
       notification.innerHTML = `
         <div class="flex items-center gap-3">
-          <span class="text-2xl">✅</span>
+          <span class="text-2xl"></span>
           <div>
             <p class="font-bold">Payment Submitted!</p>
-            <p class="text-sm text-green-100">Admin will review and approve shortly.</p>
+            <p class="text-sm text-green-100">Admin will review and approve your registration shortly.</p>
           </div>
         </div>
       `;
@@ -171,6 +174,70 @@ function PlayerDashboard() {
     }
   };
 
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await api.markNotificationAsRead(notificationId);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    if (!confirm('Delete this notification?')) return;
+    try {
+      await api.deleteNotification(notificationId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const markAnnouncementRead = async (announcementId) => {
+    try {
+      await api.markAnnouncementAsRead(announcementId);
+      setAnnouncements((prev) =>
+        prev.map((a) => (a.id === announcementId ? { ...a, is_read: true } : a))
+      );
+    } catch (error) {
+      console.error('Error marking announcement as read:', error);
+    }
+  };
+
+  const deleteAnnouncement = async (announcementId) => {
+    if (!confirm('Delete this announcement?')) return;
+    try {
+      await api.deleteAnnouncement(announcementId);
+      setAnnouncements((prev) => prev.filter((a) => a.id !== announcementId));
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      alert('Error: ' + (error.message || 'Could not delete announcement'));
+    }
+  };
+
+  const markBookingRead = async (bookingId) => {
+    try {
+      await api.markBookingAsRead(bookingId);
+      setMyBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, is_read: true } : b))
+      );
+    } catch (error) {
+      console.error('Error marking booking as read:', error);
+    }
+  };
+
+  const deleteBooking = async (bookingId) => {
+    if (!confirm('Delete this booking? This will cancel it.')) return;
+    try {
+      await api.cancelBooking(bookingId);
+      setMyBookings((prev) => prev.filter((b) => b.id !== bookingId));
+    } catch (error) {
+      alert('Failed to delete booking: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -199,7 +266,7 @@ function PlayerDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {user?.username}! 🎾</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {user?.username}!</h1>
                 <p className="text-green-100">Ready to dominate the court today?</p>
               </div>
               <div className="mt-4 md:mt-0 flex space-x-3">
@@ -207,13 +274,13 @@ function PlayerDashboard() {
                   onClick={() => setShowStatsModal(true)}
                   className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-colors shadow-md flex items-center"
                 >
-                  <span className="mr-2">📊</span> My Stats
+                  <span className="mr-2"></span> My Stats
                 </button>
                 <Link
                   to="/courts"
                   className="px-6 py-3 bg-green-700/50 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center"
                 >
-                  <span className="mr-2">🏟️</span> Book Court
+                  <span className="mr-2"></span> Book Court
                 </Link>
               </div>
             </div>
@@ -222,15 +289,15 @@ function PlayerDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Matches Played</p>
-                <p className="text-3xl font-bold text-gray-900">{myStats?.total_matches || 0}</p>
+                <p className="text-3xl font-bold text-gray-900">{detailedStats?.total_matches || myStats?.total_matches || 0}</p>
               </div>
               <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🎾</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -239,10 +306,22 @@ function PlayerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Wins</p>
-                <p className="text-3xl font-bold text-green-600">{myStats?.wins || user?.wins || 0}</p>
+                <p className="text-3xl font-bold text-green-600">{detailedStats?.wins || myStats?.wins || user?.wins || 0}</p>
               </div>
               <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🏆</span>
+                <span className="text-2xl"></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Losses</p>
+                <p className="text-3xl font-bold text-red-600">{detailedStats?.losses || myStats?.losses || user?.losses || 0}</p>
+              </div>
+              <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center">
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -251,10 +330,10 @@ function PlayerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Ranking Points</p>
-                <p className="text-3xl font-bold text-blue-600">{user?.ranking_points || 0}</p>
+                <p className="text-3xl font-bold text-blue-600">{detailedStats?.ranking_points || user?.ranking_points || 0}</p>
               </div>
               <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">📊</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -263,10 +342,10 @@ function PlayerDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Skill Level</p>
-                <p className="text-2xl font-bold text-orange-600 capitalize">{user?.skill_level || 'Beginner'}</p>
+                <p className="text-2xl font-bold text-orange-600 capitalize">{detailedStats?.skill_level || user?.skill_level || 'Beginner'}</p>
               </div>
               <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🎯</span>
+                <span className="text-2xl"></span>
               </div>
             </div>
           </div>
@@ -276,12 +355,12 @@ function PlayerDashboard() {
         <div className="bg-white rounded-xl shadow-md mb-8 overflow-hidden">
           <div className="flex overflow-x-auto">
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-              { id: 'bookings', label: 'My Bookings', icon: '📅', badge: myBookings.length },
-              { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
-              { id: 'training', label: 'Training', icon: '🎾' },
-              { id: 'announcements', label: 'Announcements', icon: '📢', badge: announcements.length },
-              { id: 'notifications', label: 'Notifications', icon: '🔔', badge: notifications.filter(n => !n.is_read).length },
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'bookings', label: 'My Bookings', badge: myBookings.filter(b => !b.is_read).length },
+              { id: 'tournaments', label: 'Tournaments' },
+              { id: 'training', label: 'Training' },
+              { id: 'announcements', label: 'Announcements', badge: announcements.filter(a => !a.is_read).length },
+              { id: 'notifications', label: 'Notifications', badge: notifications.filter(n => !n.is_read).length },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -328,26 +407,26 @@ function PlayerDashboard() {
                           reg.payment_status === 'rejected' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {reg.payment_status === 'paid' ? '✅ Paid' :
-                           reg.payment_status === 'pending' ? '⏳ Payment Submitted' :
-                           reg.payment_status === 'rejected' ? '❌ Payment Rejected' :
-                           '💳 Payment Not Submitted'}
+                          {reg.payment_status === 'paid' ? 'Paid' :
+                           reg.payment_status === 'pending' ? 'Payment Submitted' :
+                           reg.payment_status === 'rejected' ? 'Payment Rejected' :
+                           'Payment Not Submitted'}
                         </span>
                         <span className={`px-3 py-1 text-xs rounded-full font-medium ${
                           reg.status === 'approved' ? 'bg-green-100 text-green-800' :
                           reg.status === 'rejected' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {reg.status === 'approved' ? '✅ Approved' : 
-                           reg.status === 'rejected' ? '❌ Rejected' : 
-                           reg.status === 'pending_payment' ? '⏳ Pending Payment' : '⏳ Pending'}
+                          {reg.status === 'approved' ? 'Approved' : 
+                           reg.status === 'rejected' ? 'Rejected' : 
+                           reg.status === 'pending_payment' ? 'Pending Payment' : 'Pending'}
                         </span>
                       </div>
                       <div className="text-sm text-gray-600">
-                        📅 {reg.tournament?.start_date ? new Date(reg.tournament.start_date).toLocaleDateString() : 'TBD'}
+                        {reg.tournament?.start_date ? new Date(reg.tournament.start_date).toLocaleDateString() : 'TBD'}
                       </div>
                       <div className="text-sm text-gray-600">
-                        💰 Entry: {reg.tournament?.entry_fee || 0} KES
+                        Entry: {reg.tournament?.entry_fee || 0} KES
                       </div>
                     </div>
                   ))}
@@ -360,17 +439,17 @@ function PlayerDashboard() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Link to="/courts" className="bg-green-50 border-2 border-green-200 rounded-xl p-6 hover:bg-green-100 transition-all hover:scale-105">
-                  <div className="text-3xl mb-3">🏟️</div>
+                  <div className="text-3xl mb-3"></div>
                   <div className="font-bold text-green-800 text-lg">Book a Court</div>
                   <div className="text-sm text-green-600 mt-1">Reserve your perfect court</div>
                 </Link>
                 <Link to="/tournaments" className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 hover:bg-blue-100 transition-all hover:scale-105">
-                  <div className="text-3xl mb-3">🏆</div>
+                  <div className="text-3xl mb-3"></div>
                   <div className="font-bold text-blue-800 text-lg">Join Tournament</div>
                   <div className="text-sm text-blue-600 mt-1">Compete and win prizes</div>
                 </Link>
                 <Link to="/profile" className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 hover:bg-purple-100 transition-all hover:scale-105">
-                  <div className="text-3xl mb-3">👤</div>
+                  <div className="text-3xl mb-3"></div>
                   <div className="font-bold text-purple-800 text-lg">Update Profile</div>
                   <div className="text-sm text-purple-600 mt-1">Manage your account</div>
                 </Link>
@@ -386,7 +465,12 @@ function PlayerDashboard() {
                 </div>
                 <div className="space-y-3">
                   {myBookings.slice(0, 3).map((booking) => (
-                    <div key={booking.id} className="border-2 border-gray-200 rounded-xl p-4 hover:border-green-300 transition-colors">
+                    <div
+                      key={booking.id}
+                      className={`border-2 rounded-xl p-4 hover:border-green-300 transition-colors ${
+                        booking.is_read ? 'border-gray-200 bg-gray-50' : 'border-gray-200'
+                      }`}
+                    >
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-semibold text-lg">{booking.court?.name || 'Court'}</div>
@@ -402,6 +486,22 @@ function PlayerDashboard() {
                         }`}>
                           {booking.status}
                         </span>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        {!booking.is_read && (
+                          <button
+                            onClick={() => markBookingRead(booking.id)}
+                            className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteBooking(booking.id)}
+                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -442,7 +542,7 @@ function PlayerDashboard() {
                         className="w-full h-32 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center"
                         style={{ display: court.image_url ? 'none' : 'flex' }}
                       >
-                        <span className="text-white text-4xl">🏟️</span>
+                        <span className="text-white text-4xl"></span>
                       </div>
                       
                       {/* Court Info */}
@@ -457,7 +557,7 @@ function PlayerDashboard() {
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {court.is_available ? '✅ Available' : '❌ Occupied'}
+                            {court.is_available ? 'Available' : 'Occupied'}
                           </div>
                         </div>
                       </div>
@@ -465,7 +565,7 @@ function PlayerDashboard() {
                   ))}
                   {courts.length === 0 && (
                     <div className="col-span-2 text-center py-8">
-                      <div className="text-5xl mb-3">🏟️</div>
+                      <div className="text-5xl mb-3"></div>
                       <div className="text-gray-500 mb-2">No courts available</div>
                     </div>
                   )}
@@ -482,18 +582,7 @@ function PlayerDashboard() {
                   {notifications.slice(0, 3).map((notification) => (
                     <div 
                       key={notification.id} 
-                      onClick={async () => {
-                        if (!notification.is_read) {
-                          try {
-                            await api.markNotificationAsRead(notification.id);
-                            notification.is_read = true;
-                            setNotifications([...notifications]);
-                          } catch (error) {
-                            console.error('Error marking notification as read:', error);
-                          }
-                        }
-                      }}
-                      className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
+                      className={`p-4 rounded-xl cursor-default hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
@@ -502,6 +591,22 @@ function PlayerDashboard() {
                             <p className="font-medium">{notification.title || 'Notification'}</p>
                             <p className="text-xs text-gray-500">{formatDate(notification.created_at)}</p>
                           </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!notification.is_read && (
+                            <button
+                              onClick={() => markNotificationRead(notification.id)}
+                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              Mark as read
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteNotification(notification.id)}
+                            className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                       <p className="text-sm text-gray-600 mt-2">{notification.message || notification.content}</p>
@@ -584,7 +689,12 @@ function PlayerDashboard() {
                 {myBookings.map((booking) => {
                   const paymentStatus = booking.payment_status || 'unpaid';
                   return (
-                    <div key={booking.id} className="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div
+                      key={booking.id}
+                      className={`flex items-center p-4 rounded-xl border ${
+                        booking.is_read ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200'
+                      }`}
+                    >
                       <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mr-3">
                         <span className="text-green-700 text-xl">🎾</span>
                       </div>
@@ -627,6 +737,20 @@ function PlayerDashboard() {
                         >
                           {paymentStatus}
                         </span>
+                        {!booking.is_read && (
+                          <button
+                            onClick={() => markBookingRead(booking.id)}
+                            className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteBooking(booking.id)}
+                          className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
                         {booking.status !== "cancelled" && (paymentStatus === "unpaid" || paymentStatus === "rejected") && (
                           <button
                             onClick={() => startBookingPayment(booking)}
@@ -734,15 +858,35 @@ function PlayerDashboard() {
                 announcements.map((announcement) => (
                   <div
                     key={announcement.id}
-                    className="border-l-4 border-green-500 bg-green-50 p-4 rounded-lg"
+                    className={`border-l-4 p-4 rounded-lg ${
+                      announcement.is_read
+                        ? 'border-gray-300 bg-gray-50'
+                        : 'border-green-500 bg-green-50'
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-bold text-gray-900">
                         {announcement.title}
                       </h3>
-                      <span className="text-sm text-gray-500">
-                        {formatDate(announcement.created_at || announcement.createdAt)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">
+                          {formatDate(announcement.created_at || announcement.createdAt)}
+                        </span>
+                        {!announcement.is_read && (
+                          <button
+                            onClick={() => markAnnouncementRead(announcement.id)}
+                            className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteAnnouncement(announcement.id)}
+                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     <p className="text-gray-700 mb-2">{announcement.content}</p>
                     {announcement.priority && (
@@ -823,18 +967,7 @@ function PlayerDashboard() {
               {notifications.length > 0 ? notifications.map((notification) => (
                 <div 
                   key={notification.id} 
-                  onClick={async () => {
-                    if (!notification.is_read) {
-                      try {
-                        await api.markNotificationAsRead(notification.id);
-                        notification.is_read = true;
-                        setNotifications([...notifications]);
-                      } catch (error) {
-                        console.error('Error marking notification as read:', error);
-                      }
-                    }
-                  }}
-                  className={`p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
+                  className={`p-4 rounded-xl cursor-default hover:shadow-md transition-shadow ${!notification.is_read ? 'bg-green-50 border-l-4 border-green-500' : 'bg-gray-50'}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
@@ -843,6 +976,22 @@ function PlayerDashboard() {
                         <p className="font-medium">{notification.title || 'Notification'}</p>
                         <p className="text-xs text-gray-500">{formatDate(notification.created_at)}</p>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!notification.is_read && (
+                        <button
+                          onClick={() => markNotificationRead(notification.id)}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Mark as read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteNotification(notification.id)}
+                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 mt-2">{notification.message || notification.content}</p>
@@ -1061,7 +1210,7 @@ function PlayerDashboard() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">💳</span>
+                <span className="text-3xl"></span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900">Complete Your Payment</h3>
               <p className="text-gray-600 mt-2">Tournament: <span className="font-bold">{payingTournament.name}</span></p>
@@ -1083,9 +1232,9 @@ function PlayerDashboard() {
               <div className="mb-4">
                 <label className="block text-sm font-bold text-gray-700 mb-2">💰 Select Payment Method</label>
                 <div className="grid grid-cols-2 gap-3">
-                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'mpesa' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'mpesa' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300'}`}>📱 M-Pesa</button>
-                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'card' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'card' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300'}`}>💳 Card</button>
-                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'bank' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'bank' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-gray-700 border-gray-300'}`}>🏦 Bank</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'mpesa' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'mpesa' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300'}`}>M-Pesa</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'card' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'card' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300'}`}>Card</button>
+                  <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'bank' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'bank' ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-gray-700 border-gray-300'}`}>Bank</button>
                   <button type="button" onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: 'cash' })} className={`py-3 px-4 rounded-xl font-bold border-2 ${paymentForm.paymentMethod === 'cash' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-700 border-gray-300'}`}>💵 Cash</button>
                 </div>
               </div>
@@ -1102,7 +1251,7 @@ function PlayerDashboard() {
               
               <div className="flex gap-3">
                 <button type="button" onClick={() => { setShowPaymentModal(false); setPayingTournament(null); }} className="flex-1 px-6 py-4 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 text-lg">Cancel</button>
-                <button type="submit" disabled={!paymentForm.phone || !paymentForm.reference} className="flex-1 px-6 py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 text-lg disabled:bg-gray-300">✅ Submit Payment</button>
+                <button type="submit" disabled={!paymentForm.phone || !paymentForm.reference} className="flex-1 px-6 py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 text-lg disabled:bg-gray-300">Submit Payment</button>
               </div>
             </form>
           </div>
