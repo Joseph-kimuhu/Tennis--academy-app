@@ -185,7 +185,7 @@ function Home() {
                 preload="metadata"
                 poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'%3E%3Crect fill='%232E7D32' width='16' height='9'/%3E%3C/svg%3E"
               >
-                <source src="/videos/WhatsApp Video 2026-03-15 at 08.22.57.mp4" type="video/mp4" />
+                <source src="/videos/video1.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
@@ -201,7 +201,7 @@ function Home() {
                 controls
                 preload="metadata"
               >
-                <source src="/videos/WhatsApp Video 2026-03-15 at 08.22.58 (1).mp4" type="video/mp4" />
+                <source src="/videos/video2.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
@@ -217,7 +217,7 @@ function Home() {
                 controls
                 preload="metadata"
               >
-                <source src="/videos/WhatsApp Video 2026-03-15 at 08.23.00.mp4" type="video/mp4" />
+                <source src="/videos/video3.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
@@ -233,7 +233,7 @@ function Home() {
                 controls
                 preload="metadata"
               >
-                <source src="/videos/WhatsApp Video 2026-03-15 at 08.23.01.mp4" type="video/mp4" />
+                <source src="/videos/video4.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
