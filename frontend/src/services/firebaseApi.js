@@ -1810,6 +1810,140 @@ class FirebaseApiService {
     }
   }
 
+  // ==================== ADMIN ====================
+
+  async getAdminStats() {
+    const usersQ = query(collection(db, 'users'), limit(200));
+    const usersSnapshot = await getDocs(usersQ);
+    const users = usersSnapshot.docs.map(doc => doc.data());
+
+    const bookingsQ = query(collection(db, 'bookings'), limit(200));
+    const bookingsSnapshot = await getDocs(bookingsQ);
+
+    const tournamentsQ = query(collection(db, 'tournaments'), limit(100));
+    const tournamentsSnapshot = await getDocs(tournamentsQ);
+    const tournaments = tournamentsSnapshot.docs.map(doc => doc.data());
+
+    const courtsQ = query(collection(db, 'courts'), limit(100));
+    const courtsSnapshot = await getDocs(courtsQ);
+
+    return {
+      total_users: usersSnapshot.size,
+      total_bookings: bookingsSnapshot.size,
+      active_tournaments: tournaments.filter(t => t.status === 'active').length,
+      total_tournaments: tournamentsSnapshot.size,
+      total_courts: courtsSnapshot.size,
+    };
+  }
+
+  async getAllUsers(params = {}) {
+    const { limit: limitCount = 100 } = params;
+    const q = query(collection(db, 'users'), limit(limitCount));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  async getAllBookings(params = {}) {
+    const { limit: limitCount = 200 } = params;
+    const q = query(collection(db, 'bookings'), limit(limitCount));
+    const snapshot = await getDocs(q);
+    const bookings = [];
+    for (const docSnap of snapshot.docs) {
+      const booking = { id: docSnap.id, ...docSnap.data() };
+      if (booking.court_id) {
+        const courtDoc = await getDoc(doc(db, 'courts', booking.court_id));
+        if (courtDoc.exists()) booking.court = { id: courtDoc.id, ...courtDoc.data() };
+      }
+      if (booking.user_id) {
+        const userDoc = await getDoc(doc(db, 'users', booking.user_id));
+        if (userDoc.exists()) booking.user = { id: userDoc.id, ...userDoc.data() };
+      }
+      bookings.push(booking);
+    }
+    return bookings;
+  }
+
+  async getAllTournaments(params = {}) {
+    const { limit: limitCount = 50 } = params;
+    const q = query(collection(db, 'tournaments'), limit(limitCount));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  async updateUserStatus(userId, isActive) {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, { is_active: isActive, updatedAt: serverTimestamp() });
+  }
+
+  async updateUserRole(userId, newRole) {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, { role: newRole, updatedAt: serverTimestamp() });
+  }
+
+  async deleteUser(userId) {
+    await deleteDoc(doc(db, 'users', userId));
+  }
+
+  async getPlayerStats(playerId) {
+    return this.getPlayerStatistics(playerId);
+  }
+
+  async publishTournament(tournamentId) {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    await updateDoc(tournamentRef, { status: 'active', updatedAt: serverTimestamp() });
+  }
+
+  async completeTournament(tournamentId) {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    await updateDoc(tournamentRef, { status: 'completed', updatedAt: serverTimestamp() });
+  }
+
+  async deleteTournament(tournamentId) {
+    await deleteDoc(doc(db, 'tournaments', tournamentId));
+  }
+
+  async updateCourtStatus(courtId, isAvailable) {
+    const courtRef = doc(db, 'courts', courtId);
+    await updateDoc(courtRef, { is_available: isAvailable, updatedAt: serverTimestamp() });
+  }
+
+  async approveBookingPayment(bookingId) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, { payment_status: 'paid', updatedAt: serverTimestamp() });
+  }
+
+  async rejectBookingPayment(bookingId) {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, { payment_status: 'rejected', updatedAt: serverTimestamp() });
+  }
+
+  async getTournamentMatches(tournamentId) {
+    const q = query(collection(db, 'matches'), where('tournament_id', '==', tournamentId));
+    const snapshot = await getDocs(q);
+    const matches = [];
+    for (const docSnap of snapshot.docs) {
+      const match = { id: docSnap.id, ...docSnap.data() };
+      if (match.player1_id) {
+        const p1 = await getDoc(doc(db, 'users', match.player1_id));
+        if (p1.exists()) match.player1 = { id: p1.id, ...p1.data() };
+      }
+      if (match.player2_id) {
+        const p2 = await getDoc(doc(db, 'users', match.player2_id));
+        if (p2.exists()) match.player2 = { id: p2.id, ...p2.data() };
+      }
+      if (match.court_id) {
+        const court = await getDoc(doc(db, 'courts', match.court_id));
+        if (court.exists()) match.court = { id: court.id, ...court.data() };
+      }
+      matches.push(match);
+    }
+    return matches;
+  }
+
+  async deleteAnnouncement(announcementId) {
+    await deleteDoc(doc(db, 'announcements', announcementId));
+  }
+
   async getStaffStats() {
     const usersQ = query(collection(db, 'users'), limit(100));
     const usersSnapshot = await getDocs(usersQ);
